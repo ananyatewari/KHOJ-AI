@@ -5,6 +5,7 @@ import Document from "../models/Document.js";
 import { extractEntities } from "../utils/nlp.js";
 import { getEmbedding } from "../utils/embeddings.js";
 import { emitLog } from "../utils/logger.js";
+import { extractEntitiesAI } from "../services/aiEntities.js";
 
 const router = express.Router();
 
@@ -42,7 +43,29 @@ router.post("/pdf", upload.single("file"), async (req, res) => {
     });
     const text = parsed.text || "";
 
-    const entities = extractEntities(text);
+    // 1️⃣ Rule-based extraction (fast)
+const ruleEntities = extractEntities(text);
+
+// 2️⃣ AI extraction (intelligent)
+let aiEntities = null;
+try {
+  aiEntities = await extractEntitiesAI(text);
+} catch (e) {
+  console.error("AI entity extraction failed:", e.message);
+}
+
+// 3️⃣ Merge
+const entities = aiEntities? aiEntities : ruleEntities;
+
+await emitLog(io, {
+  level: "INFO",
+  message: aiEntities
+    ? "AI entity extraction completed"
+    : "AI entity extraction skipped (fallback)",
+  user: req.body.uploadedBy,
+  agency: req.body.agency
+});
+
     const chunks = text
       .split("\n")
       .map(p => p.trim())

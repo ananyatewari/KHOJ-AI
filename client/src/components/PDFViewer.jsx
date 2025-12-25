@@ -45,7 +45,7 @@ export default function PDFViewer({
   return (
     <div
       id="pdf-scroll-container"
-      className="bg-gray-900 p-4 rounded h-[80vh] overflow-y-scroll"
+      className="bg-gray-900 rounded h-[80vh] overflow-y-scroll"
     >
       <h2 className="text-lg font-semibold mb-2">
         Extracted PDF Text (AI Highlighted)

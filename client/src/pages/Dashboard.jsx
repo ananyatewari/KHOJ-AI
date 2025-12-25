@@ -57,12 +57,13 @@ export default function Dashboard() {
 
 function StatCard({ title, value }) {
   return (
-    <div className="bg-slate-800 border border-slate-700 p-5 rounded-xl">
+    <div className="bg-slate-800 border border-slate-700 p-5 rounded-xl hover:border-blue-500 transition">
       <p className="text-sm text-gray-400 mb-1">{title}</p>
       <p className="text-2xl font-bold">{value}</p>
     </div>
   );
 }
+
 
 function List({ docs, showUser }) {
   if (!docs.length)

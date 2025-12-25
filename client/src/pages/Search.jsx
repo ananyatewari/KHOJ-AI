@@ -17,11 +17,18 @@ export default function Search() {
   const [searchTerm, setSearchTerm] = useState("");
   const [semanticScope, setSemanticScope] = useState("document");
   const [semanticResults, setSemanticResults] = useState([]);
-  const [summary, setSummary] = useState("");
+  const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("document");
   const [primaryDocId, setPrimaryDocId] = useState(null);
   const [docFilter, setDocFilter] = useState("");
+  const [semanticInput, setSemanticInput] = useState("");
+
+  const [semanticCache, setSemanticCache] = useState({
+    document: null,
+    agency: null
+  });
+
   const [primaryDoc, setPrimaryDoc] = useState({
     text: "",
     entities: {}
@@ -45,79 +52,149 @@ export default function Search() {
   };
 
   const handleUpload = async () => {
-    if (!file) return alert("Select a PDF");
+  if (!file) return alert("Select a PDF");
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("agency", agency);
-    formData.append("uploadedBy", user.username);
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("agency", agency);
+  formData.append("uploadedBy", user.username);
 
-    setLoading(true);
+  // 🔥 RESET DOCUMENT CONTEXT
+  setSummary(null);
+  setSummaryLoading(false);
+  setPrimaryDocId(null);
+  setSemanticResults([]);
+  setPreviewDoc(null);
+  setActiveTab("document");
 
-    const res = await fetch("http://localhost:3000/api/ingest/pdf", {
-      method: "POST",
-      body: formData,
-    });
+  setLoading(true);
 
-    const data = await res.json();
+  const res = await fetch("http://localhost:3000/api/ingest/pdf", {
+    method: "POST",
+    body: formData,
+  });
 
-    setPrimaryDoc({
-      text: data.text,
-      entities: data.entities || {}
-    });
+  const data = await res.json();
 
-    setPreviewDoc(null);
-    setSemanticResults([]);
-    setSummary("");
-    setActiveTab("document");
-    setPrimaryDocId(data.documentId);
-    setLoading(false);
-  };
+  setPrimaryDoc({
+    text: data.text,
+    entities: data.entities || {}
+  });
 
-  /* ---------- SEARCH ---------- */
-  const handleSearch = async (value) => {
-    if (searchMode === "keyword") {
-      setSearchTerm(value);
-      return;
-    }
+  // 🔥 THIS IS THE SINGLE SOURCE OF TRUTH
+  setPrimaryDocId(data.documentId);
 
-    if (!value.trim()) return;
+  setLoading(false);
+};
 
-    setSummaryLoading(true);
+
+  const handleSearch = async () => {
+    if (searchMode !== "semantic") return;
+    if (!semanticInput.trim()) return;
 
     if (semanticScope === "document" && !primaryDocId) {
       alert("Please ingest a document before searching within it.");
       return;
     }
 
+    setSummaryLoading(true);
+
     const data = await semanticSearch(
-      value,
+      semanticInput,
       semanticScope,
       primaryDocId
     );
 
-
-    if (!data.results || !data.results.length) {
+    if (!data?.results) {
       setSummaryLoading(false);
       return;
     }
 
+    setSemanticCache(prev => ({
+      ...prev,
+      [semanticScope]: {
+        query: semanticInput,
+        results: data.results,
+      }
+    }));
+
     setSemanticResults(data.results);
-    setSummary(data.summary || "");
     setPreviewDoc(null);
     setActiveTab("semantic");
-
     setSummaryLoading(false);
   };
 
-  const filteredResults = semanticResults.filter((r) =>
-  r.filename.toLowerCase().includes(docFilter)
-);
+  const fetchSummary = async () => {
+  if (!primaryDocId) return;
+
+  setSummaryLoading(true);
+
+  const res = await fetch("http://localhost:3000/api/search/summary", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    },
+    body: JSON.stringify({
+      documentId: primaryDocId // 🔥 THIS FIXES EVERYTHING
+    })
+  });
+
+  const data = await res.json();
+  setSummary(data);
+  setSummaryLoading(false);
+};
 
 useEffect(() => {
-  setSemanticResults([]);
-  setPreviewDoc(null);
-}, [semanticScope]);
+  if (activeTab === "summary" && primaryDocId && !summary) {
+    fetchSummary();
+  }
+}, [activeTab, primaryDocId]);
+
+
+const downloadReport = async () => {
+  if (!summary) return;
+
+  const res = await fetch("http://localhost:3000/api/report/export", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    },
+    body: JSON.stringify({ summary })
+  });
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "intelligence-report.txt";
+  document.body.appendChild(a);
+  a.click();
+
+  a.remove();
+  window.URL.revokeObjectURL(url);
+};
+
+
+
+
+  const filteredResults = semanticResults.filter((r) =>
+    r.filename.toLowerCase().includes(docFilter)
+  );
+
+  useEffect(() => {
+    const cached = semanticCache[semanticScope];
+
+    if (cached) {
+      setSemanticResults(cached.results);
+    } else {
+      setSemanticResults([]);
+    }
+
+    setPreviewDoc(null);
+  }, [semanticScope, semanticCache]);
 
 
   return (
@@ -143,180 +220,204 @@ useEffect(() => {
         ))}
       </div>
 
-      {/* ---------- INGEST ---------- */}
-      <input
-        type="file"
-        accept="application/pdf"
-        onChange={(e) => setFile(e.target.files[0])}
-        className="mb-4"
-      />
+      {/* ---------- INGEST CARD ---------- */}
+<div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-8 max-w-3xl">
+  <h2 className="text-lg font-semibold mb-3">
+    Upload Intelligence Document
+  </h2>
 
-      <button
-        onClick={handleUpload}
-        className="bg-blue-600 px-4 py-2 rounded"
-      >
-        Ingest PDF
-      </button>
+  <div className="flex items-center gap-4">
+    <input
+      type="file"
+      accept="application/pdf"
+      onChange={(e) => setFile(e.target.files[0])}
+      className="text-sm text-gray-300"
+    />
+
+    <button
+      onClick={handleUpload}
+      disabled={loading}
+      className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 ml-70 px-5 py-2 rounded font-medium"
+    >
+      {loading ? "Processing…" : "Ingest PDF"}
+    </button>
+  </div>
+
+  {file && (
+    <p className="text-xs text-gray-400 mt-2">
+      Selected: <span className="text-blue-400">{file.name}</span>
+    </p>
+  )}
+</div>
 
       {loading && <p className="mt-2">Processing…</p>}
 
       {/* ---------- MAIN CONTENT ---------- */}
       {primaryDoc.text && (
-        <div className="flex mt-10 h-[80vh] gap-4">
-          {/* ---------- ENTITIES ---------- */}
-          <div className="w-72 shrink-0 overflow-y-auto bg-gray-900 rounded p-3">
-            <EntityPanel
-              entities={
-                activeTab === "semantic" && previewDoc
-                  ? previewDoc.entities
-                  : primaryDoc.entities
-              }
-              onSelect={(v) => window.scrollToEntity(v)}
-            />
-          </div>
+  <div className="grid grid-cols-[1fr_320px] gap-4 mt-10">
 
 
-          {/* ---------- DOCUMENT TAB ---------- */}
-          
-          {activeTab === "document" && (
-            <PDFViewer
-              text={primaryDoc.text}
-              entities={primaryDoc.entities}
-              searchTerm={searchMode === "keyword" ? searchTerm : ""}
-            />
-          )}
+    {/* ================= MAIN CONTENT ================= */}
+    <div className="row-span-2 bg-gray-900 rounded overflow-y-auto">
 
-          {/* ---------- SEMANTIC TAB ---------- */}
-            {activeTab === "semantic" && (
-              <div className="bg-gray-900 p-4 rounded overflow-y-auto">
+      {/* DOCUMENT TAB */}
+      {activeTab === "document" && (
+        <PDFViewer
+          text={primaryDoc.text}
+          entities={primaryDoc.entities}
+          searchTerm={searchMode === "keyword" ? searchTerm : ""}
+        />
+      )}
 
-                {/* Title */}
-                <h2 className="text-lg font-semibold mb-4 text-green-400">
-                  Semantic-Similarity Search Results
-                </h2>
+      {/* SEMANTIC TAB */}
+      {activeTab === "semantic" && (
+        <div>
 
-                {/* Controls Column */}
-                <div className="max-w-xl space-y-2 mb-4">
+          <h2 className="text-lg font-semibold mb-4 text-green-400">
+            Semantic-Similarity Search Results
+          </h2>
 
-                  {/* Scope Toggle */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setSemanticScope("document")}
-                      className={`px-3 py-1 rounded text-sm ${
-                        semanticScope === "document"
-                          ? "bg-blue-600"
-                          : "bg-gray-700 hover:bg-gray-600"
-                      }`}
-                    >
-                      Current Document
-                    </button>
+          {/* Scope + Filters */}
+          <div className="space-y-2 mb-4 max-w-xl">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSemanticScope("document")}
+                className={`px-3 py-1 rounded text-sm ${
+                  semanticScope === "document"
+                    ? "bg-blue-600"
+                    : "bg-gray-700 hover:bg-gray-600"
+                }`}
+              >
+                Current Document
+              </button>
 
-                    <button
-                      onClick={() => setSemanticScope("agency")}
-                      className={`px-3 py-1 rounded text-sm ${
-                        semanticScope === "agency"
-                          ? "bg-blue-600"
-                          : "bg-gray-700 hover:bg-gray-600"
-                      }`}
-                    >
-                      Agency Intelligence
-                    </button>
-                  </div>
-                  {semanticScope === "document" && primaryDocId && (
+              <button
+                onClick={() => setSemanticScope("agency")}
+                className={`px-3 py-1 rounded text-sm ${
+                  semanticScope === "agency"
+                    ? "bg-blue-600"
+                    : "bg-gray-700 hover:bg-gray-600"
+                }`}
+              >
+                Agency Intelligence
+              </button>
+            </div>
+
+            {semanticScope === "document" && primaryDocId && (
               <p className="text-xs text-gray-400">
-                Searching within: <span className="text-blue-400">{file?.name}</span>
+                Searching within:{" "}
+                <span className="text-blue-400">{file?.name}</span>
               </p>
             )}
 
-
-                  {/* Document Name Filter */}
-                  <input
-                    type="text"
-                    placeholder="Filter by document name"
-                    value={docFilter}
-                    onChange={(e) => setDocFilter(e.target.value.toLowerCase())}
-                    className="w-full bg-gray-800 px-3 py-2 rounded text-sm"
-                  />
-                </div>
-
-                {/* Results */}
-                <div className="space-y-4">
-                  {filteredResults.map((r, idx) => (
-                    <div
-                      key={idx}
-                      className="p-4 bg-gray-800 rounded cursor-pointer hover:bg-gray-700"
-                      onClick={() =>
-                        setPreviewDoc({
-                          text: r.text,
-                          entities: r.entities || {}
-                        })
-                      }
-                    >
-                      <div className="text-blue-400 font-medium">
-                        📄 Source: {r.filename}
-                      </div>
-
-                      <div className="text-xs text-gray-400 mt-1">
-                        Relevance score: {r.score.toFixed(2)}
-                      </div>
-
-                      <div className="text-sm mt-2 text-gray-200">
-                        {r.snippet?.slice(0, 220)}…
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Empty State */}
-                  {filteredResults.length === 0 && (
-                    <p className="text-sm text-gray-400">
-                      No documents match the current filter.
-                    </p>
-                  )}
-                </div>
-
-                {/* Preview */}
-                {previewDoc && (
-                  <div className="mt-6 space-y-3">
-                    <div className="flex justify-end">
-                      <button
-                        className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm"
-                        onClick={() => {
-                          setPrimaryDoc(previewDoc);
-                          setPreviewDoc(null);
-                          setActiveTab("document");
-                        }}
-                      >
-                        Promote to Primary Document
-                      </button>
-                    </div>
-
-                    <PDFViewer
-                      text={previewDoc.text}
-                      entities={previewDoc.entities}
-                    />
-                  </div>
-                )}
-              </div>
-          )}
-
-
-
-          {/* ---------- SUMMARY TAB ---------- */}
-          {activeTab === "summary" && (
-            <SummaryPanel
-              summary={summary}
-              loading={summaryLoading}
+            <input
+              type="text"
+              placeholder="Filter by document name"
+              value={docFilter}
+              onChange={(e) => setDocFilter(e.target.value.toLowerCase())}
+              className="w-full bg-gray-800 px-3 py-2 rounded text-sm"
             />
-          )}
+          </div>
 
-          {/* ---------- SEARCH CONTROLS ---------- */}
-          <SearchPanel
-            mode={searchMode}
-            setMode={setSearchMode}
-            onSearch={handleSearch}
-          />
+          {/* Results */}
+          <div className="space-y-4">
+            {filteredResults.map((r, idx) => (
+              <div
+                key={idx}
+                className="p-4 bg-gray-800 rounded cursor-pointer hover:bg-gray-700"
+                onClick={() =>
+                  setPreviewDoc({
+                    text: r.text,
+                    entities: r.entities || {}
+                  })
+                }
+              >
+                <div className="text-blue-400 font-medium">
+                  📄 Source: {r.filename}
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Relevance score: {r.score.toFixed(2)}
+                </div>
+                <div className="text-sm mt-2 text-gray-200">
+                  {r.snippet?.slice(0, 220)}…
+                </div>
+              </div>
+            ))}
+
+            {filteredResults.length === 0 && (
+              <p className="text-sm text-gray-400">
+                No documents match the current filter.
+              </p>
+            )}
+          </div>
+
+          {/* Preview */}
+          {previewDoc && (
+            <div className="mt-6 space-y-3">
+              <div className="flex ">
+                <button
+                  className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm"
+                  onClick={() => {
+                    setPrimaryDoc(previewDoc);
+                    setPreviewDoc(null);
+                    setActiveTab("document");
+                  }}
+                >
+                  Promote to Primary Document
+                </button>
+              </div>
+
+              <PDFViewer
+                text={previewDoc.text}
+                entities={previewDoc.entities}
+              />
+            </div>
+          )}
         </div>
       )}
+
+      {/* SUMMARY TAB */}
+      {activeTab === "summary" && (
+        <SummaryPanel summary={summary} loading={summaryLoading} onDownload={downloadReport} />
+      )}
+    </div>
+
+    {/* ================= RIGHT PANEL ================= */}
+<div className="flex flex-col gap-3 h-full">
+
+  {/* SEARCH */}
+  <div className="bg-gray-900 rounded p-4 h-[35vh] overflow-y-hidden">
+    <SearchPanel
+      mode={searchMode}
+      setMode={setSearchMode}
+      input={semanticInput}
+      setInput={setSemanticInput}
+      onSearch={handleSearch}
+    />
+  </div>
+
+  {/* ENTITIES */}
+  <div className="bg-yellow-500/10 border border-yellow-500/30 h-[45vh] rounded p-3 overflow-y-scroll">
+    <h3 className="text-sm font-semibold text-yellow-400 mb-2">
+      Extracted Entities
+    </h3>
+
+    <EntityPanel
+      entities={
+        activeTab === "semantic" && previewDoc
+          ? previewDoc.entities
+          : primaryDoc.entities
+      }
+      onSelect={(v) => window.scrollToEntity(v)}
+    />
+  </div>
+
+</div>
+
+
+  </div>
+)}
+
     </div>
   );
 }

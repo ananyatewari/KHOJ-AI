@@ -1,6 +1,12 @@
-export default function SearchPanel({ onSearch, mode, setMode }) {
+export default function SearchPanel({
+  onSearch,
+  mode,
+  setMode,
+  input,
+  setInput
+}) {
   return (
-    <div className="bg-gray-900 p-4 rounded h-fit">
+    <div className="bg-gray-900 p-4 rounded">
       <h2 className="text-lg font-semibold mb-2">Search</h2>
 
       <div className="flex gap-2 mb-3">
@@ -30,9 +36,24 @@ export default function SearchPanel({ onSearch, mode, setMode }) {
             ? "Search by meaning (e.g. meeting guidelines)"
             : "Search exact keyword"
         }
-        onChange={(e) => onSearch(e.target.value)}
-        className="w-full p-2 rounded bg-gray-800 text-white"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            onSearch();
+          }
+        }}
+        className="w-full p-2 rounded bg-gray-800 text-white mb-2"
       />
+
+      {mode === "semantic" && (
+        <button
+          onClick={onSearch}
+          className="w-full bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm"
+        >
+          Search
+        </button>
+      )}
 
       {mode === "semantic" && (
         <p className="text-xs text-gray-400 mt-2">

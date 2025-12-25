@@ -1,0 +1,115 @@
+import OcrDocument from '../models/OcrDocument.js';
+import { performOCR, extractEntities } from '../utils/dualOcrProcessor.js';
+import path from 'path';
+import fs from 'fs';
+
+/**
+ * Process a document using OCR and save results
+ * @param {Object} file - Uploaded file object from multer
+ * @param {Object} userData - User data (userId, agency)
+ * @returns {Promise<Object>} Created OCR document
+ */
+export const processDocument = async (file, userData = {}) => {
+  try {
+    const startTime = Date.now();
+    const filePath = file.path;
+    const originalFilename = file.originalname;
+    const uploadedBy = userData.userId || "unknown";
+    const agency = userData.agency || "N/A";
+    
+    // Store the relative path to serve the image later
+    const relativePath = `/uploads/${path.basename(filePath)}`;
+    
+    // Create document with processing status
+    const newOcrDoc = new OcrDocument({
+      originalImage: relativePath,
+      filename: originalFilename,
+      agency,
+      uploadedBy,
+      status: 'processing'
+    });
+    
+    await newOcrDoc.save();
+    
+    // Perform OCR on the uploaded image
+    const ocrResult = await performOCR(filePath);
+    
+    // Extract entities with bounding boxes
+    const entities = extractEntities(ocrResult);
+    
+    // Calculate processing time
+    const processingTime = Date.now() - startTime;
+    
+    // Update document with OCR results
+    newOcrDoc.text = ocrResult.text;
+    newOcrDoc.entities = entities;
+    newOcrDoc.processingTime = processingTime;
+    newOcrDoc.status = 'completed';
+    
+    await newOcrDoc.save();
+    
+    return newOcrDoc;
+  } catch (error) {
+    console.error('OCR processing error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get OCR document by ID
+ * @param {String} id - Document ID 
+ * @returns {Promise<Object>} OCR document
+ */
+export const getOcrDocumentById = async (id) => {
+  try {
+    const doc = await OcrDocument.findById(id);
+    if (!doc) {
+      throw new Error('OCR document not found');
+    }
+    return doc;
+  } catch (error) {
+    console.error('Error fetching OCR document:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get list of OCR documents
+ * @param {Object} filter - Filter criteria
+ * @returns {Promise<Array>} List of OCR documents
+ */
+export const getOcrDocuments = async (filter = {}) => {
+  try {
+    return await OcrDocument.find(filter).sort({ createdAt: -1 });
+  } catch (error) {
+    console.error('Error fetching OCR documents:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete an OCR document
+ * @param {String} id - Document ID
+ * @returns {Promise<Object>} Deletion result
+ */
+export const deleteOcrDocument = async (id) => {
+  try {
+    const doc = await OcrDocument.findById(id);
+    if (!doc) {
+      throw new Error('OCR document not found');
+    }
+    
+    // Delete the file if it exists
+    if (doc.originalImage) {
+      const filePath = path.join(process.cwd(), doc.originalImage);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+    
+    return await OcrDocument.deleteOne({ _id: id });
+  } catch (error) {
+    console.error('Error deleting OCR document:', error);
+    throw error;
+  }
+};

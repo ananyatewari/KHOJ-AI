@@ -90,4 +90,42 @@ router.post("/semantic", authMiddleware, async (req, res) => {
   }
 });
 
+import { generateAISummary } from "../services/aiSummary.js";
+
+router.post("/summary", authMiddleware, async (req, res) => {
+  try {
+    const { documentId } = req.body;
+
+    if (!documentId) {
+      return res.status(400).json({ error: "documentId required" });
+    }
+
+    const doc = await Document.findOne({
+      _id: documentId,
+      visibility: req.user.agency
+    });
+
+    if (!doc) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    const summary = await generateAISummary({
+      documents: [doc]
+    });
+    await emitLog(req.app.get("io"), {
+      level: "SUCCESS",
+      message: `AI summary generated for document ${documentId}`,
+      user: req.user.username,
+      agency: req.user.agency
+    });
+    res.json(summary);
+  } catch (err) {
+    console.error("Document summary error:", err);
+    res.status(500).json({ error: "Document summary failed" });
+  }
+});
+
+
+
+
 export default router;
