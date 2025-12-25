@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+/* Custom global styles */
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+}
+
+/* Highlight searched text in PDF */
+.react-pdf__Page__textContent span {
+  cursor: text;
+}
+
+.highlight {
+  background-color: #facc15;
+  color: black;
+}
