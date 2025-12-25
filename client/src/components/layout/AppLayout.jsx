@@ -1,6 +1,7 @@
 import TopBar from "./TopBar";
 import SideBar from "./SideBar";
 import { Outlet } from "react-router-dom";
+import LiveLogPanel from "../dashboard/LiveLogPanel";
 
 export default function AppLayout() {
   return (
@@ -18,6 +19,8 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <LiveLogPanel />
+
     </div>
   );
 }

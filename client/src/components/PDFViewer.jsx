@@ -38,7 +38,7 @@ export default function PDFViewer({
     highlightedText = highlightedText.replace(
       new RegExp(searchTerm, "gi"),
       (match) =>
-        `<mark class="bg-pink-300 text-black">${match}</mark>`
+        `<mark class="bg-yellow-300 text-black">${match}</mark>`
     );
   }
 

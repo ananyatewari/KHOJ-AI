@@ -23,6 +23,7 @@ export default function Dashboard() {
 
       {/* STAT CARDS */}
       <div className="grid grid-cols-3 gap-6 mb-10">
+        <StatCard title="Uploads (24h)" value={data?.stats.last24h || 0} />
         <StatCard title="My Uploads" value={data?.myDocs.length || 0} />
         <StatCard
           title={`${user.agency.toUpperCase()} Uploads`}

@@ -15,9 +15,18 @@ const DocumentSchema = new mongoose.Schema({
   },
 
   embedding: {
-  type: [Number],
-  default: []
-},
+    type: [Number],
+    default: []
+  },
+
+  chunks: [String],
+  chunkEmbeddings: [[Number]],
+
+
+  visibility: {
+    type: [String],
+    default: []
+  },
 
   indexed: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }

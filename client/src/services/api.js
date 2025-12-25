@@ -11,11 +11,18 @@ export async function ingestDocument(payload) {
   }).then(res => res.json());
 }
 
-export async function searchDocuments(query) {
-  return fetch(`${BASE_URL}/search?q=${query}`, {
+export async function semanticSearch(query, scope, documentId) {
+  return fetch("http://localhost:3000/api/search/semantic", {
+    method: "POST",
     headers: {
-      "x-api-key": "supersecret123"
-    }
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+    body: JSON.stringify({
+      query,
+      scope,
+      documentId
+    }),
   }).then(res => res.json());
 }
 

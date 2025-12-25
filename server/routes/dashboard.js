@@ -1,33 +1,28 @@
 import express from "express";
 import Document from "../models/Document.js";
-import authMiddleware from "../middleware/auth.js";
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/stats", async (req, res) => {
-  const total = await Document.countDocuments();
-  const indexed = await Document.countDocuments({ indexed: true });
+router.get("/", auth, async (req, res) => {
+  const { agency, username } = req.user;
 
-  res.json({
-    totalDocuments: total,
-    indexedDocuments: indexed
+  const myDocs = await Document.find({ uploadedBy: username }).sort({ createdAt: -1 });
+  const agencyDocs = await Document.find({ agency }).sort({ createdAt: -1 });
+
+  const last24h = await Document.countDocuments({
+    createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+    agency,
   });
-});
-
-router.get("/", authMiddleware, async (req, res) => {
-  const { username, agency } = req.user;
-
-  const myDocs = await Document.find({ uploadedBy: username })
-    .sort({ createdAt: -1 })
-    .limit(10);
-
-  const agencyDocs = await Document.find({ agency })
-    .sort({ createdAt: -1 })
-    .limit(20);
 
   res.json({
     myDocs,
     agencyDocs,
+    stats: {
+      myUploads: myDocs.length,
+      agencyUploads: agencyDocs.length,
+      last24h,
+    },
   });
 });
 
