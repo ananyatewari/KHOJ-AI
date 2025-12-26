@@ -11,20 +11,17 @@ export default function SummaryPanel({ summary, loading, onDownload }) {
     executiveSummary,
     keyFindings = [],
     entityInsights = {},
-    analystTakeaways = []
+    analystTakeaways = [],
   } = summary;
 
   return (
     <div className="bg-slate-900 rounded-xl p-6 space-y-6">
-
       {/* EXECUTIVE SUMMARY */}
       <section>
         <h3 className="text-lg font-semibold mb-2 text-blue-400">
           Executive Summary
         </h3>
-        <p className="text-gray-200 leading-relaxed">
-          {executiveSummary}
-        </p>
+        <p className="text-gray-200 leading-relaxed">{executiveSummary}</p>
       </section>
 
       {/* KEY FINDINGS */}
@@ -79,13 +76,15 @@ export default function SummaryPanel({ summary, loading, onDownload }) {
       </section>
 
       {/* EXPORT */}
-      <button
-      onClick={onDownload}
-  disabled={!summary}
-        className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-medium"
-      >
-        Download Intelligence Report
-      </button>
+      {onDownload && (
+        <button
+          onClick={onDownload}
+          disabled={!summary}
+          className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-medium"
+        >
+          Download Intelligence Report
+        </button>
+      )}
     </div>
   );
 }

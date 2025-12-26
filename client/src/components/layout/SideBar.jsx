@@ -9,7 +9,6 @@ export default function SideBar() {
 
   return (
     <aside className="w-64 min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 border-r border-white/10 p-4 flex flex-col">
-
       <nav className="space-y-2">
         <NavLink
           to="/app/dashboard"
@@ -50,32 +49,52 @@ export default function SideBar() {
           📄 Intelligent OCR
         </NavLink>
 
-        <NavLink to="/app/chatbot" className={({ isActive }) =>
+        <NavLink
+          to="/app/transcription"
+          className={({ isActive }) =>
+            `${linkBase} ${
+              isActive
+                ? "bg-gradient-to-r from-cyan-600/80 to-blue-600/80 text-white shadow"
+                : "text-slate-300 hover:bg-white/5"
+            }`
+          }
+        >
+          🎙️ Audio Transcription
+        </NavLink>
+
+        <NavLink
+          to="/app/chatbot"
+          className={({ isActive }) =>
             `${linkBase} ${
               isActive
                 ? "bg-gradient-to-r from-yellow-400/80 to-pink-500/80 text-white shadow"
                 : "text-slate-300 hover:bg-white/5"
-            }`}>
+            }`
+          }
+        >
           🤖 Collaboration Chatbot
         </NavLink>
 
-        <NavLink to="/" className={({ isActive }) =>
+        <NavLink
+          to="/"
+          className={({ isActive }) =>
             `${linkBase} ${
               isActive
                 ? "bg-gradient-to-r from-emerald-600/80 to-teal-600/80 text-white shadow"
                 : "text-slate-300 hover:bg-white/5"
-            }`}>
+            }`
+          }
+        >
           <button
-        onClick={logout}
-        className="mt-auto text-sm text-red-400 hover:text-red-500 transition"
-      >
-        ⏻ Logout
-      </button>
+            onClick={logout}
+            className="mt-auto text-sm text-red-400 hover:text-red-500 transition"
+          >
+            ⏻ Logout
+          </button>
         </NavLink>
       </nav>
 
       {/* Logout */}
-      
     </aside>
   );
 }

@@ -25,18 +25,18 @@ export async function generateAISummary({ documents }) {
   // Phase 2: Structured JSON
   const structured = await structureNarrativeToJson(narrative);
 
-  return structured;
+  // If some fields are empty, synthesize them from the narrative and entity context
+  const synthesized = synthesizeMissingFields(structured, narrative, entityContext);
+  return synthesized;
 }
 
 async function structureNarrativeToJson(narrativeText) {
   const systemPrompt = `
-You convert intelligence reports into structured JSON.
+You are a strict JSON generator. Convert the provided intelligence narrative into the EXACT JSON schema shown below.
 
-Return ONLY valid JSON.
-No markdown.
-No commentary.
+Return ONLY valid JSON. No markdown, commentary, or extra keys.
 
-Schema:
+Schema (exact):
 {
   "executiveSummary": string,
   "keyFindings": string[],
@@ -46,6 +46,14 @@ Schema:
     "organizations": string[]
   },
   "analystTakeaways": string[]
+}
+
+Example output (must match schema):
+{
+  "executiveSummary": "Brief summary here.",
+  "keyFindings": ["Finding one","Finding two"],
+  "entityInsights": {"persons":["Alice"],"places":["Paris"],"organizations":["Org A"]},
+  "analystTakeaways": ["Takeaway one","Takeaway two"]
 }
 `;
 
@@ -58,7 +66,39 @@ Schema:
     ]
   });
 
-  return JSON.parse(completion.choices[0].message.content);
+  const raw = completion.choices?.[0]?.message?.content || "";
+
+  // Try to extract JSON code block or nearest {...}
+  const match = raw.match(/```json\s*([\s\S]*?)\s*```/) || raw.match(/\{[\s\S]*\}/);
+  const jsonText = match ? (match[1] || match[0]) : raw;
+
+  // Try straightforward parse first
+  try {
+    return JSON.parse(jsonText);
+  } catch (err) {
+    // Attempt to sanitize common JSON issues: replace single quotes, remove trailing commas
+    let sanitized = jsonText
+      .replace(/\u2018|\u2019|\u201c|\u201d/g, '"') // smart quotes
+      .replace(/\\n/g, ' ')
+      .replace(/\'(?=,|\s|\:)/g, "'")
+      .replace(/([\{\[,])\s*'/g, '$1"')
+      .replace(/'\s*([\}\],])/g, '"$1')
+      .replace(/(['"])?([a-zA-Z0-9_\-]+)(['"])??\s*:/g, '"$2":') // ensure keys quoted
+      .replace(/,\s*([\}\]])/g, '$1'); // remove trailing commas
+
+    try {
+      return JSON.parse(sanitized);
+    } catch (err2) {
+      console.warn('Failed to parse structured JSON from AI. Raw:', raw, 'Sanitized:', sanitized, 'Errors:', err.message, err2.message);
+      // Return a partial structure that will be synthesized later
+      return {
+        executiveSummary: narrativeText.slice(0, 1000),
+        keyFindings: [],
+        entityInsights: { persons: [], places: [], organizations: [] },
+        analystTakeaways: []
+      };
+    }
+  }
 }
 
 async function generateNarrative({ combinedText, entityContext }) {
@@ -95,3 +135,65 @@ ${JSON.stringify(entityContext, null, 2)}
 
   return completion.choices[0].message.content;
 }
+
+function synthesizeMissingFields(structured, narrative, entityContext) {
+  const result = { ...structured };
+
+  // Ensure keys exist
+  result.executiveSummary = result.executiveSummary || (narrative ? narrative.split('\n')[0].slice(0, 1000) : '');
+  result.keyFindings = Array.isArray(result.keyFindings) ? result.keyFindings : [];
+  result.entityInsights = result.entityInsights || { persons: [], places: [], organizations: [] };
+  result.analystTakeaways = Array.isArray(result.analystTakeaways) ? result.analystTakeaways : [];
+
+  // If entityInsights empty, fill from entityContext
+  const flattenEntities = (ctx) => {
+    const persons = new Set();
+    const places = new Set();
+    const orgs = new Set();
+    (ctx || []).forEach(d => {
+      if (d?.persons) d.persons.forEach(p => persons.add(typeof p === 'string' ? p : p.text));
+      if (d?.places) d.places.forEach(p => places.add(typeof p === 'string' ? p : p.text));
+      if (d?.organizations) d.organizations.forEach(o => orgs.add(typeof o === 'string' ? o : o.text));
+    });
+    return { persons: Array.from(persons), places: Array.from(places), organizations: Array.from(orgs) };
+  };
+
+  const entFlat = flattenEntities(entityContext);
+  if ((!result.entityInsights.persons || result.entityInsights.persons.length === 0) && entFlat.persons.length) {
+    result.entityInsights.persons = entFlat.persons;
+  }
+  if ((!result.entityInsights.places || result.entityInsights.places.length === 0) && entFlat.places.length) {
+    result.entityInsights.places = entFlat.places;
+  }
+  if ((!result.entityInsights.organizations || result.entityInsights.organizations.length === 0) && entFlat.organizations.length) {
+    result.entityInsights.organizations = entFlat.organizations;
+  }
+
+  // If keyFindings empty, pick top sentences from narrative that look like findings
+  if (!result.keyFindings || result.keyFindings.length === 0) {
+    const sentences = (narrative || '').split(/[\.\n]\s+/).map(s => s.trim()).filter(Boolean);
+    const candidates = [];
+    const keywords = ['important', 'noted', 'observed', 'indicates', 'shows', 'reveals', 'recommend', 'suggest'];
+    sentences.forEach(s => {
+      const hasEntity = entFlat.persons.concat(entFlat.places, entFlat.organizations).some(e => e && s.includes(e));
+      const hasKeyword = keywords.some(k => s.toLowerCase().includes(k));
+      if (hasEntity || hasKeyword || s.length > 40) candidates.push(s);
+    });
+    result.keyFindings = candidates.slice(0, 6);
+  }
+
+  // If analystTakeaways empty, produce concise takeaways
+  if (!result.analystTakeaways || result.analystTakeaways.length === 0) {
+    const sentences = (narrative || '').split(/[\.\n]\s+/).map(s => s.trim()).filter(Boolean);
+    const takeaways = sentences.filter(s => s.toLowerCase().includes('should') || s.toLowerCase().includes('recommend') || s.toLowerCase().includes('consider'));
+    if (takeaways.length) {
+      result.analystTakeaways = takeaways.slice(0, 5);
+    } else {
+      const meaningful = sentences.filter(s => s.length > 40);
+      result.analystTakeaways = meaningful.slice(-5).slice(0, 5);
+    }
+  }
+
+  return result;
+}
+

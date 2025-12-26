@@ -5,6 +5,8 @@ import Dashboard from "./pages/Dashboard";
 import IntelligenceSearch from "./pages/Search";
 import DocumentView from "./pages/DocumentView";
 import OcrPage from "./pages/OcrPage";
+import TranscriptionPage from "./pages/TranscriptionPage";
+import TranscriptionView from "./pages/TranscriptionView";
 import AppLayout from "./components/layout/AppLayout";
 import PublicLayout from "./components/layout/PublicLayout";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
@@ -51,7 +53,9 @@ export default function App() {
           <Route path="search" element={<IntelligenceSearch />} />
           <Route path="document/:id" element={<DocumentView />} />
           <Route path="ocr" element={<OcrPage />} />
-          <Route path="chatbot" element={<ChatPanel/>} />
+          <Route path="transcription" element={<TranscriptionPage />} />
+          <Route path="transcription/:id" element={<TranscriptionView />} />
+          <Route path="chatbot" element={<ChatPanel />} />
         </Route>
       </Routes>
     </BrowserRouter>

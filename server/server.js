@@ -21,6 +21,7 @@ import dashboardRoutes from "./routes/dashboard.js";
 import authRoutes from "./routes/auth.js";
 import reportRoutes from "./routes/report.js";
 import chatbotRoutes from "./routes/chatbot.js";
+import transcriptionRoutes from "./routes/transcription.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -45,6 +46,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/document", documentRoutes);
 app.use("/api/ocr", ocrRoutes);
+app.use("/api/transcription", transcriptionRoutes);
 app.use("/api/report", reportRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 server.listen(3000, () => {
