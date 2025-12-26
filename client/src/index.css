@@ -34,9 +34,6 @@ body {
     --border: 217 19% 27%;
   }
 
-  body {
-    @apply bg-background text-foreground transition-colors duration-300;
-  }
 }
 
 
