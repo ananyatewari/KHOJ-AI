@@ -10,6 +10,7 @@ import PublicLayout from "./components/layout/PublicLayout";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import Landing from "./pages/Landing";
 import { OcrProvider } from "./context/OcrContext";
+import ChatPanel from "./components/dashboard/ChatPanel";
 
 export default function App() {
   return (
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="search" element={<IntelligenceSearch />} />
           <Route path="document/:id" element={<DocumentView />} />
           <Route path="ocr" element={<OcrPage />} />
+          <Route path="chatbot" element={<ChatPanel/>} />
         </Route>
       </Routes>
     </BrowserRouter>

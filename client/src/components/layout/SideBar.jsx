@@ -50,6 +50,15 @@ export default function SideBar() {
           📄 Intelligent OCR
         </NavLink>
 
+        <NavLink to="/app/chatbot" className={({ isActive }) =>
+            `${linkBase} ${
+              isActive
+                ? "bg-gradient-to-r from-yellow-400/80 to-pink-500/80 text-white shadow"
+                : "text-slate-300 hover:bg-white/5"
+            }`}>
+          🤖 Collaboration Chatbot
+        </NavLink>
+
         <NavLink to="/" className={({ isActive }) =>
             `${linkBase} ${
               isActive

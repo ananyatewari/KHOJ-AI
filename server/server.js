@@ -2,6 +2,11 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
+// Default chatbot model when not provided in environment
+if (!process.env.CHATBOT_MODEL) {
+  process.env.CHATBOT_MODEL = "claude-haiku-4.5";
+  console.log("CHATBOT_MODEL not set — defaulting to claude-haiku-4.5");
+}
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
@@ -15,6 +20,7 @@ import searchRoutes from "./routes/search.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import authRoutes from "./routes/auth.js";
 import reportRoutes from "./routes/report.js";
+import chatbotRoutes from "./routes/chatbot.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -40,6 +46,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/document", documentRoutes);
 app.use("/api/ocr", ocrRoutes);
 app.use("/api/report", reportRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 server.listen(3000, () => {
   console.log("Server running on 3000");
 });

@@ -33,6 +33,8 @@ const DocumentSchema = new mongoose.Schema({
   },
 
   indexed: { type: Boolean, default: false },
+  sharedWithChatbot: { type: Boolean, default: false },
+  approvedForCrossAgency: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 
