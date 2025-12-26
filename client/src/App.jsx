@@ -9,6 +9,7 @@ import AppLayout from "./components/layout/AppLayout";
 import PublicLayout from "./components/layout/PublicLayout";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import Landing from "./pages/Landing";
+import { OcrProvider } from "./context/OcrContext";
 
 export default function App() {
   return (
@@ -39,7 +40,9 @@ export default function App() {
           path="/app"
           element={
             <ProtectedRoute>
-              <AppLayout />
+              <OcrProvider>
+                <AppLayout />
+              </OcrProvider>
             </ProtectedRoute>
           }
         >

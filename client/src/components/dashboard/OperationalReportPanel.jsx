@@ -135,12 +135,6 @@ export default function OperationalReportPanel({
               color="from-indigo-500/60 to-blue-500/60"
             />
             <SummaryCard
-              icon={<CheckCircle />}
-              label="Ingested"
-              value={report.summary.totalIngested}
-              color="from-emerald-500/60 to-teal-500/60"
-            />
-            <SummaryCard
               icon={<FileText />}
               label="PDFs"
               value={report.summary.pdfCount}

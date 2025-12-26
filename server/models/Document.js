@@ -5,6 +5,10 @@ const DocumentSchema = new mongoose.Schema({
   text: String,
   agency: String,
   uploadedBy: String,
+  fileType: {
+    type: String,
+    default: "pdf"
+  },
 
   entities: {
     persons: [String],
@@ -32,5 +36,7 @@ const DocumentSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+DocumentSchema.index({ visibility: 1, createdAt: 1 });
+DocumentSchema.index({ agency: 1, createdAt: 1 });
 
 export default mongoose.model("Document", DocumentSchema);

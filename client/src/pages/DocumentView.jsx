@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 
 // Entity type colors for visual distinction
@@ -22,6 +22,8 @@ const entityLabels = {
 
 export default function DocumentView() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [document, setDocument] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -106,17 +108,61 @@ export default function DocumentView() {
     };
   };
 
+  const displayEntities = useMemo(() => {
+    if (!document) return {};
+
+    const base = document.entities || {};
+    const merged = Object.keys(base).reduce((acc, key) => {
+      acc[key] = Array.isArray(base[key]) ? [...base[key]] : [];
+      return acc;
+    }, {});
+
+    const aiInsights = document.aiSummary?.entityInsights || {};
+    ["persons", "places", "organizations"].forEach((type) => {
+      const insightValues = aiInsights[type];
+      if (!insightValues || !insightValues.length) return;
+
+      merged[type] = merged[type] || [];
+      const existingTexts = new Set(
+        merged[type]
+          .map((entry) =>
+            typeof entry === "string"
+              ? entry.toLowerCase()
+              : entry?.text?.toLowerCase()
+          )
+          .filter(Boolean)
+      );
+
+      insightValues.forEach((text) => {
+        const normalized = text?.trim();
+        if (!normalized) return;
+        const key = normalized.toLowerCase();
+        if (existingTexts.has(key)) return;
+
+        merged[type].push({
+          text: normalized,
+          confidence: 0.93,
+          source: "ai",
+          boundingBox: null
+        });
+        existingTexts.add(key);
+      });
+    });
+
+    return merged;
+  }, [document]);
+
   // Helper function to get all entities as a flat array
   const getAllEntities = () => {
-    if (!document || !document.entities) return [];
-    
+    if (!displayEntities || !Object.keys(displayEntities).length) return [];
+
     const allEntities = [];
-    Object.entries(document.entities).forEach(([type, entities]) => {
-      entities.forEach(entity => {
+    Object.entries(displayEntities).forEach(([type, entities]) => {
+      (entities || []).forEach((entity) => {
         allEntities.push({ ...entity, type });
       });
     });
-    
+
     return allEntities;
   };
 
@@ -141,12 +187,39 @@ export default function DocumentView() {
     );
   }
 
+  const backTarget = location.state?.from || "/app/ocr";
+  const backState = location.state?.ocrState || null;
+
+  const handleBack = () => {
+    navigate(backTarget, backState ? { state: backState } : undefined);
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gray-900 text-white">
       {/* Header */}
-      <header className="bg-gray-800 px-6 py-4 border-b border-gray-700">
-        <h1 className="text-xl font-semibold">Document Intelligence Viewer</h1>
-        <p className="text-gray-400 text-sm">{document.filename}</p>
+      <header className="bg-gray-800 px-6 py-4 border-b border-gray-700 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold">Document Intelligence Viewer</h1>
+          <p className="text-gray-400 text-sm">{document.filename}</p>
+        </div>
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          Back to OCR Workspace
+        </button>
       </header>
 
       {/* Main content */}
@@ -222,7 +295,7 @@ export default function DocumentView() {
             
             {/* Entity Type Sections */}
             <div className="space-y-4">
-              {Object.entries(document.entities).map(([type, entities]) => (
+              {Object.entries(displayEntities).map(([type, entities]) => (
                 entities.length > 0 && (
                   <div key={type} className="space-y-2">
                     <h3 className="text-md font-medium text-gray-300">

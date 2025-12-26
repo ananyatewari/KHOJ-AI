@@ -5,13 +5,25 @@ import authMiddleware from "../middleware/auth.js";
 import { emitLog } from "../utils/logger.js";
 
 const router = express.Router();
+const MAX_DOCS_PER_QUERY = 25;
+const RESULTS_LIMIT = 5;
 
 function cosineSimilarity(a, b) {
+  if (
+    !Array.isArray(a) ||
+    !Array.isArray(b) ||
+    a.length === 0 ||
+    b.length === 0
+  ) {
+    return -Infinity;
+  }
+
   let dot = 0;
   let normA = 0;
   let normB = 0;
+  const length = Math.min(a.length, b.length);
 
-  for (let i = 0; i < a.length; i++) {
+  for (let i = 0; i < length; i++) {
     dot += a[i] * b[i];
     normA += a[i] * a[i];
     normB += b[i] * b[i];
@@ -24,21 +36,59 @@ router.post("/semantic", authMiddleware, async (req, res) => {
   try {
     const { query, scope, documentId } = req.body;
     const queryEmbedding = await getEmbedding(query);
+    const baseFilter = {
+      chunkEmbeddings: { $exists: true, $ne: [] },
+      visibility: { $in: [req.user.agency] }
+    };
+
     let docs = [];
 
     if (scope === "document" && documentId) {
       docs = await Document.find({
-        _id: documentId,
-        visibility: req.user.agency,
-        chunkEmbeddings: { $exists: true, $ne: [] }
+        ...baseFilter,
+        _id: documentId
+      })
+        .select("filename chunks chunkEmbeddings entities text")
+        .lean();
+    } else {
+      const candidateDocs = await Document.find({
+        ...baseFilter,
+        embedding: { $exists: true, $ne: [] }
+      })
+        .select("_id filename embedding")
+        .lean();
+
+      const rankedDocIds = candidateDocs
+        .map((doc) => ({
+          ...doc,
+          score: cosineSimilarity(queryEmbedding, doc.embedding || [])
+        }))
+        .filter((doc) => Number.isFinite(doc.score))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, MAX_DOCS_PER_QUERY)
+        .map((doc) => doc._id.toString());
+
+      if (!rankedDocIds.length) {
+        return res.json({
+          results: [],
+          summary: `AI Summary: No intelligence related to "${query}" found.`
+        });
+      }
+
+      const docsById = new Map();
+      const hydratedDocs = await Document.find({
+        _id: { $in: rankedDocIds }
+      })
+        .select("filename chunks chunkEmbeddings entities text")
+        .lean();
+
+      hydratedDocs.forEach((doc) => {
+        docsById.set(doc._id.toString(), doc);
       });
-    } 
-    
-    else {
-      docs = await Document.find({
-        visibility: req.user.agency,
-        chunkEmbeddings: { $exists: true, $ne: [] }
-      });
+
+      docs = rankedDocIds
+        .map((id) => docsById.get(id))
+        .filter(Boolean);
     }
 
     await emitLog(req.app.get("io"), {
@@ -80,7 +130,7 @@ router.post("/semantic", authMiddleware, async (req, res) => {
     results.sort((a, b) => b.score - a.score);
 
     res.json({
-      results: results.slice(0, 5),
+      results: results.slice(0, RESULTS_LIMIT),
       summary: `AI Summary: Intelligence related to "${query}" appears across ${results.length} documents.`
     });
 

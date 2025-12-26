@@ -20,6 +20,10 @@ const OcrDocumentSchema = new mongoose.Schema({
     persons: [{
       text: String,
       confidence: Number,
+      source: {
+        type: String,
+        default: "ocr"
+      },
       boundingBox: {
         x: Number,
         y: Number,
@@ -30,6 +34,10 @@ const OcrDocumentSchema = new mongoose.Schema({
     places: [{
       text: String,
       confidence: Number,
+      source: {
+        type: String,
+        default: "ocr"
+      },
       boundingBox: {
         x: Number,
         y: Number,
@@ -40,6 +48,10 @@ const OcrDocumentSchema = new mongoose.Schema({
     dates: [{
       text: String,
       confidence: Number,
+      source: {
+        type: String,
+        default: "ocr"
+      },
       boundingBox: {
         x: Number,
         y: Number,
@@ -50,6 +62,10 @@ const OcrDocumentSchema = new mongoose.Schema({
     organizations: [{
       text: String,
       confidence: Number,
+      source: {
+        type: String,
+        default: "ocr"
+      },
       boundingBox: {
         x: Number,
         y: Number,
@@ -60,6 +76,10 @@ const OcrDocumentSchema = new mongoose.Schema({
     phoneNumbers: [{
       text: String,
       confidence: Number,
+      source: {
+        type: String,
+        default: "ocr"
+      },
       boundingBox: {
         x: Number,
         y: Number,
@@ -75,6 +95,16 @@ const OcrDocumentSchema = new mongoose.Schema({
     type: String,
     enum: ['processing', 'completed', 'failed'],
     default: 'processing'
+  },
+  aiSummary: {
+    executiveSummary: String,
+    keyFindings: [String],
+    entityInsights: {
+      persons: [String],
+      places: [String],
+      organizations: [String]
+    },
+    analystTakeaways: [String]
   },
   
   // Timestamps

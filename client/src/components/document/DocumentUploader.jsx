@@ -1,130 +1,351 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import SummaryPanel from "../search/SummaryPanel";
+import { useAuth } from "../../context/AuthContext";
+import { useOcrWorkspace } from "../../context/OcrContext";
 
-// Create axios instance with base URL
 const apiClient = axios.create({
-  baseURL: 'http://localhost:3000'
+  baseURL: "http://localhost:3000"
 });
 
+const entityColors = {
+  persons: "bg-indigo-500/20 text-indigo-200 border-indigo-400/60",
+  places: "bg-emerald-500/20 text-emerald-100 border-emerald-400/60",
+  organizations: "bg-amber-500/20 text-amber-100 border-amber-400/60",
+  phoneNumbers: "bg-rose-500/20 text-rose-100 border-rose-400/60",
+  dates: "bg-purple-500/20 text-purple-100 border-purple-400/60"
+};
+
+const entityLabels = {
+  persons: "Persons",
+  places: "Locations",
+  organizations: "Organizations",
+  phoneNumbers: "Phone Numbers",
+  dates: "Dates"
+};
+
+const entityOrder = ["persons", "places", "organizations", "phoneNumbers", "dates"];
+
 export default function DocumentUploader() {
-  const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
+  const {
+    selectedFiles,
+    setSelectedFiles,
+    documents,
+    setDocuments,
+    summary,
+    setSummary,
+    summaryLoading,
+    setSummaryLoading,
+    uploading,
+    setUploading,
+    analysisMessage,
+    setAnalysisMessage,
+    clearWorkspace
+  } = useOcrWorkspace();
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { user, token } = useAuth() || {};
+
+  const [dragActive, setDragActive] = useState(false);
+
+  const totalSize = useMemo(() => {
+    if (!selectedFiles.length) return 0;
+    return selectedFiles.reduce((acc, file) => acc + file.size, 0);
+  }, [selectedFiles]);
+
+  const totalSizeLabel = totalSize
+    ? `${(totalSize / 1024 / 1024).toFixed(2)} MB total`
+    : null;
 
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    setFile(selectedFile);
-    setError(""); // Clear any previous errors
+    const pickedFiles = Array.from(e.target.files || []);
+    const validImages = pickedFiles.filter((file) =>
+      file.type.startsWith("image/")
+    );
+
+    if (pickedFiles.length && !validImages.length) {
+      setError("Only image files are supported for OCR intelligence.");
+      return;
+    }
+
+    if (!validImages.length) return;
+
+    setSelectedFiles((prev) => {
+      const merged = [...prev, ...validImages];
+      return merged.slice(0, 10); // enforce 10 image cap
+    });
+    setError("");
+  };
+
+  const clearSelectedFiles = () => {
+    setSelectedFiles([]);
+    setError("");
+  };
+
+  const removeFileAtIndex = (indexToRemove) => {
+    setSelectedFiles((prev) =>
+      prev.filter((_, idx) => idx !== indexToRemove)
+    );
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) {
-      setError("Please select a file to upload");
-      return;
-    }
 
-    // Check file type
-    if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
-      setError("Only images and PDF files are supported");
+    if (!selectedFiles.length) {
+      setError("Upload at least one image to continue.");
       return;
     }
 
     setUploading(true);
+    setSummaryLoading(true);
     setError("");
+    setAnalysisMessage("");
 
     try {
       const formData = new FormData();
-      formData.append("document", file);
-      // You can add user ID and agency from context if available
-      // formData.append("userId", userId);
-      // formData.append("agency", userAgency);
+      selectedFiles.forEach((file) => formData.append("images", file));
+      if (user?.username) formData.append("userId", user.username);
+      if (user?.agency) formData.append("agency", user.agency);
 
       const response = await apiClient.post("/api/ocr/process", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-        },
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
       });
 
-      // If successful, navigate to the document viewer
-      if (response.data && response.data.document) {
-        navigate(`/app/document/${response.data.document.id}`);
+      const processedDocs = response.data?.documents || [];
+      setDocuments(processedDocs);
+      setSummary(response.data?.aiSummary || null);
+
+      if (processedDocs.length < selectedFiles.length) {
+        setAnalysisMessage(
+          "Some images could not be processed. View processed results below."
+        );
+      } else {
+        setAnalysisMessage(
+          `Intelligence extracted from ${processedDocs.length} image${
+            processedDocs.length > 1 ? "s" : ""
+          }.`
+        );
       }
     } catch (err) {
       console.error("Upload error:", err);
-      setError(err.response?.data?.error || "Failed to process document");
+      setError(err.response?.data?.error || "Failed to process images");
     } finally {
       setUploading(false);
+      setSummaryLoading(false);
     }
+  };
+
+  const downloadSummary = () => {
+    if (!summary) return;
+    const blob = new Blob([JSON.stringify(summary, null, 2)], {
+      type: "application/json"
+    });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "image-intelligence-summary.json";
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 shadow-md border border-gray-700">
-      <h2 className="text-xl font-semibold text-white mb-4">
-        Intelligent Document OCR
+      <h2 className="text-xl font-semibold text-white mb-2">
+        Intelligent Image OCR
       </h2>
-      
+      <p className="text-gray-400 text-sm mb-6">
+        Upload up to 10 images to extract text, entities, and AI analyst
+        takeaways. PDFs are handled separately in the document ingest flow.
+      </p>
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex flex-col space-y-2">
-          <label className="text-gray-300 font-medium">Upload Document</label>
-          <div className="relative border-2 border-dashed border-gray-600 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors">
+          <label className="text-gray-300 font-medium">
+            Upload Intelligence Images
+          </label>
+          <div
+            className={`relative border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer transition-colors ${
+              dragActive
+                ? "border-blue-400 bg-blue-500/10"
+                : "border-gray-600 hover:border-blue-500"
+            }`}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDragActive(true);
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (e.currentTarget.contains(e.relatedTarget)) return;
+              setDragActive(false);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDragActive(false);
+              const droppedFiles = Array.from(e.dataTransfer.files || []);
+              const validImages = droppedFiles.filter((file) =>
+                file.type.startsWith("image/")
+              );
+              if (!validImages.length) {
+                setError("Only image files are supported for OCR intelligence.");
+                return;
+              }
+              setSelectedFiles((prev) => {
+                const merged = [...prev, ...validImages];
+                return merged.slice(0, 10);
+              });
+            }}
+          >
             <input
               type="file"
               onChange={handleFileChange}
-              accept="image/*,.pdf"
+              accept="image/*"
+              multiple
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-            
-            {file ? (
-              <div className="text-center">
-                <p className="text-blue-400 font-medium">{file.name}</p>
-                <p className="text-gray-400 text-sm mt-1">
-                  {(file.size / 1024 / 1024).toFixed(2)} MB
-                </p>
-              </div>
-            ) : (
+
+            {!selectedFiles.length ? (
               <div className="text-center">
                 <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center mx-auto mb-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-blue-400"
+                  >
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="17 8 12 3 7 8"></polyline>
                     <line x1="12" y1="3" x2="12" y2="15"></line>
                   </svg>
                 </div>
                 <p className="text-gray-400">
-                  Drag and drop file here or <span className="text-blue-400">browse</span>
+                  Drag and drop images here or{" "}
+                  <span className="text-blue-400">browse</span>
                 </p>
                 <p className="text-gray-500 text-sm mt-1">
-                  Supports: Images, PDF
+                  Supported formats: JPG, PNG, WEBP • Max 10 images
                 </p>
+              </div>
+            ) : (
+              <div className="text-center text-sm text-gray-300">
+                {selectedFiles.length} image
+                {selectedFiles.length > 1 ? "s are" : " is"} queued for
+                intelligence extraction. Use the controls below to manage your
+                selection.
               </div>
             )}
           </div>
         </div>
 
-        {error && (
-          <div className="text-red-500 text-sm mt-2">{error}</div>
+        {selectedFiles.length > 0 && (
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+              <div>
+                <p className="text-sm text-gray-200 font-medium">
+                  Selected Images ({selectedFiles.length})
+                </p>
+                {totalSizeLabel && (
+                  <p className="text-xs text-gray-500">{totalSizeLabel}</p>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={clearSelectedFiles}
+                  className="text-xs text-red-300 hover:text-red-200 underline-offset-2 underline"
+                >
+                  Clear Selection
+                </button>
+                <button
+                  type="button"
+                  onClick={clearWorkspace}
+                  className="text-xs text-gray-400 hover:text-gray-200 underline-offset-2 underline"
+                >
+                  Reset Workspace
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              {selectedFiles.map((file, index) => (
+                <div
+                  key={`${file.name}-${file.size}-${index}`}
+                  className="flex items-center justify-between bg-gray-800/60 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="bg-gray-700 text-gray-200 w-8 h-8 rounded-md flex items-center justify-center text-xs font-semibold">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-100 truncate">{file.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeFileAtIndex(index)}
+                    className="text-xs text-red-300 hover:text-red-100 px-2 py-1 rounded border border-red-400/40"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
+
+        {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
 
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={!file || uploading}
+            disabled={!selectedFiles.length || uploading}
             className={`px-4 py-2 rounded-md font-medium ${
-              !file || uploading
+              !selectedFiles.length || uploading
                 ? "bg-gray-700 text-gray-400 cursor-not-allowed"
                 : "bg-blue-600 text-white hover:bg-blue-700"
             } transition-colors`}
           >
             {uploading ? (
               <span className="flex items-center">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
-                Processing...
+                Processing…
               </span>
             ) : (
               "Extract Intelligence"
@@ -132,33 +353,100 @@ export default function DocumentUploader() {
           </button>
         </div>
       </form>
-      
-      <div className="mt-6 border-t border-gray-700 pt-4">
-        <h3 className="text-gray-300 font-medium mb-2">What happens next?</h3>
-        <ul className="text-gray-400 text-sm space-y-1">
-          <li className="flex items-start">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 11 12 14 22 4"></polyline>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-            </svg>
-            Document is scanned with OCR technology
-          </li>
-          <li className="flex items-start">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 11 12 14 22 4"></polyline>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-            </svg>
-            Entities like names, locations, and phone numbers are automatically detected
-          </li>
-          <li className="flex items-start">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 11 12 14 22 4"></polyline>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-            </svg>
-            You'll be taken to the interactive document viewer to explore the results
-          </li>
-        </ul>
-      </div>
+
+      {analysisMessage && (
+        <div className="mt-4 text-sm text-blue-300">{analysisMessage}</div>
+      )}
+
+      {/* AI Summary */}
+      {summary && (
+        <div className="mt-8 border-t border-gray-700 pt-6">
+          <h3 className="text-lg font-semibold text-white mb-4">
+            AI Analyst Takeaways
+          </h3>
+          <SummaryPanel
+            summary={summary}
+            loading={summaryLoading}
+            onDownload={downloadSummary}
+          />
+        </div>
+      )}
+
+      {/* Per-image intelligence */}
+      {documents.length > 0 && (
+        <div className="mt-8 border-t border-gray-700 pt-6 space-y-4">
+          <h3 className="text-lg font-semibold text-white">
+            Image Intelligence Breakdown
+          </h3>
+          <div className="grid gap-4">
+            {documents.map((doc) => (
+              <div
+                key={doc.id}
+                className="bg-gray-900 border border-gray-700 rounded-lg p-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                  <div>
+                    <p className="text-white font-medium">{doc.filename}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(doc.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate(`/app/document/${doc.id}`)}
+                    className="text-sm bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded"
+                  >
+                    Open in Viewer
+                  </button>
+                </div>
+
+                {doc.originalImage && (
+                  <div className="relative mb-4">
+                    <img
+                      src={`http://localhost:3000${doc.originalImage}`}
+                      alt={doc.filename}
+                      className="w-full max-h-64 object-contain rounded border border-gray-800"
+                    />
+                  </div>
+                )}
+
+                <div className="mb-3">
+                  <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">
+                    Intelligence Snippet
+                  </p>
+                  <p className="text-gray-200 text-sm leading-relaxed">
+                    {doc.text?.slice(0, 360) || "No readable text extracted."}
+                    {doc.text?.length > 360 ? "…" : ""}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  {entityOrder.map((type) => {
+                    const values = doc.entities?.[type] || [];
+                    if (!values.length) return null;
+                    return (
+                      <div key={type}>
+                        <p className="text-xs uppercase text-gray-500 mb-1">
+                          {entityLabels[type]}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {values.slice(0, 8).map((entity, idx) => (
+                            <span
+                              key={`${type}-${entity.text || entity}-${idx}`}
+                              className={`px-2 py-1 text-xs border rounded ${entityColors[type]}`}
+                            >
+                              {entity.text || entity}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

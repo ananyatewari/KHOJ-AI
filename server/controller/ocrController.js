@@ -1,7 +1,8 @@
-import OcrDocument from '../models/OcrDocument.js';
-import { performOCR, extractEntities } from '../utils/dualOcrProcessor.js';
-import path from 'path';
-import fs from 'fs';
+import OcrDocument from "../models/OcrDocument.js";
+import { performOCR, extractEntities } from "../utils/dualOcrProcessor.js";
+import { generateAISummary } from "../services/aiSummary.js";
+import path from "path";
+import fs from "fs";
 
 /**
  * Process a document using OCR and save results
@@ -16,44 +17,102 @@ export const processDocument = async (file, userData = {}) => {
     const originalFilename = file.originalname;
     const uploadedBy = userData.userId || "unknown";
     const agency = userData.agency || "N/A";
-    
+
     // Store the relative path to serve the image later
     const relativePath = `/uploads/${path.basename(filePath)}`;
-    
+
     // Create document with processing status
     const newOcrDoc = new OcrDocument({
       originalImage: relativePath,
       filename: originalFilename,
       agency,
       uploadedBy,
-      status: 'processing'
+      status: "processing"
     });
-    
+
     await newOcrDoc.save();
-    
+
     // Perform OCR on the uploaded image
     const ocrResult = await performOCR(filePath);
-    
+
     // Extract entities with bounding boxes
     const entities = extractEntities(ocrResult);
-    
+
+    // Generate AI summary to enrich entities
+    let aiSummary = null;
+    try {
+      aiSummary = await generateAISummary({
+        documents: [
+          {
+            text: ocrResult.text,
+            entities
+          }
+        ]
+      });
+    } catch (aiErr) {
+      console.warn(
+        `AI summary generation failed for ${originalFilename}:`,
+        aiErr.message
+      );
+    }
+
+    const mergedEntities = mergeAiEntityInsights(entities, aiSummary);
+
     // Calculate processing time
     const processingTime = Date.now() - startTime;
-    
+
     // Update document with OCR results
     newOcrDoc.text = ocrResult.text;
-    newOcrDoc.entities = entities;
+    newOcrDoc.entities = mergedEntities;
+    newOcrDoc.aiSummary = aiSummary;
     newOcrDoc.processingTime = processingTime;
-    newOcrDoc.status = 'completed';
-    
+    newOcrDoc.status = "completed";
+
     await newOcrDoc.save();
-    
+
     return newOcrDoc;
   } catch (error) {
-    console.error('OCR processing error:', error);
+    console.error("OCR processing error:", error);
     throw error;
   }
 };
+
+function mergeAiEntityInsights(baseEntities = {}, aiSummary) {
+  if (!aiSummary?.entityInsights) {
+    return baseEntities;
+  }
+
+  const categories = ["persons", "places", "organizations"];
+  const merged = { ...baseEntities };
+
+  categories.forEach((category) => {
+    const aiEntities = aiSummary.entityInsights[category] || [];
+    if (!Array.isArray(aiEntities) || !aiEntities.length) return;
+
+    merged[category] = merged[category] || [];
+
+    const existingTexts = new Set(
+      merged[category]
+        .map((entry) => entry?.text?.toLowerCase())
+        .filter(Boolean)
+    );
+
+    aiEntities.forEach((text) => {
+      const normalized = text?.toLowerCase();
+      if (!normalized || existingTexts.has(normalized)) return;
+
+      merged[category].push({
+        text,
+        confidence: 0.92,
+        source: "ai",
+        boundingBox: null
+      });
+      existingTexts.add(normalized);
+    });
+  });
+
+  return merged;
+}
 
 /**
  * Get OCR document by ID

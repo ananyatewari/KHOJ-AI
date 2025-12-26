@@ -3,8 +3,9 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import Document from "../models/OcrDocument.js";
-import { performOCR, extractEntities } from "../utils/dualOcrProcessor.js";
+import OcrDocument from "../models/OcrDocument.js";
+import { processDocument } from "../controller/ocrController.js";
+import { generateAISummary } from "../services/aiSummary.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -23,61 +24,59 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    // Accept images and PDFs
-    if (file.mimetype.startsWith("image/") || file.mimetype === "application/pdf") {
+    if (file.mimetype.startsWith("image/")) {
       cb(null, true);
     } else {
-      cb(new Error("Unsupported file format. Please upload an image or PDF."));
+      cb(new Error("Unsupported file format. Please upload image files only."));
     }
-  },
+  }
 });
 
 const router = express.Router();
 
-// Process document endpoint - OCR and entity extraction
-router.post("/process", upload.single("document"), async (req, res) => {
+// Process multiple images endpoint - OCR and entity extraction
+router.post("/process", upload.array("images", 10), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
+    if (!req.files || !req.files.length) {
+      return res.status(400).json({ error: "No images uploaded" });
     }
 
-    const filePath = req.file.path;
-    const originalFilename = req.file.originalname;
-    const uploadedBy = req.body.userId || "unknown";
-    const agency = req.body.agency || "N/A";
-    
-    // Store the relative path to serve the image later
-    const relativePath = `/uploads/${path.basename(filePath)}`;
-    
-    // Perform OCR on the uploaded image
-    const ocrResult = await performOCR(filePath);
-    
-    // Extract entities with bounding boxes
-    const entities = extractEntities(ocrResult);
-    
-    // Create a new document in the database
-    const newDocument = new Document({
-      originalImage: relativePath,
-      filename: originalFilename,
-      text: ocrResult.text,
-      agency,
-      uploadedBy,
-      entities
-    });
-    
-    await newDocument.save();
-    
+    const userContext = {
+      userId: req.body.userId || "unknown",
+      agency: req.body.agency || "N/A"
+    };
+
+    const processedDocuments = [];
+
+    for (const file of req.files) {
+      try {
+        const doc = await processDocument(file, userContext);
+        processedDocuments.push(doc);
+      } catch (processErr) {
+        console.error("OCR processing error for file:", file.originalname, processErr);
+      }
+    }
+
+    if (!processedDocuments.length) {
+      return res.status(500).json({ error: "Failed to process uploaded images" });
+    }
+
     res.status(201).json({
       success: true,
-      document: {
-        id: newDocument._id,
-        text: newDocument.text,
-        entities: newDocument.entities
-      }
+      documents: processedDocuments.map((doc) => ({
+        id: doc._id,
+        text: doc.text,
+        entities: doc.entities,
+        originalImage: doc.originalImage,
+        filename: doc.filename,
+        createdAt: doc.createdAt,
+        aiSummary: doc.aiSummary
+      })),
+      aiSummary: await aggregateSummary(processedDocuments)
     });
   } catch (err) {
     console.error("OCR processing error:", err);
@@ -85,10 +84,38 @@ router.post("/process", upload.single("document"), async (req, res) => {
   }
 });
 
+// Get all OCR documents
+router.get("/documents", async (req, res) => {
+  try {
+    // Optional filtering by user or agency
+    const filter = {};
+    if (req.query.userId) filter.uploadedBy = req.query.userId;
+    if (req.query.agency) filter.agency = req.query.agency;
+
+    const documents = await OcrDocument.find(filter).sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      documents: documents.map((doc) => ({
+        id: doc._id,
+        filename: doc.filename,
+        originalImage: doc.originalImage,
+        text:
+          doc.text?.substring(0, 100) +
+          (doc.text?.length > 100 ? "..." : ""),
+        createdAt: doc.createdAt,
+        agency: doc.agency
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get OCR document by ID
 router.get("/:id", async (req, res) => {
   try {
-    const document = await Document.findById(req.params.id);
+    const document = await OcrDocument.findById(req.params.id);
     
     if (!document) {
       return res.status(404).json({ error: "Document not found" });
@@ -101,37 +128,32 @@ router.get("/:id", async (req, res) => {
       originalImage: document.originalImage,
       filename: document.filename,
       agency: document.agency,
-      createdAt: document.createdAt
+      createdAt: document.createdAt,
+      aiSummary: document.aiSummary
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Get all OCR documents
-router.get("/documents", async (req, res) => {
+async function aggregateSummary(documents = []) {
+  const enrichedDocs = documents.filter(
+    (doc) => doc?.text && doc?.entities
+  );
+
+  if (!enrichedDocs.length) return null;
+
   try {
-    // Optional filtering by user or agency
-    const filter = {};
-    if (req.query.userId) filter.uploadedBy = req.query.userId;
-    if (req.query.agency) filter.agency = req.query.agency;
-    
-    const documents = await Document.find(filter).sort({ createdAt: -1 });
-    
-    res.json({
-      success: true,
-      documents: documents.map(doc => ({
-        id: doc._id,
-        filename: doc.filename,
-        originalImage: doc.originalImage,
-        text: doc.text?.substring(0, 100) + (doc.text?.length > 100 ? '...' : ''),
-        createdAt: doc.createdAt,
-        agency: doc.agency
+    return await generateAISummary({
+      documents: enrichedDocs.map((doc) => ({
+        text: doc.text,
+        entities: doc.entities
       }))
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.warn("Batch AI summary generation failed:", err.message);
+    return null;
   }
-});
+}
 
 export default router;
