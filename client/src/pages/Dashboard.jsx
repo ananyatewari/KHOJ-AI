@@ -124,10 +124,6 @@ export default function Dashboard() {
               <Section title={`${user.agency.toUpperCase()} Uploads`}>
                 <List docs={data.agencyDocs} showUser />
               </Section>
-
-              <div className="mt-6">
-                <ChatPanel />
-              </div>
             </div>
           </div>
         )}

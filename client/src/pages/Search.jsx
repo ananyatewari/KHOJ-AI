@@ -23,6 +23,7 @@ export default function Search() {
   const [primaryDocId, setPrimaryDocId] = useState(null);
   const [docFilter, setDocFilter] = useState("");
   const [semanticInput, setSemanticInput] = useState("");
+  const [uploadedFileName, setUploadedFileName] = useState(null);
 
   const [semanticCache, setSemanticCache] = useState({
     document: null,
@@ -35,6 +36,22 @@ export default function Search() {
   });
 
   const [previewDoc, setPreviewDoc] = useState(null);
+
+  // Restore document context from localStorage on mount
+  useEffect(() => {
+    const savedContext = localStorage.getItem('intelligenceSearchContext');
+    if (savedContext) {
+      try {
+        const { fileName, primaryDoc: savedDoc, primaryDocId: savedId } = JSON.parse(savedContext);
+        setUploadedFileName(fileName);
+        setPrimaryDoc(savedDoc);
+        setPrimaryDocId(savedId);
+      } catch (error) {
+        console.error('Failed to restore document context:', error);
+        localStorage.removeItem('intelligenceSearchContext');
+      }
+    }
+  }, []);
 
   window.scrollToEntity = (value) => {
     const container = document.getElementById("pdf-scroll-container");
@@ -76,16 +93,41 @@ export default function Search() {
 
   const data = await res.json();
 
-  setPrimaryDoc({
+  const newPrimaryDoc = {
     text: data.text,
     entities: data.entities || {}
-  });
+  };
 
-  // 🔥 THIS IS THE SINGLE SOURCE OF TRUTH
+  setPrimaryDoc(newPrimaryDoc);
   setPrimaryDocId(data.documentId);
+  setUploadedFileName(file.name);
+
+  // Save to localStorage for persistence
+  localStorage.setItem('intelligenceSearchContext', JSON.stringify({
+    fileName: file.name,
+    primaryDoc: newPrimaryDoc,
+    primaryDocId: data.documentId
+  }));
 
   setLoading(false);
 };
+
+  const handleClearDocument = () => {
+    if (confirm('Are you sure you want to clear the current document? This will remove all saved context.')) {
+      // Clear all document-related state
+      setFile(null);
+      setUploadedFileName(null);
+      setPrimaryDoc({ text: "", entities: {} });
+      setPrimaryDocId(null);
+      setSummary(null);
+      setSemanticResults([]);
+      setPreviewDoc(null);
+      setActiveTab("document");
+      
+      // Clear localStorage
+      localStorage.removeItem('intelligenceSearchContext');
+    }
+  };
 
 
   const handleSearch = async () => {
@@ -226,6 +268,23 @@ const downloadReport = async () => {
     Upload Intelligence Document
   </h2>
 
+  {uploadedFileName && (
+    <div className="mb-4 p-3 bg-green-900/30 border border-green-500/50 rounded">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-green-400 font-medium">Current Document:</p>
+          <p className="text-xs text-gray-300 mt-1">{uploadedFileName}</p>
+        </div>
+        <button
+          onClick={handleClearDocument}
+          className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm font-medium"
+        >
+          Clear Document
+        </button>
+      </div>
+    </div>
+  )}
+
   <div className="flex items-center gap-4">
     <input
       type="file"
@@ -306,7 +365,7 @@ const downloadReport = async () => {
             {semanticScope === "document" && primaryDocId && (
               <p className="text-xs text-gray-400">
                 Searching within:{" "}
-                <span className="text-blue-400">{file?.name}</span>
+                <span className="text-blue-400">{uploadedFileName || file?.name}</span>
               </p>
             )}
 

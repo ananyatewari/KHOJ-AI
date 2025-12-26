@@ -6,52 +6,63 @@ import { converseWithChatbot } from "../services/chatbotService.js";
 
 const router = express.Router();
 
+const MAX_CONTEXT_DOCS = 5;
+const MAX_SNIPPET_LENGTH = 3500;
+const MIN_SNIPPET_LENGTH = 1500;
+
 // POST /api/chatbot/converse
-// body: { message: string, context?: string, scope?: 'mine'|'agency'|'cross-agency' }
+// body: { message: string }
 router.post("/converse", auth, async (req, res) => {
   try {
-    const { message, context, scope = "agency" } = req.body;
+    const { message } = req.body;
     if (!message || !message.trim()) return res.status(400).json({ error: "Message is required" });
 
     const userInfo = req.user || {};
-    const userAgency = userInfo.agency;
 
-    // Query DocumentShare to find approved shares
-    let shareQuery = { approvalStatus: "approved" };
-
-    if (scope === "cross-agency") {
-      // Cross-agency: include shares with scope 'cross-agency' or matching specific-agencies
-      shareQuery.scope = { $in: ["cross-agency"] };
-    } else if (scope === "mine") {
-      // Only my docs
-      shareQuery.uploadedBy = userInfo.username;
-    } else {
-      // default 'agency': docs shared within the same agency (no approval needed)
-      shareQuery.uploadedByAgency = userAgency;
-    }
-
-    // Fetch approved shares
-    const shares = await DocumentShare.find(shareQuery)
+    // Always pull from cross-agency approved shares
+    const shares = await DocumentShare.find({
+      approvalStatus: "approved",
+      scope: "cross-agency",
+    })
       .populate("documentId")
-      .sort({ createdAt: -1 })
-      .limit(15);
+      .sort({ sharedAt: -1 })
+      .limit(50);
 
-    // Extract documents and combine text
+    console.log(`[Chatbot] Found ${shares.length} approved cross-agency shares`);
+
     const docs = shares
-      .map(s => s.documentId)
-      .filter(d => d && d.text);
+      .map((share) => share.documentId)
+      .filter((doc) => {
+        if (!doc) {
+          console.log("[Chatbot] Warning: Share has null/missing documentId (document may have been deleted)");
+          return false;
+        }
+        const hasContent = doc.text || (doc.chunks && doc.chunks.length);
+        if (!hasContent) {
+          console.log(`[Chatbot] Warning: Document ${doc._id} (${doc.filename}) has no text or chunks`);
+        }
+        return hasContent;
+      });
 
-    const combinedText = docs
-      .map(d => `--- ${d.filename} (${d.agency}) ---\n${d.text}`)
-      .join("\n\n")
-      .slice(0, 12000);
+    console.log(`[Chatbot] ${docs.length} documents have usable content`);
 
-    const messages = [{ role: "user", content: `User: ${message}` }];
-    if (context) messages.push({ role: "user", content: `Context: ${context}` });
+    const { combinedText, sources } = buildContextPayload(message, docs);
 
-    const reply = await converseWithChatbot({ messages, userContext: userInfo, contextText: combinedText });
+    const messages = [{ role: "user", content: `User: ${message.trim()}` }];
 
-    res.json({ reply, docsCount: docs.length });
+    const { reply, usedSources } = await converseWithChatbot({
+      messages,
+      userContext: userInfo,
+      contextText: combinedText,
+      sources,
+    });
+
+    res.json({
+      reply,
+      docsCount: usedSources.length,
+      sources: usedSources,
+      scannedDocs: docs.length,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Chatbot error" });
@@ -73,7 +84,7 @@ router.post("/share", auth, async (req, res) => {
       return res.status(403).json({ error: "Only uploader can change sharing" });
     }
 
-    // Create or update DocumentShare entry
+    // Create or update DocumentShare entry - auto-approve all shares
     const shareEntry = await DocumentShare.findOneAndUpdate(
       { documentId: docId, scope, uploadedBy: req.user.username },
       {
@@ -82,7 +93,9 @@ router.post("/share", auth, async (req, res) => {
         uploadedByAgency: req.user.agency,
         scope,
         visibleToAgencies,
-        approvalStatus: scope === "agency" ? "approved" : "pending",
+        approvalStatus: "approved",
+        approvedBy: req.user.username,
+        approvedAt: new Date(),
         sharedAt: new Date(),
       },
       { upsert: true, new: true }
@@ -92,9 +105,7 @@ router.post("/share", auth, async (req, res) => {
       success: true, 
       shareId: shareEntry._id,
       status: shareEntry.approvalStatus,
-      message: scope === "agency" 
-        ? "Shared with your agency" 
-        : `Pending admin approval for ${scope}`
+      message: `Document shared successfully for ${scope} collaboration`
     });
   } catch (err) {
     console.error(err);
@@ -155,5 +166,150 @@ router.post("/approve", auth, async (req, res) => {
     res.status(500).json({ error: "Approval failed" });
   }
 });
+
+function buildContextPayload(message = "", docs = []) {
+  if (!docs.length) return { combinedText: "", sources: [] };
+
+  const keywords = extractKeywords(message);
+
+  const scoredDocs = docs
+    .map((doc) => {
+      const snippet = selectSnippet(doc, keywords);
+      const score = computeDocScore(doc, snippet, keywords);
+      return { doc, snippet, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const topDocs = scoredDocs.slice(0, MAX_CONTEXT_DOCS);
+
+  const combinedText = topDocs
+    .map(({ doc, snippet }) => {
+      const header = `FILE: ${doc.filename || "Untitled"} | AGENCY: ${doc.agency || "Unknown"}`;
+      return `${header}\n${snippet}`;
+    })
+    .join("\n\n");
+
+  const sources = topDocs.map(({ doc, snippet }) => ({
+    id: doc._id,
+    filename: doc.filename,
+    agency: doc.agency,
+    snippet,
+    createdAt: doc.createdAt,
+  }));
+
+  return { combinedText, sources };
+}
+
+function extractKeywords(message = "") {
+  const words = message
+    .toLowerCase()
+    .split(/[^a-z0-9]+/g)
+    .filter((word) => word.length > 2);
+  
+  // Include common question words and important terms
+  const importantTerms = ['who', 'what', 'when', 'where', 'why', 'how', 'tell', 'about', 'incident', 'case', 'report'];
+  const allKeywords = [...new Set([...words, ...importantTerms.filter(term => message.toLowerCase().includes(term))])];
+  
+  return allKeywords;
+}
+
+function computeDocScore(doc, snippet, keywords) {
+  const recencyBoost = doc.createdAt ? doc.createdAt.getTime() / 1e12 : 0;
+  const baseScore = keywords.length ? keywords.reduce((score, word) => {
+    const text = `${doc.filename || ""} ${doc.text || ""}`.toLowerCase();
+    return score + (text.includes(word) ? 1 : 0);
+  }, 0) : 0;
+  const snippetScore = keywords.length ? keywords.reduce((score, word) => {
+    const lowerSnippet = snippet.toLowerCase();
+    return score + (lowerSnippet.includes(word) ? 1 : 0);
+  }, 0) : 1;
+  return baseScore + snippetScore + recencyBoost;
+}
+
+function selectSnippet(doc, keywords) {
+  // If document has no chunks, use full text (up to limit)
+  if (!doc.chunks || doc.chunks.length === 0) {
+    const fullText = doc.text || "";
+    if (fullText.length <= MAX_SNIPPET_LENGTH) {
+      return fullText; // Return full document if it fits
+    }
+    // For longer documents without chunks, try to find the most relevant section
+    return extractRelevantSection(fullText, keywords);
+  }
+
+  // If document has chunks, find the best matching chunks
+  const scored = doc.chunks
+    .filter(Boolean)
+    .map((chunk) => ({
+      chunk,
+      score: keywords.length
+        ? keywords.reduce((total, word) => total + (chunk.toLowerCase().includes(word) ? 1 : 0), 0)
+        : 0,
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  if (scored.length === 0) return "";
+
+  // Combine top chunks up to the max length
+  let combinedSnippet = scored[0].chunk;
+  for (let i = 1; i < scored.length && combinedSnippet.length < MIN_SNIPPET_LENGTH; i++) {
+    const nextChunk = scored[i].chunk;
+    if (combinedSnippet.length + nextChunk.length <= MAX_SNIPPET_LENGTH) {
+      combinedSnippet += "\n\n" + nextChunk;
+    }
+  }
+
+  return truncateSnippet(combinedSnippet);
+}
+
+function extractRelevantSection(text, keywords) {
+  if (!keywords.length) {
+    return truncateSnippet(text);
+  }
+
+  // Find the position of the first keyword match
+  let bestPosition = 0;
+  let maxMatches = 0;
+
+  // Scan through the text in windows to find the most keyword-dense section
+  const windowSize = MAX_SNIPPET_LENGTH;
+  for (let i = 0; i < text.length - windowSize; i += Math.floor(windowSize / 2)) {
+    const window = text.slice(i, i + windowSize).toLowerCase();
+    const matches = keywords.reduce((count, word) => count + (window.includes(word) ? 1 : 0), 0);
+    if (matches > maxMatches) {
+      maxMatches = matches;
+      bestPosition = i;
+    }
+  }
+
+  // Extract from the best position, trying to start at a sentence boundary
+  let startPos = bestPosition;
+  if (startPos > 0) {
+    const sentenceStart = text.lastIndexOf('. ', startPos + 100);
+    if (sentenceStart > bestPosition - 200 && sentenceStart !== -1) {
+      startPos = sentenceStart + 2;
+    }
+  }
+
+  return truncateSnippet(text.slice(startPos));
+}
+
+function truncateSnippet(text = "") {
+  if (text.length <= MAX_SNIPPET_LENGTH) {
+    return text.trim();
+  }
+  
+  // Try to truncate at a sentence boundary
+  const truncated = text.slice(0, MAX_SNIPPET_LENGTH);
+  const lastPeriod = truncated.lastIndexOf('.');
+  const lastNewline = truncated.lastIndexOf('\n');
+  
+  const cutoff = Math.max(lastPeriod, lastNewline);
+  if (cutoff > MAX_SNIPPET_LENGTH * 0.8) {
+    return text.slice(0, cutoff + 1).trim();
+  }
+  
+  return truncated.trim() + "...";
+}
 
 export default router;

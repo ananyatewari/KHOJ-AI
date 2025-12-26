@@ -10,7 +10,7 @@ export default function SharePanel({ docs = [], onUpdate }) {
     setLocalDocs(docs);
   }, [docs]);
 
-  const toggleShare = async (docId, isCurrentlyShared) => {
+  const shareCrossAgency = async (docId) => {
     setSharing((s) => ({ ...s, [docId]: true }));
     try {
       const res = await fetch("/api/chatbot/share", {
@@ -19,14 +19,17 @@ export default function SharePanel({ docs = [], onUpdate }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ docId, scope: "agency" }),
+        body: JSON.stringify({ docId, scope: "cross-agency" }),
       });
       const data = await res.json();
-      // Update local state
       setLocalDocs((docs) =>
         docs.map((d) =>
           d._id === docId
-            ? { ...d, sharedWithChatbot: true, shareStatus: data.status }
+            ? {
+                ...d,
+                sharedWithChatbot: true,
+                shareStatus: data.status,
+              }
             : d
         )
       );
@@ -40,11 +43,10 @@ export default function SharePanel({ docs = [], onUpdate }) {
 
   return (
     <section className="bg-slate-950/50 border border-white/10 rounded-2xl p-4">
-      <h3 className="font-semibold mb-3">Manage Shared Documents</h3>
+      <h3 className="font-semibold mb-3">Cross-Agency Sharing</h3>
       <p className="text-xs text-slate-400 mb-3">
-        Mark your documents to be included in the Collaboration Chatbot context.
-        Shared docs can be queried by your agency immediately; cross-agency
-        sharing requires admin approval.
+        Share documents into the cross-agency collaboration pool so the chatbot
+        can answer with their context. Documents are immediately available after sharing.
       </p>
       {localDocs.length === 0 && (
         <p className="text-sm text-slate-400">No documents available.</p>
@@ -60,18 +62,23 @@ export default function SharePanel({ docs = [], onUpdate }) {
               <div className="text-xs text-slate-500">
                 {new Date(d.createdAt).toLocaleDateString()}
               </div>
+              {d.shareStatus && (
+                <div className="text-[11px] uppercase tracking-wide text-slate-400">
+                  Status: {d.shareStatus}
+                </div>
+              )}
             </div>
-            <div>
+            <div className="text-right">
               <button
-                onClick={() => toggleShare(d._id, d.sharedWithChatbot)}
-                disabled={sharing[d._id]}
+                onClick={() => shareCrossAgency(d._id)}
+                disabled={sharing[d._id] || d.sharedWithChatbot}
                 className={`px-2 py-1 rounded text-xs font-medium ${
                   d.sharedWithChatbot
-                    ? "bg-emerald-600 text-white"
-                    : "bg-slate-700 text-white"
+                    ? "bg-emerald-600 text-white cursor-not-allowed opacity-75"
+                    : "bg-indigo-600 text-white hover:bg-indigo-700"
                 }`}
               >
-                {d.sharedWithChatbot ? "Shared" : "Share"}
+                {d.sharedWithChatbot ? "✓ Shared" : "Share Cross-Agency"}
               </button>
             </div>
           </li>
