@@ -28,6 +28,18 @@ export default function SideBar() {
         >
           🔍 Intelligence Search
         </NavLink>
+        
+        <NavLink
+          to="/app/ocr"
+          className={({ isActive }) =>
+            `block px-4 py-2 rounded ${
+              isActive ? "bg-blue-600" : "hover:bg-slate-800"
+            }`
+          }
+        >
+          🔎 Intelligent Document OCR
+        </NavLink>
+
       </nav>
 
       {/* Logout always at bottom */}

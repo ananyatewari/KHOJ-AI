@@ -14,3 +14,40 @@ body {
   background-color: #facc15;
   color: black;
 }
+
+/* ---------------- SHADCN THEME ---------------- */
+
+@layer base {
+  :root {
+    /* LIGHT MODE */
+    --background: 240 20% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --border: 220 13% 85%;
+  }
+
+  .dark {
+    /* DARK MODE */
+    --background: 224 71% 4%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --border: 217 19% 27%;
+  }
+
+  body {
+    @apply bg-background text-foreground transition-colors duration-300;
+  }
+}
+
+
+/* ---------- ANIMATED GRADIENT ---------- */
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient-slow {
+  background-size: 200% 200%;
+  animation: gradientMove 20s ease infinite;
+}

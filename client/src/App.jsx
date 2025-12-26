@@ -3,16 +3,19 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import IntelligenceSearch from "./pages/Search";
-
+import DocumentView from "./pages/DocumentView";
+import OcrPage from "./pages/OcrPage";
 import AppLayout from "./components/layout/AppLayout";
 import PublicLayout from "./components/layout/PublicLayout";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
+import Landing from "./pages/Landing";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* PUBLIC */}
+        <Route path="/" element={<Landing />} />
         <Route
           path="/login"
           element={
@@ -42,6 +45,8 @@ export default function App() {
         >
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="search" element={<IntelligenceSearch />} />
+          <Route path="document/:id" element={<DocumentView />} />
+          <Route path="ocr" element={<OcrPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

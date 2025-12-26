@@ -84,9 +84,17 @@ function List({ docs, showUser }) {
               </p>
             )}
           </div>
-          <span className="text-xs text-gray-500">
-            {new Date(d.createdAt).toLocaleString()}
-          </span>
+          <div className="flex items-center gap-3">
+            <a 
+              href={`/app/document/${d._id}`} 
+              className="text-blue-400 hover:text-blue-300 text-sm"
+            >
+              View Analysis
+            </a>
+            <span className="text-xs text-gray-500">
+              {new Date(d.createdAt).toLocaleString()}
+            </span>
+          </div>
         </li>
       ))}
     </ul>

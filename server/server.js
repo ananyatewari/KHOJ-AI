@@ -9,13 +9,12 @@ import { Server } from "socket.io";
 import path from "path";
 import { fileURLToPath } from "url";
 import documentRoutes from "./routes/document.js";
-// import ocrRoutes from "./routes/ocr.js";
-
+import ocrRoutes from "./routes/ocr.js";
 import ingestPdf from "./routes/ingest.js";
 import searchRoutes from "./routes/search.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import authRoutes from "./routes/auth.js";
-
+import reportRoutes from "./routes/report.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -39,11 +38,8 @@ app.use("/api/search", searchRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/document", documentRoutes);
-import reportRoutes from "./routes/report.js";
-
+app.use("/api/ocr", ocrRoutes);
 app.use("/api/report", reportRoutes);
-
-// app.use("/api/ocr", ocrRoutes);
 server.listen(3000, () => {
   console.log("Server running on 3000");
 });

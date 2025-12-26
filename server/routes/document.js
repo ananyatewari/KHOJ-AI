@@ -2,7 +2,10 @@ import express from "express";
 import Document from "../models/Document.js";
 import authMiddleware from "../middleware/auth.js";
 import { emitLog } from "../utils/logger.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const router = express.Router();
 
 router.get("/:id", authMiddleware, async (req, res) => {
@@ -31,7 +34,14 @@ router.get("/:id", authMiddleware, async (req, res) => {
     documentId: doc._id
   });
 
-  res.json({ text: doc.text });
+  res.json({ text: doc.text, id: doc._id,
+      text: doc.text,
+      entities: doc.entities,
+      originalImage: doc.originalImage,
+      filename: doc.filename,
+      agency: doc.agency,
+      createdAt: doc.createdAt
+  });
 });
 
 
