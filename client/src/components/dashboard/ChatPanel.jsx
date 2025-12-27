@@ -140,7 +140,7 @@ export default function ChatPanel() {
       }`}>
         {showHistory && (
           <>
-            <div className={`p-6 border-b ${
+            <div className={`p-4 border-b ${
               theme === "dark" ? "border-slate-700/50" : "border-purple-200"
             }`}>
               <div className="flex items-center justify-between mb-4">
@@ -289,58 +289,58 @@ export default function ChatPanel() {
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-5xl mx-auto p-6">
             {messages.length === 0 && (
-              <div className="text-center py-16">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <Sparkles size={40} className="text-white" />
+              <div className="text-center py-8">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <Sparkles size={28} className="text-white" />
                 </div>
-                <h2 className={`text-2xl font-bold mb-3 ${
+                <h2 className={`text-xl font-bold mb-2 ${
                   theme === "dark" ? "text-white" : "text-slate-800"
                 }`}>Welcome to Cross-Agency Intelligence Chat</h2>
-                <p className={`mb-6 max-w-2xl mx-auto ${
+                <p className={`mb-4 max-w-2xl mx-auto text-sm ${
                   theme === "dark" ? "text-slate-400" : "text-slate-600"
                 }`}>
                   Ask questions about topics in shared documents. The AI assistant will provide answers grounded in cross-agency approved intelligence and cite every document it references.
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
-                  <div className={`border rounded-xl p-4 ${
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-3xl mx-auto">
+                  <div className={`border rounded-lg p-3 ${
                     theme === "dark"
                       ? "bg-slate-800/50 border-slate-700/50"
                       : "bg-white/80 border-purple-200 shadow-md"
                   }`}>
-                    <div className="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center mb-3">
-                      <Shield size={20} className="text-indigo-400" />
+                    <div className="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center mb-2 mx-auto">
+                      <Shield size={18} className="text-indigo-400" />
                     </div>
-                    <h3 className={`text-sm font-semibold mb-1 ${
+                    <h3 className={`text-xs font-semibold mb-1 ${
                       theme === "dark" ? "text-white" : "text-slate-800"
                     }`}>Secure & Verified</h3>
                     <p className={`text-xs ${
                       theme === "dark" ? "text-slate-400" : "text-slate-600"
                     }`}>All responses are based on approved shared documents</p>
                   </div>
-                  <div className={`border rounded-xl p-4 ${
+                  <div className={`border rounded-lg p-3 ${
                     theme === "dark"
                       ? "bg-slate-800/50 border-slate-700/50"
                       : "bg-white/80 border-purple-200 shadow-md"
                   }`}>
-                    <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center mb-3">
-                      <Users size={20} className="text-purple-400" />
+                    <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center mb-2 mx-auto">
+                      <Users size={18} className="text-purple-400" />
                     </div>
-                    <h3 className={`text-sm font-semibold mb-1 ${
+                    <h3 className={`text-xs font-semibold mb-1 ${
                       theme === "dark" ? "text-white" : "text-slate-800"
                     }`}>Cross-Agency</h3>
                     <p className={`text-xs ${
                       theme === "dark" ? "text-slate-400" : "text-slate-600"
                     }`}>Access intelligence from multiple agencies</p>
                   </div>
-                  <div className={`border rounded-xl p-4 ${
+                  <div className={`border rounded-lg p-3 ${
                     theme === "dark"
                       ? "bg-slate-800/50 border-slate-700/50"
                       : "bg-white/80 border-purple-200 shadow-md"
                   }`}>
-                    <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center mb-3">
-                      <FileText size={20} className="text-emerald-400" />
+                    <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center mb-2 mx-auto">
+                      <FileText size={18} className="text-emerald-400" />
                     </div>
-                    <h3 className={`text-sm font-semibold mb-1 ${
+                    <h3 className={`text-xs font-semibold mb-1 ${
                       theme === "dark" ? "text-white" : "text-slate-800"
                     }`}>Source Citations</h3>
                     <p className={`text-xs ${

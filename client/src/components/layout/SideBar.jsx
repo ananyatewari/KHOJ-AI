@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { LayoutDashboard, Search, FileText, Mic, MessageSquare, History, LogOut, User, AlertTriangle, Sun, Moon } from "lucide-react";
@@ -36,9 +36,11 @@ export default function SideBar() {
       <div className={`p-6 border-b ${
         theme === "dark" ? "border-white/10" : "border-purple-100"
       }`}>
+        <Link to="/">
         <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
           KHOJ AI
         </h1>
+        </Link>
         <p className={`text-xs mt-1 ${
           theme === "dark" ? "text-slate-500" : "text-slate-600"
         }`}>Intelligence Platform</p>
@@ -51,7 +53,7 @@ export default function SideBar() {
           className={({ isActive }) =>
             `${linkBase} ${
               isActive
-                ? "bg-indigo-600 text-white shadow-lg"
+                ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg"
                 : theme === "dark"
                 ? "text-slate-300 hover:bg-white/5"
                 : "text-slate-600 hover:bg-purple-50"
@@ -67,7 +69,7 @@ export default function SideBar() {
           className={({ isActive }) =>
             `${linkBase} ${
               isActive
-                ? "bg-indigo-600 text-white shadow-lg"
+                ? "bg-gradient-to-r from-teal-400 to-cyan-600 text-white shadow-lg"
                 : theme === "dark"
                 ? "text-slate-300 hover:bg-white/5"
                 : "text-slate-600 hover:bg-purple-50"
@@ -83,7 +85,7 @@ export default function SideBar() {
           className={({ isActive }) =>
             `${linkBase} ${
               isActive
-                ? "bg-indigo-600 text-white shadow-lg"
+                ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg"
                 : theme === "dark"
                 ? "text-slate-300 hover:bg-white/5"
                 : "text-slate-600 hover:bg-purple-50"
@@ -99,7 +101,7 @@ export default function SideBar() {
           className={({ isActive }) =>
             `${linkBase} ${
               isActive
-                ? "bg-indigo-600 text-white shadow-lg"
+                ? "bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg"
                 : theme === "dark"
                 ? "text-slate-300 hover:bg-white/5"
                 : "text-slate-600 hover:bg-purple-50"
@@ -115,7 +117,7 @@ export default function SideBar() {
           className={({ isActive }) =>
             `${linkBase} ${
               isActive
-                ? "bg-indigo-600 text-white shadow-lg"
+                ? "bg-gradient-to-r from-cyan-400 to-blue-600 text-white shadow-lg"
                 : theme === "dark"
                 ? "text-slate-300 hover:bg-white/5"
                 : "text-slate-600 hover:bg-purple-50"
@@ -131,7 +133,7 @@ export default function SideBar() {
           className={({ isActive }) =>
             `${linkBase} ${
               isActive
-                ? "bg-indigo-600 text-white shadow-lg"
+                ? "bg-gradient-to-r from-green-600 to-emerald-700 text-white shadow-lg"
                 : theme === "dark"
                 ? "text-slate-300 hover:bg-white/5"
                 : "text-slate-600 hover:bg-purple-50"

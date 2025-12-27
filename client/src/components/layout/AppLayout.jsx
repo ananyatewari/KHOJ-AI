@@ -19,7 +19,7 @@ export default function AppLayout() {
       {/* Main area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <TopBar />
+        {/* <TopBar /> */}
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">

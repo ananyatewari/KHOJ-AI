@@ -94,15 +94,8 @@ export default function Dashboard() {
               theme={theme}
             />
             <StatCard
-              title="Agency Uploads (24h)"
+              title={`${user.agency.toUpperCase()} Uploads (24h)`}
               value={data?.stats.last24h || 0}
-              icon={<Upload size={20} />}
-              color="from-indigo-500 to-purple-500"
-              theme={theme}
-            />
-            <StatCard
-              title={`${user.agency.toUpperCase()} Total`}
-              value={data?.agencyDocs.length || 0}
               icon={<Building2 size={20} />}
               color="from-emerald-500 to-teal-500"
               theme={theme}
@@ -115,7 +108,7 @@ export default function Dashboard() {
               theme={theme}
             />
             <StatCard
-              title="Team Members"
+              title="Agency Members"
               value={data?.stats.totalMembers || 0}
               icon={<UserCheck size={20} />}
               color="from-amber-500 to-orange-500"
