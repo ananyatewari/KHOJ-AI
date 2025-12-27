@@ -22,6 +22,7 @@ import authRoutes from "./routes/auth.js";
 import reportRoutes from "./routes/report.js";
 import chatbotRoutes from "./routes/chatbot.js";
 import transcriptionRoutes from "./routes/transcription.js";
+import historyRoutes from "./routes/history.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -49,6 +50,7 @@ app.use("/api/ocr", ocrRoutes);
 app.use("/api/transcription", transcriptionRoutes);
 app.use("/api/report", reportRoutes);
 app.use("/api/chatbot", chatbotRoutes);
+app.use("/api/history", historyRoutes);
 server.listen(3000, () => {
   console.log("Server running on 3000");
 });

@@ -1,26 +1,65 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { LayoutDashboard, Search, FileText, Mic, MessageSquare, History, LogOut, User, AlertTriangle, Sun, Moon } from "lucide-react";
 
 export default function SideBar() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutModal(false);
+    logout();
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
+  };
 
   const linkBase =
-    "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition";
+    "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition";
 
   return (
-    <aside className="w-64 min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 border-r border-white/10 p-4 flex flex-col">
-      <nav className="space-y-2">
+    <>
+    <aside className={`w-64 h-screen border-r flex flex-col ${
+      theme === "dark"
+        ? "bg-gradient-to-b from-slate-950 to-slate-900 border-white/10"
+        : "bg-white/80 backdrop-blur-xl border-purple-100 shadow-lg"
+    }`}>
+      {/* App Name */}
+      <div className={`p-6 border-b ${
+        theme === "dark" ? "border-white/10" : "border-purple-100"
+      }`}>
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          KHOJ AI
+        </h1>
+        <p className={`text-xs mt-1 ${
+          theme === "dark" ? "text-slate-500" : "text-slate-600"
+        }`}>Intelligence Platform</p>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         <NavLink
           to="/app/dashboard"
           className={({ isActive }) =>
             `${linkBase} ${
               isActive
-                ? "bg-gradient-to-r from-indigo-600/80 to-blue-600/80 text-white shadow"
-                : "text-slate-300 hover:bg-white/5"
+                ? "bg-indigo-600 text-white shadow-lg"
+                : theme === "dark"
+                ? "text-slate-300 hover:bg-white/5"
+                : "text-slate-600 hover:bg-purple-50"
             }`
           }
         >
-          📊 Dashboard
+          <LayoutDashboard size={18} />
+          Dashboard
         </NavLink>
 
         <NavLink
@@ -28,12 +67,15 @@ export default function SideBar() {
           className={({ isActive }) =>
             `${linkBase} ${
               isActive
-                ? "bg-gradient-to-r from-purple-600/80 to-fuchsia-600/80 text-white shadow"
-                : "text-slate-300 hover:bg-white/5"
+                ? "bg-indigo-600 text-white shadow-lg"
+                : theme === "dark"
+                ? "text-slate-300 hover:bg-white/5"
+                : "text-slate-600 hover:bg-purple-50"
             }`
           }
         >
-          🔍 Intelligence Search
+          <Search size={18} />
+          Intelligence Search
         </NavLink>
 
         <NavLink
@@ -41,12 +83,15 @@ export default function SideBar() {
           className={({ isActive }) =>
             `${linkBase} ${
               isActive
-                ? "bg-gradient-to-r from-emerald-600/80 to-teal-600/80 text-white shadow"
-                : "text-slate-300 hover:bg-white/5"
+                ? "bg-indigo-600 text-white shadow-lg"
+                : theme === "dark"
+                ? "text-slate-300 hover:bg-white/5"
+                : "text-slate-600 hover:bg-purple-50"
             }`
           }
         >
-          📄 Intelligent OCR
+          <FileText size={18} />
+          Intelligent OCR
         </NavLink>
 
         <NavLink
@@ -54,12 +99,15 @@ export default function SideBar() {
           className={({ isActive }) =>
             `${linkBase} ${
               isActive
-                ? "bg-gradient-to-r from-cyan-600/80 to-blue-600/80 text-white shadow"
-                : "text-slate-300 hover:bg-white/5"
+                ? "bg-indigo-600 text-white shadow-lg"
+                : theme === "dark"
+                ? "text-slate-300 hover:bg-white/5"
+                : "text-slate-600 hover:bg-purple-50"
             }`
           }
         >
-          🎙️ Audio Transcription
+          <Mic size={18} />
+          Audio Transcription
         </NavLink>
 
         <NavLink
@@ -67,34 +115,139 @@ export default function SideBar() {
           className={({ isActive }) =>
             `${linkBase} ${
               isActive
-                ? "bg-gradient-to-r from-yellow-400/80 to-pink-500/80 text-white shadow"
-                : "text-slate-300 hover:bg-white/5"
+                ? "bg-indigo-600 text-white shadow-lg"
+                : theme === "dark"
+                ? "text-slate-300 hover:bg-white/5"
+                : "text-slate-600 hover:bg-purple-50"
             }`
           }
         >
-          🤖 Collaboration Chatbot
+          <MessageSquare size={18} />
+          Collaboration Chatbot
         </NavLink>
 
         <NavLink
-          to="/"
+          to="/app/history"
           className={({ isActive }) =>
             `${linkBase} ${
               isActive
-                ? "bg-gradient-to-r from-emerald-600/80 to-teal-600/80 text-white shadow"
-                : "text-slate-300 hover:bg-white/5"
+                ? "bg-indigo-600 text-white shadow-lg"
+                : theme === "dark"
+                ? "text-slate-300 hover:bg-white/5"
+                : "text-slate-600 hover:bg-purple-50"
             }`
           }
         >
-          <button
-            onClick={logout}
-            className="mt-auto text-sm text-red-400 hover:text-red-500 transition"
-          >
-            ⏻ Logout
-          </button>
+          <History size={18} />
+          History
         </NavLink>
       </nav>
 
-      {/* Logout */}
+      {/* Theme Toggle */}
+      <div className="px-4 pb-4">
+        <button
+          onClick={toggleTheme}
+          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition ${
+            theme === "dark"
+              ? "bg-slate-800/50 hover:bg-slate-800 text-slate-300"
+              : "bg-purple-50 hover:bg-purple-100 text-slate-700 border border-purple-200"
+          }`}
+        >
+          <span className="flex items-center gap-3">
+            {theme === "dark" ? <Moon size={18} /> : <Sun size={18} />}
+            {theme === "dark" ? "Dark Mode" : "Light Mode"}
+          </span>
+          <div className={`w-10 h-5 rounded-full relative transition ${
+            theme === "dark" ? "bg-slate-700" : "bg-purple-200"
+          }`}>
+            <div className={`absolute top-0.5 w-4 h-4 bg-indigo-500 rounded-full transition-transform duration-200 ${
+              theme === "dark" ? "left-0.5" : "left-5"
+            }`} />
+          </div>
+        </button>
+      </div>
+
+      {/* Profile & Logout */}
+      <div className={`p-4 border-t ${
+        theme === "dark" ? "border-white/10" : "border-purple-100"
+      }`}>
+        {/* Logout button */}
+        <button
+          onClick={handleLogoutClick}
+          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 mb-2 ${
+            theme === "dark"
+              ? "text-red-400 hover:bg-red-500/10 hover:text-red-300"
+              : "text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200"
+          }`}
+        >
+          <LogOut size={18} />
+          Logout
+        </button>
+
+        {/* Profile card */}
+        <div className={`flex items-center gap-3 px-4 py-3 rounded-lg ${
+          theme === "dark"
+            ? "bg-slate-800/50"
+            : "bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100"
+        }`}>
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+            <User size={18} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-medium truncate ${
+              theme === "dark" ? "text-white" : "text-slate-800"
+            }`}>{user?.username}</p>
+            <p className={`text-xs truncate ${
+              theme === "dark" ? "text-slate-400" : "text-slate-500"
+            }`}>{user?.agency?.toUpperCase()}</p>
+          </div>
+        </div>
+      </div>
     </aside>
+
+    {/* Logout Confirmation Modal - Outside sidebar for proper full-screen overlay */}
+    {showLogoutModal && (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]">
+        <div className={`rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl ${
+          theme === "dark"
+            ? "bg-slate-900 border border-slate-700"
+            : "bg-white border border-purple-200"
+        }`}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+              <AlertTriangle size={24} className="text-red-400" />
+            </div>
+            <div>
+              <h3 className={`text-lg font-semibold ${
+                theme === "dark" ? "text-white" : "text-slate-800"
+              }`}>Confirm Logout</h3>
+              <p className={`text-sm ${
+                theme === "dark" ? "text-slate-400" : "text-slate-600"
+              }`}>Are you sure you want to log out?</p>
+            </div>
+          </div>
+          
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={cancelLogout}
+              className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition ${
+                theme === "dark"
+                  ? "bg-slate-800 hover:bg-slate-700 text-white"
+                  : "bg-slate-200 hover:bg-slate-300 text-slate-800"
+              }`}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmLogout}
+              className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   );
 }

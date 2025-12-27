@@ -1,8 +1,11 @@
+import { useTheme } from "../context/ThemeContext";
+
 export default function PDFViewer({
   text = "",
   searchTerm = "",
   entities = {},
 }) {
+  const { theme } = useTheme();
   function highlightEntities(text, entities) {
     let highlighted = text;
 
@@ -45,9 +48,15 @@ export default function PDFViewer({
   return (
     <div
       id="pdf-scroll-container"
-      className="bg-gray-900 rounded h-[80vh] overflow-y-scroll"
+      className={`rounded h-[80vh] overflow-y-scroll p-4 ${
+        theme === "dark"
+          ? "bg-gray-900 text-white"
+          : "bg-white text-slate-800 border border-purple-200"
+      }`}
     >
-      <h2 className="text-lg font-semibold mb-2">
+      <h2 className={`text-lg font-semibold mb-2 ${
+        theme === "dark" ? "text-white" : "text-slate-800"
+      }`}>
         Extracted PDF Text (AI Highlighted)
       </h2>
 

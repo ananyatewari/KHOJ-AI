@@ -45,7 +45,13 @@ Schema (exact):
     "places": string[],
     "organizations": string[]
   },
-  "analystTakeaways": string[]
+  "analystTakeaways": string[],
+  "keyDiscussionPoints": string[],
+  "decisionsMade": string[],
+  "actionItems": [{"item": string, "assignee": string, "dueDate": string}],
+  "nextSteps": string[],
+  "importantDeadlines": string[],
+  "takeaways": string[]
 }
 
 Example output (must match schema):
@@ -53,7 +59,13 @@ Example output (must match schema):
   "executiveSummary": "Brief summary here.",
   "keyFindings": ["Finding one","Finding two"],
   "entityInsights": {"persons":["Alice"],"places":["Paris"],"organizations":["Org A"]},
-  "analystTakeaways": ["Takeaway one","Takeaway two"]
+  "analystTakeaways": ["Takeaway one","Takeaway two"],
+  "keyDiscussionPoints": ["Discussion point one","Discussion point two"],
+  "decisionsMade": ["Decision one","Decision two"],
+  "actionItems": [{"item":"Action one","assignee":"John","dueDate":"2024-01-01"}],
+  "nextSteps": ["Step one","Step two"],
+  "importantDeadlines": ["Deadline one","Deadline two"],
+  "takeaways": ["Takeaway one","Takeaway two"]
 }
 `;
 
@@ -95,7 +107,13 @@ Example output (must match schema):
         executiveSummary: narrativeText.slice(0, 1000),
         keyFindings: [],
         entityInsights: { persons: [], places: [], organizations: [] },
-        analystTakeaways: []
+        analystTakeaways: [],
+        keyDiscussionPoints: [],
+        decisionsMade: [],
+        actionItems: [],
+        nextSteps: [],
+        importantDeadlines: [],
+        takeaways: []
       };
     }
   }
@@ -144,6 +162,12 @@ function synthesizeMissingFields(structured, narrative, entityContext) {
   result.keyFindings = Array.isArray(result.keyFindings) ? result.keyFindings : [];
   result.entityInsights = result.entityInsights || { persons: [], places: [], organizations: [] };
   result.analystTakeaways = Array.isArray(result.analystTakeaways) ? result.analystTakeaways : [];
+  result.keyDiscussionPoints = Array.isArray(result.keyDiscussionPoints) ? result.keyDiscussionPoints : [];
+  result.decisionsMade = Array.isArray(result.decisionsMade) ? result.decisionsMade : [];
+  result.actionItems = Array.isArray(result.actionItems) ? result.actionItems : [];
+  result.nextSteps = Array.isArray(result.nextSteps) ? result.nextSteps : [];
+  result.importantDeadlines = Array.isArray(result.importantDeadlines) ? result.importantDeadlines : [];
+  result.takeaways = Array.isArray(result.takeaways) ? result.takeaways : [];
 
   // If entityInsights empty, fill from entityContext
   const flattenEntities = (ctx) => {

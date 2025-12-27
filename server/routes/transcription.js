@@ -5,6 +5,7 @@ import upload from "../middleware/uploadMiddleware.js";
 import { emitLog } from "../utils/logger.js";
 import aiService from "../services/aiService.js";
 import { extractEntitiesAI } from "../services/aiEntities.js";
+import { generateAnalysisPDF } from "../utils/pdfGenerator.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -199,6 +200,47 @@ router.get("/", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("Error fetching transcriptions:", error);
     res.status(500).json({ error: "Failed to fetch transcriptions" });
+  }
+});
+
+// Download transcription analysis as PDF
+router.get("/download-analysis/:id", authMiddleware, async (req, res) => {
+  try {
+    const transcription = await Transcription.findById(req.params.id);
+    
+    if (!transcription) {
+      return res.status(404).json({ error: "Transcription not found" });
+    }
+
+    // Check access
+    const hasAccess = transcription.visibility.includes(req.user.agency);
+    if (!hasAccess) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    // Prepare item for PDF generation (match expected structure)
+    const item = {
+      filename: transcription.filename,
+      transcript: transcription.transcript,
+      text: transcription.transcript, // alias for compatibility
+      entities: transcription.entities,
+      aiSummary: transcription.aiSummary,
+      uploadedBy: transcription.uploadedBy,
+      agency: transcription.agency,
+      createdAt: transcription.createdAt
+    };
+
+    // Generate PDF
+    const pdfBuffer = await generateAnalysisPDF(item, "transcription");
+    const filename = `${transcription.filename.replace(/\.[^/.]+$/, "")}_analysis.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(pdfBuffer);
+
+  } catch (error) {
+    console.error("Error downloading transcription analysis:", error);
+    res.status(500).json({ error: "Failed to download analysis" });
   }
 });
 

@@ -7,16 +7,19 @@ import DocumentView from "./pages/DocumentView";
 import OcrPage from "./pages/OcrPage";
 import TranscriptionPage from "./pages/TranscriptionPage";
 import TranscriptionView from "./pages/TranscriptionView";
+import History from "./pages/History";
 import AppLayout from "./components/layout/AppLayout";
 import PublicLayout from "./components/layout/PublicLayout";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import Landing from "./pages/Landing";
 import { OcrProvider } from "./context/OcrContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import ChatPanel from "./components/dashboard/ChatPanel";
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
       <Routes>
         {/* PUBLIC */}
         <Route path="/" element={<Landing />} />
@@ -56,8 +59,10 @@ export default function App() {
           <Route path="transcription" element={<TranscriptionPage />} />
           <Route path="transcription/:id" element={<TranscriptionView />} />
           <Route path="chatbot" element={<ChatPanel />} />
+          <Route path="history" element={<History />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }

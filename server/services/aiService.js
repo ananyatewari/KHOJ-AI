@@ -1,16 +1,16 @@
-import { OpenAI } from 'openai';
+import Groq from 'groq-sdk';
 import fs from 'fs';
 import path from 'path';
 import FormData from 'form-data';
 import fetch from 'node-fetch';
 import { generateAISummary } from '../services/aiSummary.js';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
+const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY
 });
 
 // Allow configuring chat model via environment; fall back to a widely-available model
-const CHAT_MODEL = process.env.OPENAI_CHAT_MODEL || process.env.CHATBOT_MODEL || 'gpt-3.5-turbo';
+const CHAT_MODEL = process.env.GROQ_CHAT_MODEL || process.env.CHATBOT_MODEL || 'llama-3.1-70b-versatile';
 
 // (Using ElevenLabs as the single transcription provider)
 

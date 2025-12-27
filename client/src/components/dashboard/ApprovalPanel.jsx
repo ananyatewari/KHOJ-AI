@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { Loader2 } from "lucide-react";
 
 export default function ApprovalPanel() {
   const { token, user } = useAuth();
+  const { theme } = useTheme();
   const [pending, setPending] = useState([]);
   const [loading, setLoading] = useState(false);
   const [approving, setApproving] = useState({});
@@ -68,40 +71,89 @@ export default function ApprovalPanel() {
   if (user?.role !== "admin") return null;
 
   return (
-    <section className="bg-slate-950/50 border border-yellow-500/20 rounded-2xl p-4 mt-6">
-      <h3 className="font-semibold mb-2 text-yellow-400">
+    <section
+      className={`border rounded-2xl p-4 mt-6 ${
+        theme === "dark"
+          ? "bg-slate-950/50 border-yellow-500/20"
+          : "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200 shadow-lg"
+      }`}
+    >
+      <h3
+        className={`font-semibold mb-2 ${
+          theme === "dark" ? "text-yellow-400" : "text-amber-700"
+        }`}
+      >
         ⚡ Admin: Cross-Agency Approval Queue
       </h3>
-      <p className="text-xs text-slate-400 mb-3">
+      <p
+        className={`text-xs mb-3 ${
+          theme === "dark" ? "text-slate-400" : "text-amber-700/70"
+        }`}
+      >
         Review and approve documents for cross-agency chatbot visibility.
       </p>
 
       {loading && (
-        <p className="text-sm text-slate-400">Loading pending approvals...</p>
+        <div
+          className={`flex items-center gap-2 text-sm py-4 ${
+            theme === "dark" ? "text-slate-400" : "text-amber-700"
+          }`}
+        >
+          <Loader2 size={16} className="animate-spin" />
+          Loading pending approvals...
+        </div>
       )}
 
       {pending.length === 0 && !loading && (
-        <p className="text-sm text-slate-500">No pending approvals.</p>
+        <p
+          className={`text-sm ${
+            theme === "dark" ? "text-slate-500" : "text-amber-600"
+          }`}
+        >
+          No pending approvals.
+        </p>
       )}
 
       <ul className="space-y-2 max-h-72 overflow-auto">
         {pending.map((share) => (
           <li
             key={share._id}
-            className="bg-slate-900/60 border border-yellow-500/10 p-3 rounded flex items-start justify-between"
+            className={`border p-3 rounded flex items-start justify-between ${
+              theme === "dark"
+                ? "bg-slate-900/60 border-yellow-500/10"
+                : "bg-white/80 border-amber-200"
+            }`}
           >
             <div className="flex-1">
-              <div className="font-medium text-sm">
+              <div
+                className={`font-medium text-sm ${
+                  theme === "dark" ? "text-white" : "text-slate-800"
+                }`}
+              >
                 {share.documentId?.filename}
               </div>
-              <div className="text-xs text-slate-400">
+              <div
+                className={`text-xs ${
+                  theme === "dark" ? "text-slate-400" : "text-slate-600"
+                }`}
+              >
                 {share.uploadedByAgency.toUpperCase()} · Shared by{" "}
                 {share.uploadedBy}
               </div>
-              <div className="text-xs text-slate-500 mt-1 max-w-xs truncate">
+              <div
+                className={`text-xs mt-1 max-w-xs truncate ${
+                  theme === "dark" ? "text-slate-500" : "text-slate-600"
+                }`}
+              >
                 {share.documentId?.text?.slice(0, 100)}...
               </div>
-              <div className="text-xs text-yellow-500 mt-1">
+              <div
+                className={`text-xs mt-1 ${
+                  theme === "dark"
+                    ? "text-yellow-500"
+                    : "text-amber-600 font-medium"
+                }`}
+              >
                 Pending {share.scope} approval
               </div>
             </div>
@@ -109,16 +161,16 @@ export default function ApprovalPanel() {
               <button
                 onClick={() => approve(share._id)}
                 disabled={approving[share._id]}
-                className="px-2 py-1 bg-emerald-600 text-white text-xs rounded"
+                className="px-2 py-1 bg-emerald-600 text-white text-xs rounded flex items-center justify-center disabled:opacity-50"
               >
-                {approving[share._id] ? "..." : "✓"}
+                {approving[share._id] ? <Loader2 size={12} className="animate-spin" /> : "✓"}
               </button>
               <button
                 onClick={() => reject(share._id)}
                 disabled={approving[share._id]}
-                className="px-2 py-1 bg-red-600 text-white text-xs rounded"
+                className="px-2 py-1 bg-red-600 text-white text-xs rounded flex items-center justify-center disabled:opacity-50"
               >
-                {approving[share._id] ? "..." : "✕"}
+                {approving[share._id] ? <Loader2 size={12} className="animate-spin" /> : "✕"}
               </button>
             </div>
           </li>

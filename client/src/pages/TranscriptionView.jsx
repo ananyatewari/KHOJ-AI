@@ -386,20 +386,33 @@ export default function TranscriptionView() {
       {/* Download Button */}
       <div className="mt-6 flex gap-3">
         <button
-          onClick={() => {
-            const blob = new Blob([JSON.stringify(transcription, null, 2)], {
-              type: "application/json",
-            });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `transcription-${transcription.id}.json`;
-            a.click();
-            window.URL.revokeObjectURL(url);
+          onClick={async () => {
+            try {
+              const response = await fetch(`http://localhost:3000/api/transcription/download-analysis/${transcription.id}`, {
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
+              });
+              
+              if (!response.ok) throw new Error("Download failed");
+              
+              const blob = await response.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${transcription.filename.replace(/\.[^/.]+$/, "")}_analysis.pdf`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.URL.revokeObjectURL(url);
+            } catch (error) {
+              console.error("Error downloading analysis:", error);
+              alert("Failed to download analysis");
+            }
           }}
           className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
         >
-          📥 Download as JSON
+          📥 Download Analysis PDF
         </button>
       </div>
     </div>

@@ -1,7 +1,7 @@
-import { OpenAI } from "openai";
+import Groq from "groq-sdk";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY
 });
 
 export async function extractEntities(text) {
@@ -15,8 +15,8 @@ export async function extractEntities(text) {
 
   if (!text) return defaults;
 
-  // Allow override via env var; fall back to gpt-3.5-turbo if needed
-  const preferredModel = process.env.OPENAI_ENTITY_MODEL || process.env.AI_MODEL || 'gpt-4';
+  // Allow override via env var; fall back to llama-3.1-70b-versatile if needed
+  const preferredModel = process.env.GROQ_ENTITY_MODEL || process.env.AI_MODEL || 'llama-3.1-70b-versatile';
 
   const prompt = `Extract named entities from the following text and categorize them. Return as JSON with these exact categories: persons, places, dates, organizations, phoneNumbers. Each entity should have 'text' and 'confidence' (0-1) fields.
 
@@ -26,7 +26,7 @@ ${text}
 Return ONLY valid JSON, no additional text.`;
 
   async function callModel(model) {
-    return openai.chat.completions.create({
+    return groq.chat.completions.create({
       model,
       messages: [
         { role: 'system', content: 'You are an entity extraction expert. Extract named entities from text and categorize them accurately. Always return valid JSON.' },
@@ -43,9 +43,9 @@ Return ONLY valid JSON, no additional text.`;
       response = await callModel(preferredModel);
     } catch (err) {
       const isModelError = err && (err.code === 'model_not_found' || err.status === 404 || (err.error && err.error.code === 'model_not_found'));
-      if (isModelError && preferredModel !== 'gpt-3.5-turbo') {
-        console.warn(`Preferred entity model ${preferredModel} unavailable — retrying with gpt-3.5-turbo`);
-        response = await callModel('gpt-3.5-turbo');
+      if (isModelError && preferredModel !== 'llama-3.1-70b-versatile') {
+        console.warn(`Preferred entity model ${preferredModel} unavailable — retrying with llama-3.1-70b-versatile`);
+        response = await callModel('llama-3.1-70b-versatile');
       } else {
         throw err;
       }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axios from "axios";
+import { useTheme } from "../context/ThemeContext";
 
 // Entity type colors for visual distinction
 const entityColors = {
@@ -21,6 +22,7 @@ const entityLabels = {
 };
 
 export default function DocumentView() {
+  const { theme } = useTheme();
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -173,7 +175,9 @@ export default function DocumentView() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900">
+      <div className={`flex items-center justify-center h-screen ${
+        theme === "dark" ? "bg-gray-900" : "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50"
+      }`}>
         <div className="text-blue-500">Loading document...</div>
       </div>
     );
@@ -181,7 +185,9 @@ export default function DocumentView() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900">
+      <div className={`flex items-center justify-center h-screen ${
+        theme === "dark" ? "bg-gray-900" : "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50"
+      }`}>
         <div className="text-red-500">{error}</div>
       </div>
     );
@@ -195,16 +201,32 @@ export default function DocumentView() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-900 text-white">
+    <div className={`flex flex-col h-screen ${
+      theme === "dark"
+        ? "bg-gray-900 text-white"
+        : "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 text-slate-800"
+    }`}>
       {/* Header */}
-      <header className="bg-gray-800 px-6 py-4 border-b border-gray-700 flex flex-wrap items-center justify-between gap-3">
+      <header className={`px-6 py-4 border-b flex flex-wrap items-center justify-between gap-3 ${
+        theme === "dark"
+          ? "bg-gray-800 border-gray-700"
+          : "bg-white/80 border-purple-200 backdrop-blur-xl shadow-md"
+      }`}>
         <div>
-          <h1 className="text-xl font-semibold">Document Intelligence Viewer</h1>
-          <p className="text-gray-400 text-sm">{document.filename}</p>
+          <h1 className={`text-xl font-semibold ${
+            theme === "dark" ? "text-white" : "text-slate-800"
+          }`}>Document Intelligence Viewer</h1>
+          <p className={`text-sm ${
+            theme === "dark" ? "text-gray-400" : "text-slate-600"
+          }`}>{document.filename}</p>
         </div>
         <button
           onClick={handleBack}
-          className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm"
+          className={`flex items-center gap-2 px-3 py-2 rounded text-sm transition ${
+            theme === "dark"
+              ? "bg-gray-700 hover:bg-gray-600 text-white"
+              : "bg-purple-600 hover:bg-purple-700 text-white shadow-md"
+          }`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -225,8 +247,12 @@ export default function DocumentView() {
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden" ref={containerRef}>
         {/* Left panel - Original Image with SVG Overlay */}
-        <div className="w-1/2 border-r border-gray-700 relative overflow-auto p-4">
-          <h2 className="text-lg font-medium mb-3">Original Document</h2>
+        <div className={`w-1/2 border-r relative overflow-auto p-4 custom-scrollbar ${
+          theme === "dark" ? "border-gray-700" : "border-purple-200"
+        }`}>
+          <h2 className={`text-lg font-medium mb-3 ${
+            theme === "dark" ? "text-white" : "text-slate-800"
+          }`}>Original Document</h2>
           <div className="relative">
             {/* Original Image */}
             {document.originalImage ? (
@@ -243,8 +269,12 @@ export default function DocumentView() {
                 }}
               />
             ) : (
-              <div className="flex items-center justify-center bg-gray-800 p-10 rounded-lg">
-                <p className="text-gray-400">Document preview not available</p>
+              <div className={`flex items-center justify-center p-10 rounded-lg ${
+                theme === "dark" ? "bg-gray-800" : "bg-white/80 border border-purple-200"
+              }`}>
+                <p className={theme === "dark" ? "text-gray-400" : "text-slate-600"}>
+                  Document preview not available
+                </p>
               </div>
             )}
             
@@ -280,25 +310,39 @@ export default function DocumentView() {
         </div>
 
         {/* Right panel - Text and Entities */}
-        <div className="w-1/2 flex flex-col bg-gray-850 overflow-hidden">
+        <div className={`w-1/2 flex flex-col overflow-hidden ${
+          theme === "dark" ? "bg-gray-850" : "bg-white/60"
+        }`}>
           {/* Text Panel */}
-          <div className="flex-1 overflow-auto p-4 border-b border-gray-700">
-            <h2 className="text-lg font-medium mb-3">Extracted Text</h2>
-            <div className="bg-gray-800 p-4 rounded-md whitespace-pre-line font-mono text-sm">
+          <div className={`flex-1 overflow-auto p-4 border-b custom-scrollbar ${
+            theme === "dark" ? "border-gray-700" : "border-purple-200"
+          }`}>
+            <h2 className={`text-lg font-medium mb-3 ${
+              theme === "dark" ? "text-white" : "text-slate-800"
+            }`}>Extracted Text</h2>
+            <div className={`p-4 rounded-md whitespace-pre-line font-mono text-sm ${
+              theme === "dark"
+                ? "bg-gray-800 text-white"
+                : "bg-white border border-purple-200 text-slate-800 shadow-sm"
+            }`}>
               {document.text}
             </div>
           </div>
 
           {/* Entity Panel */}
-          <div className="h-2/5 overflow-auto p-4">
-            <h2 className="text-lg font-medium mb-3">Detected Entities</h2>
+          <div className="h-2/5 overflow-auto p-4 custom-scrollbar">
+            <h2 className={`text-lg font-medium mb-3 ${
+              theme === "dark" ? "text-white" : "text-slate-800"
+            }`}>Detected Entities</h2>
             
             {/* Entity Type Sections */}
             <div className="space-y-4">
               {Object.entries(displayEntities).map(([type, entities]) => (
                 entities.length > 0 && (
                   <div key={type} className="space-y-2">
-                    <h3 className="text-md font-medium text-gray-300">
+                    <h3 className={`text-md font-medium ${
+                      theme === "dark" ? "text-gray-300" : "text-slate-700"
+                    }`}>
                       {entityLabels[type]} ({entities.length})
                     </h3>
                     

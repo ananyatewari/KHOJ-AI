@@ -18,6 +18,17 @@ const DocumentSchema = new mongoose.Schema({
     phoneNumbers: [String]
   },
 
+  aiSummary: {
+    executiveSummary: String,
+    keyFindings: [String],
+    entityInsights: {
+      persons: [String],
+      places: [String],
+      organizations: [String]
+    },
+    analystTakeaways: [String]
+  },
+
   embedding: {
     type: [Number],
     default: []

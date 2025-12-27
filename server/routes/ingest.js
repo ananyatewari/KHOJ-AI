@@ -6,6 +6,7 @@ import { extractEntities } from "../utils/nlp.js";
 import { getEmbedding } from "../utils/embeddings.js";
 import { emitLog } from "../utils/logger.js";
 import { extractEntitiesAI } from "../services/aiEntities.js";
+import { generateAISummary } from "../services/aiSummary.js";
 
 const router = express.Router();
 
@@ -81,28 +82,58 @@ await emitLog(io, {
       message: "Embeddings generated",
       user: req.body.uploadedBy,
       agency: req.body.agency
-  });
+    });
 
-  const doc = await Document.create({
-    filename: req.file.originalname,
-    text,
-    agency: req.body.agency,
-    uploadedBy: req.body.uploadedBy,
-    visibility: [req.body.agency],
-    entities,
-    chunks,
-    chunkEmbeddings,
-    indexed: true
-});
+    // Generate AI Summary
+    let aiSummary = null;
+    try {
+      await emitLog(io, {
+        level: "INFO",
+        message: "Generating AI summary...",
+        user: req.body.uploadedBy,
+        agency: req.body.agency
+      });
 
+      aiSummary = await generateAISummary({
+        documents: [{ text, entities }]
+      });
 
-  await emitLog(io, {
-    level: "SUCCESS",
-    message: "Document indexed successfully",
-    documentId: doc._id,
-    user: req.body.uploadedBy,
-    agency: req.body.agency
-  });
+      await emitLog(io, {
+        level: "SUCCESS",
+        message: "AI summary generated",
+        user: req.body.uploadedBy,
+        agency: req.body.agency
+      });
+    } catch (summaryErr) {
+      console.error("AI summary generation failed:", summaryErr);
+      await emitLog(io, {
+        level: "WARNING",
+        message: "AI summary generation failed (continuing without summary)",
+        user: req.body.uploadedBy,
+        agency: req.body.agency
+      });
+    }
+
+    const doc = await Document.create({
+      filename: req.file.originalname,
+      text,
+      agency: req.body.agency,
+      uploadedBy: req.body.uploadedBy,
+      visibility: [req.body.agency],
+      entities,
+      aiSummary,
+      chunks,
+      chunkEmbeddings,
+      indexed: true
+    });
+
+    await emitLog(io, {
+      level: "SUCCESS",
+      message: "Document indexed successfully",
+      documentId: doc._id,
+      user: req.body.uploadedBy,
+      agency: req.body.agency
+    });
 
 
     res.json({
