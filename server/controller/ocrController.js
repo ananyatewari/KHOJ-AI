@@ -9,16 +9,17 @@ import fs from "fs";
 /**
  * Process a document using OCR and save results
  * @param {Object} file - Uploaded file object from multer
- * @param {Object} userData - User data (userId, agency)
+ * @param {Object} userContext - User context (userId, agency)
+ * @param {Object} io - Socket.io instance
  * @returns {Promise<Object>} Created OCR document
  */
-export const processDocument = async (file, userData = {}) => {
+export async function processDocument(file, userContext, io = null) {
   try {
     const startTime = Date.now();
     const filePath = file.path;
     const originalFilename = file.originalname;
-    const uploadedBy = userData.userId || "unknown";
-    const agency = userData.agency || "N/A";
+    const uploadedBy = userContext.userId || "unknown";
+    const agency = userContext.agency || "N/A";
 
     // Store the relative path to serve the image later
     const relativePath = `/uploads/${path.basename(filePath)}`;
@@ -73,7 +74,7 @@ export const processDocument = async (file, userData = {}) => {
     await newOcrDoc.save();
 
     try {
-      const { event, isNew } = await findOrCreateEvent(newOcrDoc, "OcrDocument");
+      const { event, isNew } = await findOrCreateEvent(newOcrDoc, "OcrDocument", io);
       if (event) {
         if (isNew) {
           await updateEventTitle(event._id);

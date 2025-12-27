@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import OcrDocument from "../models/OcrDocument.js";
 import { processDocument } from "../controller/ocrController.js";
 import { generateAISummary } from "../services/aiSummary.js";
+import { generateReportPDF } from "../utils/pdfGenerator.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -50,11 +51,12 @@ router.post("/process", upload.array("images", 10), async (req, res) => {
       agency: req.body.agency || "N/A"
     };
 
+    const io = req.app.get("io");
     const processedDocuments = [];
 
     for (const file of req.files) {
       try {
-        const doc = await processDocument(file, userContext);
+        const doc = await processDocument(file, userContext, io);
         processedDocuments.push(doc);
       } catch (processErr) {
         console.error("OCR processing error for file:", file.originalname, processErr);
@@ -133,6 +135,31 @@ router.get("/:id", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Download OCR summary as PDF
+router.post("/download-pdf", async (req, res) => {
+  try {
+    const { summary, documents } = req.body;
+    
+    if (!summary) {
+      return res.status(400).json({ error: "No summary data provided" });
+    }
+
+    // Use the professional KHOJ AI branded PDF generator
+    const pdfBuffer = await generateReportPDF(summary);
+
+    // Set response headers for PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="khoj-ai-ocr-intelligence-report.pdf"');
+    
+    // Send the PDF
+    res.send(pdfBuffer);
+
+  } catch (error) {
+    console.error("PDF generation error:", error);
+    res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
 

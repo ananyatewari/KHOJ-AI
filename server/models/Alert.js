@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const AlertSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ["entity_match", "geo_spike", "risk_profile", "cross_agency", "custom"],
+    enum: ["entity_match", "geo_spike", "risk_profile", "cross_agency", "custom", "event_created", "document_created", "new_document", "new_ocr_document", "new_transcription"],
     required: true
   },
   

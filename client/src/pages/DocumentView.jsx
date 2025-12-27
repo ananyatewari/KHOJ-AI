@@ -9,7 +9,7 @@ const entityColors = {
   places: "#059669", // Emerald
   organizations: "#d97706", // Amber
   phoneNumbers: "#dc2626", // Red
-  dates: "#7c3aed" // Purple
+  dates: "#7c3aed", // Purple
 };
 
 // Human-readable entity type labels
@@ -18,7 +18,7 @@ const entityLabels = {
   places: "Location",
   organizations: "Organization",
   phoneNumbers: "Phone Number",
-  dates: "Date"
+  dates: "Date",
 };
 
 export default function DocumentView() {
@@ -31,7 +31,7 @@ export default function DocumentView() {
   const [error, setError] = useState(null);
   const [activeEntity, setActiveEntity] = useState(null);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
-  
+
   const imageRef = useRef(null);
   const containerRef = useRef(null);
   const svgRef = useRef(null);
@@ -40,24 +40,27 @@ export default function DocumentView() {
   useEffect(() => {
     const fetchDocument = async () => {
       try {
-        console.log('Fetching document with ID:', id);
+        console.log("Fetching document with ID:", id);
         // Try OCR endpoint first
         try {
           const response = await axios.get(`/api/ocr/${id}`);
-          console.log('OCR Document data received:', response.data);
+          console.log("OCR Document data received:", response.data);
           setDocument(response.data);
           setLoading(false);
         } catch (ocrErr) {
-          console.log('OCR endpoint failed, trying document endpoint');
+          console.log("OCR endpoint failed, trying document endpoint");
           // Fall back to regular document endpoint
           const docResponse = await axios.get(`/api/document/${id}`);
-          console.log('Document data received:', docResponse.data);
+          console.log("Document data received:", docResponse.data);
           setDocument(docResponse.data);
           setLoading(false);
         }
       } catch (err) {
-        console.error('Error loading document:', err);
-        setError("Failed to load document. " + (err.response?.data?.error || err.message));
+        console.error("Error loading document:", err);
+        setError(
+          "Failed to load document. " +
+            (err.response?.data?.error || err.message)
+        );
         setLoading(false);
       }
     };
@@ -76,7 +79,7 @@ export default function DocumentView() {
 
     // Set up event listeners
     window.addEventListener("resize", updateImageSize);
-    
+
     // Initial update
     if (document && !loading) {
       const img = new Image();
@@ -96,7 +99,7 @@ export default function DocumentView() {
     // Get the natural dimensions of the image (the actual size of the image file)
     const naturalWidth = imageRef.current.naturalWidth;
     const naturalHeight = imageRef.current.naturalHeight;
-    
+
     // Calculate the scale factors
     const scaleX = imageSize.width / naturalWidth;
     const scaleY = imageSize.height / naturalHeight;
@@ -106,7 +109,7 @@ export default function DocumentView() {
       x: box.x * scaleX,
       y: box.y * scaleY,
       width: box.width * scaleX,
-      height: box.height * scaleY
+      height: box.height * scaleY,
     };
   };
 
@@ -145,7 +148,7 @@ export default function DocumentView() {
           text: normalized,
           confidence: 0.93,
           source: "ai",
-          boundingBox: null
+          boundingBox: null,
         });
         existingTexts.add(key);
       });
@@ -175,9 +178,13 @@ export default function DocumentView() {
 
   if (loading) {
     return (
-      <div className={`flex items-center justify-center h-screen ${
-        theme === "dark" ? "bg-gray-900" : "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50"
-      }`}>
+      <div
+        className={`flex items-center justify-center h-screen ${
+          theme === "dark"
+            ? "bg-gray-900"
+            : "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50"
+        }`}
+      >
         <div className="text-blue-500">Loading document...</div>
       </div>
     );
@@ -185,9 +192,13 @@ export default function DocumentView() {
 
   if (error) {
     return (
-      <div className={`flex items-center justify-center h-screen ${
-        theme === "dark" ? "bg-gray-900" : "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50"
-      }`}>
+      <div
+        className={`flex items-center justify-center h-screen ${
+          theme === "dark"
+            ? "bg-gray-900"
+            : "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50"
+        }`}
+      >
         <div className="text-red-500">{error}</div>
       </div>
     );
@@ -201,24 +212,36 @@ export default function DocumentView() {
   };
 
   return (
-    <div className={`flex flex-col h-screen ${
-      theme === "dark"
-        ? "bg-gray-900 text-white"
-        : "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 text-slate-800"
-    }`}>
-      {/* Header */}
-      <header className={`px-6 py-4 border-b flex flex-wrap items-center justify-between gap-3 ${
+    <div
+      className={`flex flex-col h-screen ${
         theme === "dark"
-          ? "bg-gray-800 border-gray-700"
-          : "bg-white/80 border-purple-200 backdrop-blur-xl shadow-md"
-      }`}>
+          ? "bg-gray-900 text-white"
+          : "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 text-slate-800"
+      }`}
+    >
+      {/* Header */}
+      <header
+        className={`px-6 py-4 border-b flex flex-wrap items-center justify-between gap-3 ${
+          theme === "dark"
+            ? "bg-gray-800 border-gray-700"
+            : "bg-white/80 border-purple-200 backdrop-blur-xl shadow-md"
+        }`}
+      >
         <div>
-          <h1 className={`text-xl font-semibold ${
-            theme === "dark" ? "text-white" : "text-slate-800"
-          }`}>Document Intelligence Viewer</h1>
-          <p className={`text-sm ${
-            theme === "dark" ? "text-gray-400" : "text-slate-600"
-          }`}>{document.filename}</p>
+          <h1
+            className={`text-xl font-semibold ${
+              theme === "dark" ? "text-white" : "text-slate-800"
+            }`}
+          >
+            Document Intelligence Viewer
+          </h1>
+          <p
+            className={`text-sm ${
+              theme === "dark" ? "text-gray-400" : "text-slate-600"
+            }`}
+          >
+            {document.filename}
+          </p>
         </div>
         <button
           onClick={handleBack}
@@ -247,39 +270,57 @@ export default function DocumentView() {
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden" ref={containerRef}>
         {/* Left panel - Original Image with SVG Overlay */}
-        <div className={`w-1/2 border-r relative overflow-auto p-4 custom-scrollbar ${
-          theme === "dark" ? "border-gray-700" : "border-purple-200"
-        }`}>
-          <h2 className={`text-lg font-medium mb-3 ${
-            theme === "dark" ? "text-white" : "text-slate-800"
-          }`}>Original Document</h2>
+        <div
+          className={`w-1/2 border-r relative overflow-auto p-4 custom-scrollbar ${
+            theme === "dark" ? "border-gray-700" : "border-purple-200"
+          }`}
+        >
+          <h2
+            className={`text-lg font-medium mb-3 ${
+              theme === "dark" ? "text-white" : "text-slate-800"
+            }`}
+          >
+            Original Document
+          </h2>
           <div className="relative">
             {/* Original Image */}
             {document.originalImage ? (
-              <img 
+              <img
                 ref={imageRef}
                 src={`http://localhost:3000${document.originalImage}`}
                 alt="Original document"
                 className="max-w-full"
-                onLoad={() => console.log('Image loaded successfully')}
+                onLoad={() => console.log("Image loaded successfully")}
                 onError={(e) => {
-                  console.error('Image failed to load:', document.originalImage);
+                  console.error(
+                    "Image failed to load:",
+                    document.originalImage
+                  );
                   e.target.onerror = null;
-                  e.target.src = 'https://via.placeholder.com/800x600?text=Document+Preview+Unavailable';
+                  e.target.src =
+                    "https://via.placeholder.com/800x600?text=Document+Preview+Unavailable";
                 }}
               />
             ) : (
-              <div className={`flex items-center justify-center p-10 rounded-lg ${
-                theme === "dark" ? "bg-gray-800" : "bg-white/80 border border-purple-200"
-              }`}>
-                <p className={theme === "dark" ? "text-gray-400" : "text-slate-600"}>
+              <div
+                className={`flex items-center justify-center p-10 rounded-lg ${
+                  theme === "dark"
+                    ? "bg-gray-800"
+                    : "bg-white/80 border border-purple-200"
+                }`}
+              >
+                <p
+                  className={
+                    theme === "dark" ? "text-gray-400" : "text-slate-600"
+                  }
+                >
                   Document preview not available
                 </p>
               </div>
             )}
-            
+
             {/* SVG Overlay for bounding boxes */}
-            <svg 
+            <svg
               ref={svgRef}
               className="absolute top-0 left-0 w-full h-full pointer-events-none"
               style={{ width: imageSize.width, height: imageSize.height }}
@@ -287,11 +328,12 @@ export default function DocumentView() {
               {getAllEntities().map((entity, index) => {
                 const box = scaleBoundingBox(entity.boundingBox);
                 if (!box) return null;
-                
-                const isActive = activeEntity && 
-                  activeEntity.text === entity.text && 
+
+                const isActive =
+                  activeEntity &&
+                  activeEntity.text === entity.text &&
                   activeEntity.type === entity.type;
-                
+
                 return (
                   <rect
                     key={`box-${index}`}
@@ -301,7 +343,11 @@ export default function DocumentView() {
                     height={box.height}
                     stroke={entityColors[entity.type] || "#ffffff"}
                     strokeWidth={isActive ? "3" : "1"}
-                    fill={isActive ? `${entityColors[entity.type]}33` : "transparent"}
+                    fill={
+                      isActive
+                        ? `${entityColors[entity.type]}33`
+                        : "transparent"
+                    }
                   />
                 );
               })}
@@ -310,78 +356,103 @@ export default function DocumentView() {
         </div>
 
         {/* Right panel - Text and Entities */}
-        <div className={`w-1/2 flex flex-col overflow-hidden ${
-          theme === "dark" ? "bg-gray-850" : "bg-white/60"
-        }`}>
+        <div
+          className={`w-1/2 flex flex-col overflow-hidden ${
+            theme === "dark" ? "bg-gray-850" : "bg-white/60"
+          }`}
+        >
           {/* Text Panel */}
-          <div className={`flex-1 overflow-auto p-4 border-b custom-scrollbar ${
-            theme === "dark" ? "border-gray-700" : "border-purple-200"
-          }`}>
-            <h2 className={`text-lg font-medium mb-3 ${
-              theme === "dark" ? "text-white" : "text-slate-800"
-            }`}>Extracted Text</h2>
-            <div className={`p-4 rounded-md whitespace-pre-line font-mono text-sm ${
-              theme === "dark"
-                ? "bg-gray-800 text-white"
-                : "bg-white border border-purple-200 text-slate-800 shadow-sm"
-            }`}>
+          <div
+            className={`flex-1 overflow-auto p-4 border-b custom-scrollbar ${
+              theme === "dark" ? "border-gray-700" : "border-purple-200"
+            }`}
+          >
+            <h2
+              className={`text-lg font-medium mb-3 ${
+                theme === "dark" ? "text-white" : "text-slate-800"
+              }`}
+            >
+              Extracted Text
+            </h2>
+            <div
+              className={`p-4 rounded-md whitespace-pre-line font-mono text-sm ${
+                theme === "dark"
+                  ? "bg-gray-800 text-white"
+                  : "bg-white border border-purple-200 text-slate-800 shadow-sm"
+              }`}
+            >
               {document.text}
             </div>
           </div>
 
           {/* Entity Panel */}
           <div className="h-2/5 overflow-auto p-4 custom-scrollbar">
-            <h2 className={`text-lg font-medium mb-3 ${
-              theme === "dark" ? "text-white" : "text-slate-800"
-            }`}>Detected Entities</h2>
-            
+            <h2
+              className={`text-lg font-medium mb-3 ${
+                theme === "dark" ? "text-white" : "text-slate-800"
+              }`}
+            >
+              Detected Entities
+            </h2>
+
             {/* Entity Type Sections */}
             <div className="space-y-4">
-              {Object.entries(displayEntities).map(([type, entities]) => (
-                entities.length > 0 && (
-                  <div key={type} className="space-y-2">
-                    <h3 className={`text-md font-medium ${
-                      theme === "dark" ? "text-gray-300" : "text-slate-700"
-                    }`}>
-                      {entityLabels[type]} ({entities.length})
-                    </h3>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      {entities.map((entity, index) => (
-                        <div
-                          key={`${type}-${index}`}
-                          className={`px-3 py-1.5 rounded-md text-sm flex items-center gap-2 cursor-pointer transition-all ${
-                            activeEntity && activeEntity.text === entity.text && activeEntity.type === type
-                              ? "ring-2 ring-opacity-70"
-                              : ""
-                          }`}
-                          style={{
-                            backgroundColor: `${entityColors[type]}22`,
-                            borderLeft: `3px solid ${entityColors[type]}`,
-                            color: "white"
-                          }}
-                          onMouseEnter={() => handleEntityHover({ ...entity, type })}
-                          onMouseLeave={() => handleEntityHover(null)}
-                        >
-                          <span>{entity.text}</span>
-                          
-                          {/* Confidence indicator */}
-                          <span 
-                            className="px-1.5 py-0.5 rounded-full text-xs" 
-                            style={{ 
-                              backgroundColor: entity.confidence > 0.9 ? "#059669" : 
-                                              entity.confidence > 0.7 ? "#d97706" : "#dc2626",
-                              opacity: 0.8
+              {Object.entries(displayEntities).map(
+                ([type, entities]) =>
+                  entities.length > 0 && (
+                    <div key={type} className="space-y-2">
+                      <h3
+                        className={`text-md font-medium ${
+                          theme === "dark" ? "text-gray-300" : "text-slate-700"
+                        }`}
+                      >
+                        {entityLabels[type]} ({entities.length})
+                      </h3>
+
+                      <div className="flex flex-wrap gap-2">
+                        {entities.map((entity, index) => (
+                          <div
+                            key={`${type}-${index}`}
+                            className={`px-3 py-1.5 rounded-md text-sm flex items-center gap-2 cursor-pointer transition-all ${
+                              activeEntity &&
+                              activeEntity.text === entity.text &&
+                              activeEntity.type === type
+                                ? "ring-2 ring-opacity-70"
+                                : ""
+                            }`}
+                            style={{
+                              backgroundColor: `${entityColors[type]}22`,
+                              borderLeft: `3px solid ${entityColors[type]}`,
+                              color: "white",
                             }}
+                            onMouseEnter={() =>
+                              handleEntityHover({ ...entity, type })
+                            }
+                            onMouseLeave={() => handleEntityHover(null)}
                           >
-                            {Math.round(entity.confidence * 100)}%
-                          </span>
-                        </div>
-                      ))}
+                            <span>{entity.text}</span>
+
+                            {/* Confidence indicator */}
+                            <span
+                              className="px-1.5 py-0.5 rounded-full text-xs"
+                              style={{
+                                backgroundColor:
+                                  entity.confidence > 0.9
+                                    ? "#059669"
+                                    : entity.confidence > 0.7
+                                    ? "#d97706"
+                                    : "#dc2626",
+                                opacity: 0.8,
+                              }}
+                            >
+                              {Math.round(entity.confidence * 100)}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )
-              ))}
+                  )
+              )}
             </div>
           </div>
         </div>

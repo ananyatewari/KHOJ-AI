@@ -30,22 +30,19 @@ export default function Landing() {
     <div className={`relative min-h-screen overflow-hidden transition-colors duration-300 ${
       theme === "dark" ? "text-white" : "text-slate-900"
     }`}>
-      {/* ===== STATIC GRADIENT BACKGROUND ===== */}
       <BackgroundGradient />
-      {/* ===== STATIC GRADIENT BACKGROUND ===== */}
 <div
   className={`
     fixed inset-0 -z-10 transition-colors duration-300
     ${
       theme === "dark"
         ? "bg-black bg-[radial-gradient(circle_at_20%_20%,rgba(124,58,237,0.55),transparent_45%),radial-gradient(circle_at_80%_25%,rgba(59,130,246,0.55),transparent_45%),radial-gradient(circle_at_50%_75%,rgba(16,185,129,0.45),transparent_55%)]"
-        : "bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.08),transparent_50%),radial-gradient(circle_at_70%_60%,rgba(59,130,246,0.08),transparent_50%),radial-gradient(circle_at_40%_80%,rgba(236,72,153,0.06),transparent_50%)]"
+        : "bg-gradient-to-br from-indigo-200 via-purple-300 to-pink-500 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.35),transparent_50%),radial-gradient(circle_at_70%_60%,rgba(59,130,246,0.45),transparent_50%),radial-gradient(circle_at_40%_80%,rgba(236,72,153,0.35),transparent_50%)]"
     }
   `}
 />
 
 
-      {/* ===== NAVBAR ===== */}
       <nav className={`flex justify-between items-center px-8 py-5 border-b backdrop-blur-xl w-full transition-colors duration-300 ${
         theme === "dark"
           ? "border-white/10 bg-black/30"

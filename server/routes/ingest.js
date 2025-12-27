@@ -145,7 +145,7 @@ await emitLog(io, {
         agency: req.body.agency
       });
 
-      const { event, isNew } = await findOrCreateEvent(doc, "Document");
+      const { event, isNew } = await findOrCreateEvent(doc, "Document", io);
       
       if (event) {
         if (isNew) {

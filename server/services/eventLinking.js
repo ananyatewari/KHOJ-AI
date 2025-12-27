@@ -2,6 +2,7 @@ import Event from "../models/Event.js";
 import Document from "../models/Document.js";
 import OcrDocument from "../models/OcrDocument.js";
 import Transcription from "../models/Transcription.js";
+import { createRealTimeAlert } from "../utils/alertCreator.js";
 
 const ENTITY_MATCH_THRESHOLD = 0.3;
 const TEMPORAL_WINDOW_HOURS = 48;
@@ -63,10 +64,12 @@ function isTemporallyClose(date1, date2, windowHours = TEMPORAL_WINDOW_HOURS) {
 function calculateSeverityScore(text, entities) {
   let score = 0;
   const lowerText = (text || "").toLowerCase();
+  let hasHighSeverityKeyword = false;
   
   HIGH_SEVERITY_KEYWORDS.forEach(keyword => {
     const matches = (lowerText.match(new RegExp(keyword, "gi")) || []).length;
     score += matches * 5;
+    if (matches > 0) hasHighSeverityKeyword = true;
   });
   
   const totalEntities = 
@@ -76,6 +79,11 @@ function calculateSeverityScore(text, entities) {
     (entities.phoneNumbers?.length || 0);
   
   score += totalEntities * 2;
+  
+  // Auto-boost to high severity for any high-severity keywords
+  if (hasHighSeverityKeyword && score < 40) {
+    score = 40; // Ensure minimum "High Priority" classification
+  }
   
   return Math.min(score, 100);
 }
@@ -195,7 +203,7 @@ async function findRelatedDocuments(document, documentType) {
   return relatedDocs;
 }
 
-export async function findOrCreateEvent(document, documentType = "Document") {
+export async function findOrCreateEvent(document, documentType = "Document", io = null) {
   const { entities, text, createdAt, agency, embedding } = document;
   
   const recentEvents = await Event.find({
@@ -352,6 +360,54 @@ export async function findOrCreateEvent(document, documentType = "Document") {
   newEvent.confidenceScore = calculateConfidenceScore(newEvent);
   
   await newEvent.save();
+  
+  // Create alert for new event
+  const severityLevel = 
+    newEvent.severityScore >= 70 ? "critical" :
+    newEvent.severityScore >= 40 ? "high" : "medium";
+  
+  await createRealTimeAlert({
+    type: "event_created",
+    severity: severityLevel,
+    title: `New Event Created: ${newEvent.title}`,
+    description: `A new intelligence event has been created with ${newEvent.documents.length} related documents. Severity score: ${newEvent.severityScore}.`,
+    agencies: newEvent.agencies,
+    details: {
+      eventId: newEvent._id,
+      documentCount: newEvent.documents.length,
+      severityScore: newEvent.severityScore,
+      confidenceScore: newEvent.confidenceScore,
+      crossAgency: newEvent.metadata.crossAgencyFlag,
+      relatedDocumentId: document._id,
+      documentType
+    },
+    relatedEvent: newEvent._id
+  });
+  
+  // Emit real-time notification for new event creation
+  if (io) {
+    io.emit("event:created", {
+      eventId: newEvent._id,
+      title: newEvent.title,
+      severityScore: newEvent.severityScore,
+      agencies: newEvent.agencies,
+      documentType,
+      documentId: document._id,
+      timestamp: new Date()
+    });
+    
+    // Send agency-specific notifications
+    newEvent.agencies.forEach(eventAgency => {
+      io.emit(`agency:${eventAgency}:event`, {
+        type: "new_event",
+        eventId: newEvent._id,
+        title: newEvent.title,
+        severityScore: newEvent.severityScore,
+        documentType,
+        timestamp: new Date()
+      });
+    });
+  }
   
   return { event: newEvent, isNew: true };
 }

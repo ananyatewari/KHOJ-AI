@@ -2,13 +2,11 @@ import { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { useAlerts } from "../../context/AlertsContext";
-import { LayoutDashboard, Search, FileText, Mic, MessageSquare, History, LogOut, User, AlertTriangle, Sun, Moon, Bell } from "lucide-react";
+import { LayoutDashboard, Search, FileText, Mic, MessageSquare, History, LogOut, User, AlertTriangle, Sun, Moon } from "lucide-react";
 
 export default function SideBar() {
   const { logout, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { unreadCount } = useAlerts();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogoutClick = () => {
@@ -178,7 +176,7 @@ export default function SideBar() {
           className={({ isActive }) =>
             `${linkBase} ${
               isActive
-                ? "bg-gradient-to-r from-green-600 to-emerald-700 text-white shadow-lg"
+                ? "bg-gradient-to-r from-green-400 to-emerald-800 text-white shadow-lg"
                 : theme === "dark"
                 ? "text-slate-300 hover:bg-white/5"
                 : "text-slate-600 hover:bg-purple-50"
@@ -189,25 +187,14 @@ export default function SideBar() {
           History
         </NavLink>
 
-        <NavLink
-          to="/app/alerts"
-          className={({ isActive }) =>
-            `${linkBase} relative ${
+        <NavLink to="/app/alerts" className={({isActive}) => `${linkBase} ${
               isActive
-                ? "bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg"
+                ? "bg-gradient-to-r from-fuchsia-400 to-pink-800 text-white shadow-lg"
                 : theme === "dark"
                 ? "text-slate-300 hover:bg-white/5"
-                : "text-slate-600 hover:bg-purple-50"
-            }`
-          }
-        >
-          <Bell size={18} />
-          AI Alerts
-          {unreadCount > 0 && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
+                : "text-slate-600 hover:bg-purple-50"}`}>
+          <AlertTriangle size={18} />
+          Alerts
         </NavLink>
       </nav>
 

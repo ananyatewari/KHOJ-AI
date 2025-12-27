@@ -10,23 +10,10 @@ export function generateAnalysisPDF(item, type) {
       doc.on("end", () => resolve(Buffer.concat(chunks)));
       doc.on("error", reject);
 
-      // Header with Logo and Branding
+      // Header with Branding
       const startY = doc.y;
       
-      // Draw shield logo (SVG-like representation)
-      const logoX = 275;
-      const logoY = startY + 20;
-      const shieldPath = `M ${logoX} ${logoY} L ${logoX + 12} ${logoY + 6} L ${logoX + 12} ${logoY + 14} C ${logoX + 12} ${logoY + 22} ${logoX + 6} ${logoY + 28} ${logoX} ${logoY + 32} C ${logoX - 6} ${logoY + 28} ${logoX - 12} ${logoY + 22} ${logoX - 12} ${logoY + 14} L ${logoX - 12} ${logoY + 6} Z`;
-      
-      doc.path(shieldPath).fillAndStroke("#4F46E5", "#4F46E5");
-      
-      // Document icon inside shield
-      doc.rect(logoX - 5, logoY + 9, 10, 13).stroke("#FFFFFF");
-      doc.moveTo(logoX - 3, logoY + 12).lineTo(logoX + 3, logoY + 12).stroke("#FFFFFF");
-      doc.moveTo(logoX - 3, logoY + 15).lineTo(logoX + 3, logoY + 15).stroke("#FFFFFF");
-      doc.moveTo(logoX - 3, logoY + 18).lineTo(logoX + 1, logoY + 18).stroke("#FFFFFF");
-      
-      doc.moveDown(3);
+      doc.moveDown(1);
       
       // Brand name with gradient effect
       doc.fontSize(28).fillColor("#4F46E5").text("KHOJ AI", { align: "center" });
@@ -213,23 +200,10 @@ export function generateReportPDF(reportData) {
       doc.on("end", () => resolve(Buffer.concat(chunks)));
       doc.on("error", reject);
 
-      // Header with Logo and Branding
+      // Header with Branding
       const startY = doc.y;
       
-      // Draw shield logo
-      const logoX = 275;
-      const logoY = startY + 20;
-      const shieldPath = `M ${logoX} ${logoY} L ${logoX + 12} ${logoY + 6} L ${logoX + 12} ${logoY + 14} C ${logoX + 12} ${logoY + 22} ${logoX + 6} ${logoY + 28} ${logoX} ${logoY + 32} C ${logoX - 6} ${logoY + 28} ${logoX - 12} ${logoY + 22} ${logoX - 12} ${logoY + 14} L ${logoX - 12} ${logoY + 6} Z`;
-      
-      doc.path(shieldPath).fillAndStroke("#4F46E5", "#4F46E5");
-      
-      // Document icon inside shield
-      doc.rect(logoX - 5, logoY + 9, 10, 13).stroke("#FFFFFF");
-      doc.moveTo(logoX - 3, logoY + 12).lineTo(logoX + 3, logoY + 12).stroke("#FFFFFF");
-      doc.moveTo(logoX - 3, logoY + 15).lineTo(logoX + 3, logoY + 15).stroke("#FFFFFF");
-      doc.moveTo(logoX - 3, logoY + 18).lineTo(logoX + 1, logoY + 18).stroke("#FFFFFF");
-      
-      doc.moveDown(3);
+      doc.moveDown(1);
       
       // Brand name
       doc.fontSize(28).fillColor("#4F46E5").text("KHOJ AI", { align: "center" });

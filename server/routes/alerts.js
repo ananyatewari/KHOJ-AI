@@ -165,7 +165,9 @@ router.post("/:id/notify-agencies", authMiddleware, async (req, res) => {
     await alert.save();
 
     const io = req.app.get("io");
+    console.log(`[DEBUG] Emitting agency notifications to: ${agencies.join(', ')}`);
     agencies.forEach(agency => {
+      console.log(`[DEBUG] Emitting to alert:agency:${agency}`);
       io.emit(`alert:agency:${agency}`, {
         alert: alert.toObject(),
         message,
@@ -226,5 +228,34 @@ router.delete("/:id", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "Failed to delete alert" });
   }
 });
+
+// Helper function to create alerts from MongoDB hooks
+export async function createRealTimeAlert(alertData) {
+  try {
+    const alert = new Alert({
+      ...alertData,
+      triggeredBy: "System"
+    });
+
+    await alert.save();
+
+    // Emit WebSocket notification
+    const io = global.io;
+    if (io) {
+      if (alert.agencies && alert.agencies.length > 0) {
+        alert.agencies.forEach(agency => {
+          io.emit(`alert:${agency}`, alert.toObject());
+        });
+      } else {
+        io.emit("alert:all", alert.toObject());
+      }
+    }
+
+    return alert;
+  } catch (error) {
+    console.error("Error creating real-time alert:", error);
+    return null;
+  }
+}
 
 export default router;

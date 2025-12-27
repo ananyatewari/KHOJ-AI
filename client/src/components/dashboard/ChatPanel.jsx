@@ -1,7 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { Send, History, Plus, Trash2, X, FileText, Users, Shield, Sparkles } from "lucide-react";
+import {
+  Send,
+  History,
+  Plus,
+  Trash2,
+  X,
+  FileText,
+  Users,
+  Shield,
+  Sparkles,
+} from "lucide-react";
 
 export default function ChatPanel() {
   const { token, user } = useAuth();
@@ -37,17 +47,20 @@ export default function ChatPanel() {
   // Save current conversation to history
   const saveToHistory = () => {
     if (messages.length === 0) return;
-    
+
     const conversation = {
       id: Date.now(),
       timestamp: new Date().toISOString(),
       messages: messages,
-      preview: messages[0]?.text?.slice(0, 50) || "Conversation"
+      preview: messages[0]?.text?.slice(0, 50) || "Conversation",
     };
-    
+
     const updatedHistory = [conversation, ...chatHistory].slice(0, 20); // Keep last 20
     setChatHistory(updatedHistory);
-    localStorage.setItem(`chatHistory_${user?.username}`, JSON.stringify(updatedHistory));
+    localStorage.setItem(
+      `chatHistory_${user?.username}`,
+      JSON.stringify(updatedHistory)
+    );
   };
 
   // Load a conversation from history
@@ -66,9 +79,12 @@ export default function ChatPanel() {
 
   // Delete a conversation from history
   const deleteFromHistory = (id) => {
-    const updatedHistory = chatHistory.filter(c => c.id !== id);
+    const updatedHistory = chatHistory.filter((c) => c.id !== id);
     setChatHistory(updatedHistory);
-    localStorage.setItem(`chatHistory_${user?.username}`, JSON.stringify(updatedHistory));
+    localStorage.setItem(
+      `chatHistory_${user?.username}`,
+      JSON.stringify(updatedHistory)
+    );
   };
 
   const viewDocument = async (docId) => {
@@ -127,36 +143,53 @@ export default function ChatPanel() {
   };
 
   return (
-    <div className={`h-full flex ${
-      theme === "dark" ? "bg-slate-900" : "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50"
-    }`}>
-      {/* History Sidebar */}
-      <div className={`${
-        showHistory ? "w-80" : "w-0"
-      } transition-all duration-300 overflow-hidden border-r flex flex-col ${
+    <div
+      className={`h-full flex ${
         theme === "dark"
-          ? "border-slate-700/50 bg-slate-950/50"
-          : "border-purple-200 bg-white/80 backdrop-blur-xl shadow-lg"
-      }`}>
+          ? "bg-slate-900"
+          : "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50"
+      }`}
+    >
+      {/* History Sidebar */}
+      <div
+        className={`${
+          showHistory ? "w-80" : "w-0"
+        } transition-all duration-300 overflow-hidden border-r flex flex-col ${
+          theme === "dark"
+            ? "border-slate-700/50 bg-slate-950/50"
+            : "border-purple-200 bg-white/80 backdrop-blur-xl shadow-lg"
+        }`}
+      >
         {showHistory && (
           <>
-            <div className={`p-4 border-b ${
-              theme === "dark" ? "border-slate-700/50" : "border-purple-200"
-            }`}>
+            <div
+              className={`p-4 border-b ${
+                theme === "dark" ? "border-slate-700/50" : "border-purple-200"
+              }`}
+            >
               <div className="flex items-center justify-between mb-4">
-                <h3 className={`text-lg font-semibold flex items-center gap-2 ${
-                  theme === "dark" ? "text-white" : "text-slate-800"
-                }`}>
+                <h3
+                  className={`text-lg font-semibold flex items-center gap-2 ${
+                    theme === "dark" ? "text-white" : "text-slate-800"
+                  }`}
+                >
                   <History size={20} className="text-indigo-400" />
                   Chat History
                 </h3>
                 <button
                   onClick={() => setShowHistory(false)}
                   className={`p-1.5 rounded-lg transition ${
-                    theme === "dark" ? "hover:bg-slate-800" : "hover:bg-purple-100"
+                    theme === "dark"
+                      ? "hover:bg-slate-800"
+                      : "hover:bg-purple-100"
                   }`}
                 >
-                  <X size={18} className={theme === "dark" ? "text-slate-400" : "text-slate-600"} />
+                  <X
+                    size={18}
+                    className={
+                      theme === "dark" ? "text-slate-400" : "text-slate-600"
+                    }
+                  />
                 </button>
               </div>
               <button
@@ -171,15 +204,26 @@ export default function ChatPanel() {
             <div className="flex-1 overflow-y-auto p-4">
               {chatHistory.length === 0 ? (
                 <div className="text-center py-12">
-                  <History size={48} className={`mx-auto mb-3 ${
-                    theme === "dark" ? "text-slate-600" : "text-purple-300"
-                  }`} />
-                  <p className={`text-sm ${
-                    theme === "dark" ? "text-slate-400" : "text-slate-600"
-                  }`}>No saved conversations</p>
-                  <p className={`text-xs mt-1 ${
-                    theme === "dark" ? "text-slate-500" : "text-slate-500"
-                  }`}>Start chatting to create history</p>
+                  <History
+                    size={48}
+                    className={`mx-auto mb-3 ${
+                      theme === "dark" ? "text-slate-600" : "text-purple-300"
+                    }`}
+                  />
+                  <p
+                    className={`text-sm ${
+                      theme === "dark" ? "text-slate-400" : "text-slate-600"
+                    }`}
+                  >
+                    No saved conversations
+                  </p>
+                  <p
+                    className={`text-xs mt-1 ${
+                      theme === "dark" ? "text-slate-500" : "text-slate-500"
+                    }`}
+                  >
+                    Start chatting to create history
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -196,13 +240,25 @@ export default function ChatPanel() {
                         onClick={() => loadConversation(conv)}
                         className="w-full text-left"
                       >
-                        <p className={`text-sm truncate mb-1 ${
-                          theme === "dark" ? "text-white" : "text-slate-800"
-                        }`}>{conv.preview}...</p>
-                        <p className={`text-xs ${
-                          theme === "dark" ? "text-slate-500" : "text-slate-600"
-                        }`}>
-                          {new Date(conv.timestamp).toLocaleDateString()} at {new Date(conv.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <p
+                          className={`text-sm truncate mb-1 ${
+                            theme === "dark" ? "text-white" : "text-slate-800"
+                          }`}
+                        >
+                          {conv.preview}...
+                        </p>
+                        <p
+                          className={`text-xs ${
+                            theme === "dark"
+                              ? "text-slate-500"
+                              : "text-slate-600"
+                          }`}
+                        >
+                          {new Date(conv.timestamp).toLocaleDateString()} at{" "}
+                          {new Date(conv.timestamp).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </p>
                       </button>
                       <button
@@ -227,11 +283,13 @@ export default function ChatPanel() {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className={`backdrop-blur-sm border-b p-6 ${
-          theme === "dark"
-            ? "bg-slate-950/50 border-slate-700/50"
-            : "bg-white/60 border-purple-200 shadow-sm"
-        }`}>
+        <div
+          className={`backdrop-blur-sm border-b p-6 ${
+            theme === "dark"
+              ? "bg-slate-950/50 border-slate-700/50"
+              : "bg-white/60 border-purple-200 shadow-sm"
+          }`}
+        >
           <div className="max-w-5xl mx-auto">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -245,27 +303,36 @@ export default function ChatPanel() {
                     </div>
                   </div>
                   <div>
-                    <h1 className={`text-2xl font-bold flex items-center gap-2 ${
-                      theme === "dark" ? "text-white" : "text-slate-800"
-                    }`}>
+                    <h1
+                      className={`text-2xl font-bold flex items-center gap-2 ${
+                        theme === "dark" ? "text-white" : "text-slate-800"
+                      }`}
+                    >
                       Cross-Agency Intelligence Chat
                       <Sparkles size={20} className="text-amber-400" />
                     </h1>
-                    <p className={`text-sm mt-1 ${
-                      theme === "dark" ? "text-slate-400" : "text-slate-600"
-                    }`}>
-                      AI-powered assistant grounded in cross-agency approved shared documents
+                    <p
+                      className={`text-sm mt-1 ${
+                        theme === "dark" ? "text-slate-400" : "text-slate-600"
+                      }`}
+                    >
+                      AI-powered assistant grounded in cross-agency approved
+                      shared documents
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 text-xs">
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/30 rounded-full">
                     <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                    <span className="text-indigo-300 font-medium">Secure Connection</span>
+                    <span className="text-indigo-300 font-medium">
+                      Secure Connection
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full">
                     <Shield size={12} className="text-purple-400" />
-                    <span className="text-purple-300 font-medium">Agency: {user?.agency?.toUpperCase()}</span>
+                    <span className="text-purple-300 font-medium">
+                      Agency: {user?.agency?.toUpperCase()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -284,7 +351,6 @@ export default function ChatPanel() {
           </div>
         </div>
 
-
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-5xl mx-auto p-6">
@@ -293,59 +359,97 @@ export default function ChatPanel() {
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <Sparkles size={28} className="text-white" />
                 </div>
-                <h2 className={`text-xl font-bold mb-2 ${
-                  theme === "dark" ? "text-white" : "text-slate-800"
-                }`}>Welcome to Cross-Agency Intelligence Chat</h2>
-                <p className={`mb-4 max-w-2xl mx-auto text-sm ${
-                  theme === "dark" ? "text-slate-400" : "text-slate-600"
-                }`}>
-                  Ask questions about topics in shared documents. The AI assistant will provide answers grounded in cross-agency approved intelligence and cite every document it references.
+                <h2
+                  className={`text-xl font-bold mb-2 ${
+                    theme === "dark" ? "text-white" : "text-slate-800"
+                  }`}
+                >
+                  Welcome to Cross-Agency Intelligence Chat
+                </h2>
+                <p
+                  className={`mb-4 max-w-2xl mx-auto text-sm ${
+                    theme === "dark" ? "text-slate-400" : "text-slate-600"
+                  }`}
+                >
+                  Ask questions about topics in shared documents. The AI
+                  assistant will provide answers grounded in cross-agency
+                  approved intelligence and cite every document it references.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-3xl mx-auto">
-                  <div className={`border rounded-lg p-3 ${
-                    theme === "dark"
-                      ? "bg-slate-800/50 border-slate-700/50"
-                      : "bg-white/80 border-purple-200 shadow-md"
-                  }`}>
+                  <div
+                    className={`border rounded-lg p-3 ${
+                      theme === "dark"
+                        ? "bg-slate-800/50 border-slate-700/50"
+                        : "bg-white/80 border-purple-200 shadow-md"
+                    }`}
+                  >
                     <div className="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center mb-2 mx-auto">
                       <Shield size={18} className="text-indigo-400" />
                     </div>
-                    <h3 className={`text-xs font-semibold mb-1 ${
-                      theme === "dark" ? "text-white" : "text-slate-800"
-                    }`}>Secure & Verified</h3>
-                    <p className={`text-xs ${
-                      theme === "dark" ? "text-slate-400" : "text-slate-600"
-                    }`}>All responses are based on approved shared documents</p>
+                    <h3
+                      className={`text-xs font-semibold mb-1 ${
+                        theme === "dark" ? "text-white" : "text-slate-800"
+                      }`}
+                    >
+                      Secure & Verified
+                    </h3>
+                    <p
+                      className={`text-xs ${
+                        theme === "dark" ? "text-slate-400" : "text-slate-600"
+                      }`}
+                    >
+                      All responses are based on approved shared documents
+                    </p>
                   </div>
-                  <div className={`border rounded-lg p-3 ${
-                    theme === "dark"
-                      ? "bg-slate-800/50 border-slate-700/50"
-                      : "bg-white/80 border-purple-200 shadow-md"
-                  }`}>
+                  <div
+                    className={`border rounded-lg p-3 ${
+                      theme === "dark"
+                        ? "bg-slate-800/50 border-slate-700/50"
+                        : "bg-white/80 border-purple-200 shadow-md"
+                    }`}
+                  >
                     <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center mb-2 mx-auto">
                       <Users size={18} className="text-purple-400" />
                     </div>
-                    <h3 className={`text-xs font-semibold mb-1 ${
-                      theme === "dark" ? "text-white" : "text-slate-800"
-                    }`}>Cross-Agency</h3>
-                    <p className={`text-xs ${
-                      theme === "dark" ? "text-slate-400" : "text-slate-600"
-                    }`}>Access intelligence from multiple agencies</p>
+                    <h3
+                      className={`text-xs font-semibold mb-1 ${
+                        theme === "dark" ? "text-white" : "text-slate-800"
+                      }`}
+                    >
+                      Cross-Agency
+                    </h3>
+                    <p
+                      className={`text-xs ${
+                        theme === "dark" ? "text-slate-400" : "text-slate-600"
+                      }`}
+                    >
+                      Access intelligence from multiple agencies
+                    </p>
                   </div>
-                  <div className={`border rounded-lg p-3 ${
-                    theme === "dark"
-                      ? "bg-slate-800/50 border-slate-700/50"
-                      : "bg-white/80 border-purple-200 shadow-md"
-                  }`}>
+                  <div
+                    className={`border rounded-lg p-3 ${
+                      theme === "dark"
+                        ? "bg-slate-800/50 border-slate-700/50"
+                        : "bg-white/80 border-purple-200 shadow-md"
+                    }`}
+                  >
                     <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center mb-2 mx-auto">
                       <FileText size={18} className="text-emerald-400" />
                     </div>
-                    <h3 className={`text-xs font-semibold mb-1 ${
-                      theme === "dark" ? "text-white" : "text-slate-800"
-                    }`}>Source Citations</h3>
-                    <p className={`text-xs ${
-                      theme === "dark" ? "text-slate-400" : "text-slate-600"
-                    }`}>Every answer includes document references</p>
+                    <h3
+                      className={`text-xs font-semibold mb-1 ${
+                        theme === "dark" ? "text-white" : "text-slate-800"
+                      }`}
+                    >
+                      Source Citations
+                    </h3>
+                    <p
+                      className={`text-xs ${
+                        theme === "dark" ? "text-slate-400" : "text-slate-600"
+                      }`}
+                    >
+                      Every answer includes document references
+                    </p>
                   </div>
                 </div>
               </div>
@@ -353,15 +457,26 @@ export default function ChatPanel() {
 
             <div className="space-y-6">
               {messages.map((m, i) => (
-                <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-3xl ${m.role === "user" ? "w-auto" : "w-full"}`}>
+                <div
+                  key={i}
+                  className={`flex ${
+                    m.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-3xl ${
+                      m.role === "user" ? "w-auto" : "w-full"
+                    }`}
+                  >
                     {m.role === "user" ? (
                       <div className="flex items-start gap-3 justify-end">
                         <div className="bg-indigo-600 text-white rounded-2xl rounded-tr-sm px-5 py-3 shadow-lg">
                           <p className="text-sm leading-relaxed">{m.text}</p>
                         </div>
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
-                          <span className="text-white font-semibold text-sm">{user?.username?.charAt(0).toUpperCase()}</span>
+                          <span className="text-white font-semibold text-sm">
+                            {user?.username?.charAt(0).toUpperCase()}
+                          </span>
                         </div>
                       </div>
                     ) : (
@@ -370,19 +485,26 @@ export default function ChatPanel() {
                           <Sparkles size={20} className="text-white" />
                         </div>
                         <div className="flex-1">
-                          <div className={`border rounded-2xl rounded-tl-sm px-5 py-3 shadow-lg ${
-                            theme === "dark"
-                              ? "bg-slate-800/50 border-slate-700/50 text-white"
-                              : "bg-white/90 border-purple-200 text-slate-800"
-                          }`}>
+                          <div
+                            className={`border rounded-2xl rounded-tl-sm px-5 py-3 shadow-lg ${
+                              theme === "dark"
+                                ? "bg-slate-800/50 border-slate-700/50 text-white"
+                                : "bg-white/90 border-purple-200 text-slate-800"
+                            }`}
+                          >
                             <p className="text-sm leading-relaxed">{m.text}</p>
                           </div>
                           {m.sources?.length > 0 && (
                             <div className="mt-3 space-y-2">
-                              <p className={`text-xs font-medium ${
-                                theme === "dark" ? "text-slate-400" : "text-slate-600"
-                              }`}>
-                                📚 Sources ({m.sources.length} of {m.scannedDocs} documents scanned)
+                              <p
+                                className={`text-xs font-medium ${
+                                  theme === "dark"
+                                    ? "text-slate-400"
+                                    : "text-slate-600"
+                                }`}
+                              >
+                                📚 Sources ({m.sources.length} of{" "}
+                                {m.scannedDocs} documents scanned)
                               </p>
                               <div className="space-y-2">
                                 {m.sources.map((source) => (
@@ -397,17 +519,32 @@ export default function ChatPanel() {
                                     <div className="flex items-start justify-between gap-3">
                                       <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-2">
-                                          <FileText size={14} className="text-indigo-400" />
-                                          <p className={`text-sm font-medium ${
-                                            theme === "dark" ? "text-white" : "text-slate-800"
-                                          }`}>{source.filename}</p>
+                                          <FileText
+                                            size={14}
+                                            className="text-indigo-400"
+                                          />
+                                          <p
+                                            className={`text-sm font-medium ${
+                                              theme === "dark"
+                                                ? "text-white"
+                                                : "text-slate-800"
+                                            }`}
+                                          >
+                                            {source.filename}
+                                          </p>
                                           <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded text-xs font-medium">
                                             {source.agency?.toUpperCase()}
                                           </span>
                                         </div>
-                                        <p className={`text-xs line-clamp-2 italic ${
-                                          theme === "dark" ? "text-slate-400" : "text-slate-600"
-                                        }`}>"{source.snippet}"</p>
+                                        <p
+                                          className={`text-xs line-clamp-2 italic ${
+                                            theme === "dark"
+                                              ? "text-slate-400"
+                                              : "text-slate-600"
+                                          }`}
+                                        >
+                                          "{source.snippet}"
+                                        </p>
                                       </div>
                                       <button
                                         onClick={() => viewDocument(source.id)}
@@ -433,15 +570,23 @@ export default function ChatPanel() {
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0">
                       <Sparkles size={20} className="text-white" />
                     </div>
-                    <div className={`border rounded-2xl rounded-tl-sm px-5 py-3 ${
-                      theme === "dark"
-                        ? "bg-slate-800/50 border-slate-700/50"
-                        : "bg-white/90 border-purple-200 shadow-lg"
-                    }`}>
+                    <div
+                      className={`border rounded-2xl rounded-tl-sm px-5 py-3 ${
+                        theme === "dark"
+                          ? "bg-slate-800/50 border-slate-700/50"
+                          : "bg-white/90 border-purple-200 shadow-lg"
+                      }`}
+                    >
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                        <div
+                          className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.2s" }}
+                        ></div>
+                        <div
+                          className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.4s" }}
+                        ></div>
                       </div>
                     </div>
                   </div>
@@ -453,11 +598,13 @@ export default function ChatPanel() {
         </div>
 
         {/* Input Area */}
-        <div className={`border-t backdrop-blur-sm p-6 ${
-          theme === "dark"
-            ? "border-slate-700/50 bg-slate-950/50"
-            : "border-purple-200 bg-white/60 shadow-lg"
-        }`}>
+        <div
+          className={`border-t backdrop-blur-sm p-6 ${
+            theme === "dark"
+              ? "border-slate-700/50 bg-slate-950/50"
+              : "border-purple-200 bg-white/60 shadow-lg"
+          }`}
+        >
           <div className="max-w-5xl mx-auto">
             <div className="flex items-end gap-3">
               <div className="flex-1 relative">
@@ -477,11 +624,13 @@ export default function ChatPanel() {
                       send();
                     }
                   }}
-                  style={{ minHeight: '56px', maxHeight: '200px' }}
+                  style={{ minHeight: "56px", maxHeight: "200px" }}
                 />
-                <div className={`absolute right-4 bottom-4 text-xs ${
-                  theme === "dark" ? "text-slate-500" : "text-slate-400"
-                }`}>
+                <div
+                  className={`absolute right-4 bottom-4 text-xs ${
+                    theme === "dark" ? "text-slate-500" : "text-slate-400"
+                  }`}
+                >
                   Press Enter to send
                 </div>
               </div>
@@ -492,9 +641,24 @@ export default function ChatPanel() {
               >
                 {loading ? (
                   <>
-                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Sending
                   </>

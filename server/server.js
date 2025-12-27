@@ -37,6 +37,9 @@ const io = new Server(server, {
 
 app.set("io", io);
 
+// Make io globally available for models
+global.io = io;
+
 app.use(express.json());
 app.use(cors());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

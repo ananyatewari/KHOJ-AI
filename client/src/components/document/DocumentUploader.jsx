@@ -7,7 +7,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { useOcrWorkspace } from "../../context/OcrContext";
 
 const apiClient = axios.create({
-  baseURL: "http://localhost:3000"
+  baseURL: "http://localhost:3000",
 });
 
 const entityColors = {
@@ -15,7 +15,7 @@ const entityColors = {
   places: "bg-emerald-500/20 text-emerald-100 border-emerald-400/60",
   organizations: "bg-amber-500/20 text-amber-100 border-amber-400/60",
   phoneNumbers: "bg-rose-500/20 text-rose-100 border-rose-400/60",
-  dates: "bg-purple-500/20 text-purple-100 border-purple-400/60"
+  dates: "bg-purple-500/20 text-purple-100 border-purple-400/60",
 };
 
 const entityLabels = {
@@ -23,10 +23,16 @@ const entityLabels = {
   places: "Locations",
   organizations: "Organizations",
   phoneNumbers: "Phone Numbers",
-  dates: "Dates"
+  dates: "Dates",
 };
 
-const entityOrder = ["persons", "places", "organizations", "phoneNumbers", "dates"];
+const entityOrder = [
+  "persons",
+  "places",
+  "organizations",
+  "phoneNumbers",
+  "dates",
+];
 
 export default function DocumentUploader() {
   const { theme } = useTheme();
@@ -43,7 +49,7 @@ export default function DocumentUploader() {
     setUploading,
     analysisMessage,
     setAnalysisMessage,
-    clearWorkspace
+    clearWorkspace,
   } = useOcrWorkspace();
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -86,9 +92,7 @@ export default function DocumentUploader() {
   };
 
   const removeFileAtIndex = (indexToRemove) => {
-    setSelectedFiles((prev) =>
-      prev.filter((_, idx) => idx !== indexToRemove)
-    );
+    setSelectedFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const handleSubmit = async (e) => {
@@ -113,8 +117,8 @@ export default function DocumentUploader() {
       const response = await apiClient.post("/api/ocr/process", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        }
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
       });
 
       const processedDocs = response.data?.documents || [];
@@ -141,42 +145,78 @@ export default function DocumentUploader() {
     }
   };
 
-  const downloadSummary = () => {
+  const downloadSummary = async () => {
     if (!summary) return;
-    const blob = new Blob([JSON.stringify(summary, null, 2)], {
-      type: "application/json"
-    });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "image-intelligence-summary.json";
-    a.click();
-    window.URL.revokeObjectURL(url);
+
+    try {
+      const response = await apiClient.post(
+        "/api/ocr/download-pdf",
+        {
+          summary,
+          documents,
+        },
+        {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          responseType: "blob",
+        }
+      );
+
+      // Create blob from response
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "khoj-ai-ocr-intelligence-report.pdf";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("PDF download failed:", error);
+      // Fallback to JSON if PDF generation fails
+      const blob = new Blob([JSON.stringify(summary, null, 2)], {
+        type: "application/json",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "image-intelligence-summary.json";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }
   };
 
   return (
-    <div className={`rounded-lg p-6 shadow-md border ${
-      theme === "dark"
-        ? "bg-gray-800 border-gray-700"
-        : "bg-white/80 border-purple-200 shadow-lg"
-    }`}>
-      <h2 className={`text-xl font-semibold mb-2 ${
-        theme === "dark" ? "text-white" : "text-slate-800"
-      }`}>
+    <div
+      className={`rounded-lg p-6 shadow-md border ${
+        theme === "dark"
+          ? "bg-gray-800 border-gray-700"
+          : "bg-white/80 border-purple-200 shadow-lg"
+      }`}
+    >
+      <h2
+        className={`text-xl font-semibold mb-2 ${
+          theme === "dark" ? "text-white" : "text-slate-800"
+        }`}
+      >
         Intelligent Image OCR
       </h2>
-      <p className={`text-sm mb-6 ${
-        theme === "dark" ? "text-gray-400" : "text-slate-600"
-      }`}>
+      <p
+        className={`text-sm mb-6 ${
+          theme === "dark" ? "text-gray-400" : "text-slate-600"
+        }`}
+      >
         Upload up to 10 images to extract text, entities, and AI analyst
         takeaways. PDFs are handled separately in the document ingest flow.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex flex-col space-y-2">
-          <label className={`font-medium ${
-            theme === "dark" ? "text-gray-300" : "text-slate-700"
-          }`}>
+          <label
+            className={`font-medium ${
+              theme === "dark" ? "text-gray-300" : "text-slate-700"
+            }`}
+          >
             Upload Intelligence Images
           </label>
           <div
@@ -211,7 +251,9 @@ export default function DocumentUploader() {
                 file.type.startsWith("image/")
               );
               if (!validImages.length) {
-                setError("Only image files are supported for OCR intelligence.");
+                setError(
+                  "Only image files are supported for OCR intelligence."
+                );
                 return;
               }
               setSelectedFiles((prev) => {
@@ -230,9 +272,11 @@ export default function DocumentUploader() {
 
             {!selectedFiles.length ? (
               <div className="text-center">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 ${
-                  theme === "dark" ? "bg-gray-700" : "bg-purple-100"
-                }`}>
+                <div
+                  className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 ${
+                    theme === "dark" ? "bg-gray-700" : "bg-purple-100"
+                  }`}
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
@@ -243,27 +287,45 @@ export default function DocumentUploader() {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className={theme === "dark" ? "text-blue-400" : "text-purple-600"}
+                    className={
+                      theme === "dark" ? "text-blue-400" : "text-purple-600"
+                    }
                   >
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="17 8 12 3 7 8"></polyline>
                     <line x1="12" y1="3" x2="12" y2="15"></line>
                   </svg>
                 </div>
-                <p className={theme === "dark" ? "text-gray-400" : "text-slate-600"}>
+                <p
+                  className={
+                    theme === "dark" ? "text-gray-400" : "text-slate-600"
+                  }
+                >
                   Drag and drop images here or{" "}
-                  <span className={theme === "dark" ? "text-blue-400" : "text-purple-600 font-medium"}>browse</span>
+                  <span
+                    className={
+                      theme === "dark"
+                        ? "text-blue-400"
+                        : "text-purple-600 font-medium"
+                    }
+                  >
+                    browse
+                  </span>
                 </p>
-                <p className={`text-sm mt-1 ${
-                  theme === "dark" ? "text-gray-500" : "text-slate-500"
-                }`}>
+                <p
+                  className={`text-sm mt-1 ${
+                    theme === "dark" ? "text-gray-500" : "text-slate-500"
+                  }`}
+                >
                   Supported formats: JPG, PNG, WEBP • Max 10 images
                 </p>
               </div>
             ) : (
-              <div className={`text-center text-sm ${
-                theme === "dark" ? "text-gray-300" : "text-slate-700"
-              }`}>
+              <div
+                className={`text-center text-sm ${
+                  theme === "dark" ? "text-gray-300" : "text-slate-700"
+                }`}
+              >
                 {selectedFiles.length} image
                 {selectedFiles.length > 1 ? "s are" : " is"} queued for
                 intelligence extraction. Use the controls below to manage your
@@ -274,22 +336,30 @@ export default function DocumentUploader() {
         </div>
 
         {selectedFiles.length > 0 && (
-          <div className={`border rounded-lg p-4 ${
-            theme === "dark"
-              ? "bg-gray-900 border-gray-700"
-              : "bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200"
-          }`}>
+          <div
+            className={`border rounded-lg p-4 ${
+              theme === "dark"
+                ? "bg-gray-900 border-gray-700"
+                : "bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200"
+            }`}
+          >
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
               <div>
-                <p className={`text-sm font-medium ${
-                  theme === "dark" ? "text-gray-200" : "text-slate-800"
-                }`}>
+                <p
+                  className={`text-sm font-medium ${
+                    theme === "dark" ? "text-gray-200" : "text-slate-800"
+                  }`}
+                >
                   Selected Images ({selectedFiles.length})
                 </p>
                 {totalSizeLabel && (
-                  <p className={`text-xs ${
-                    theme === "dark" ? "text-gray-500" : "text-slate-600"
-                  }`}>{totalSizeLabel}</p>
+                  <p
+                    className={`text-xs ${
+                      theme === "dark" ? "text-gray-500" : "text-slate-600"
+                    }`}
+                  >
+                    {totalSizeLabel}
+                  </p>
                 )}
               </div>
               <div className="flex gap-3">
@@ -328,20 +398,28 @@ export default function DocumentUploader() {
                   }`}
                 >
                   <div className="flex items-center gap-3 w-full">
-                    <div className={`w-8 h-8 rounded-md flex items-center justify-center text-xs font-semibold ${
-                      theme === "dark"
-                        ? "bg-gray-700 text-gray-200"
-                        : "bg-purple-100 text-purple-700"
-                    }`}>
+                    <div
+                      className={`w-8 h-8 rounded-md flex items-center justify-center text-xs font-semibold ${
+                        theme === "dark"
+                          ? "bg-gray-700 text-gray-200"
+                          : "bg-purple-100 text-purple-700"
+                      }`}
+                    >
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`truncate ${
-                        theme === "dark" ? "text-gray-100" : "text-slate-800"
-                      }`}>{file.name}</p>
-                      <p className={`text-xs ${
-                        theme === "dark" ? "text-gray-500" : "text-slate-600"
-                      }`}>
+                      <p
+                        className={`truncate ${
+                          theme === "dark" ? "text-gray-100" : "text-slate-800"
+                        }`}
+                      >
+                        {file.name}
+                      </p>
+                      <p
+                        className={`text-xs ${
+                          theme === "dark" ? "text-gray-500" : "text-slate-600"
+                        }`}
+                      >
                         {(file.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     </div>
@@ -375,8 +453,8 @@ export default function DocumentUploader() {
                   ? "bg-gray-700 text-gray-500 cursor-not-allowed"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 : theme === "dark"
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/50"
-                  : "bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-indigo-400/50 hover:shadow-lg hover:shadow-indigo-400/50"
+                ? "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/50"
+                : "bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-indigo-400/50 hover:shadow-lg hover:shadow-indigo-400/50"
             }`}
           >
             {uploading ? (
@@ -405,12 +483,32 @@ export default function DocumentUploader() {
               </>
             ) : (
               <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
                 <span>Extract Intelligence</span>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
                 </svg>
               </>
             )}

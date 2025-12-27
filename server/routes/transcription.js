@@ -110,7 +110,7 @@ router.post("/process", authMiddleware, upload.single("audio"), async (req, res)
         agency: agency
       });
 
-      const { event, isNew } = await findOrCreateEvent(transcription, "Transcription");
+      const { event, isNew } = await findOrCreateEvent(transcription, "Transcription", io);
       
       if (event) {
         if (isNew) {

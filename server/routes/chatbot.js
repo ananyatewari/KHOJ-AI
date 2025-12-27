@@ -3,6 +3,7 @@ import auth from "../middleware/auth.js";
 import Document from "../models/Document.js";
 import DocumentShare from "../models/DocumentShare.js";
 import { converseWithChatbot } from "../services/chatbotService.js";
+import { createRealTimeAlert } from "../utils/alertCreator.js";
 
 const router = express.Router();
 
@@ -100,6 +101,29 @@ router.post("/share", auth, async (req, res) => {
       },
       { upsert: true, new: true }
     );
+
+    // Create alert for cross-agency sharing
+    if (scope === "cross-agency") {
+      await createRealTimeAlert({
+        type: "cross_agency",
+        severity: "medium",
+        title: `Document Shared Cross-Agency: ${doc.filename}`,
+        description: `${doc.filename} has been shared for cross-agency collaboration by ${req.user.username} from ${req.user.agency}`,
+        agencies: [], // Empty array means all agencies can see
+        details: {
+          documentIds: [{
+            id: doc._id,
+            type: "Document"
+          }],
+          metadata: {
+            filename: doc.filename,
+            sharedBy: req.user.username,
+            fromAgency: req.user.agency,
+            shareId: shareEntry._id
+          }
+        }
+      });
+    }
 
     res.json({ 
       success: true, 
