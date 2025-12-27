@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import {
   FileText,
@@ -7,6 +7,8 @@ import {
   CheckCircle,
   Download,
   Loader2,
+  Mic,
+  Calendar,
 } from "lucide-react";
 import {
   LineChart,
@@ -23,6 +25,7 @@ export default function OperationalReportPanel({
 }) {
   const { theme } = useTheme();
   const [range, setRange] = useState("24h");
+  const [customDate, setCustomDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState(null);
 
@@ -31,11 +34,20 @@ export default function OperationalReportPanel({
 
     const now = new Date();
     let from;
+    let to = now;
 
     if (range === "24h") {
       from = new Date(now - 24 * 60 * 60 * 1000);
     } else if (range === "48h") {
       from = new Date(now - 48 * 60 * 60 * 1000);
+    } else if (range === "custom" && customDate) {
+      from = new Date(customDate);
+      from.setHours(0, 0, 0, 0);
+      to = new Date(customDate);
+      to.setHours(23, 59, 59, 999);
+    } else {
+      setLoading(false);
+      return;
     }
 
     const res = await fetch(
@@ -48,7 +60,7 @@ export default function OperationalReportPanel({
         },
         body: JSON.stringify({
           from: from.toISOString(),
-          to: now.toISOString(),
+          to: to.toISOString(),
         }),
       }
     );
@@ -59,81 +71,106 @@ export default function OperationalReportPanel({
   };
 
   const downloadReport = async () => {
-  const res = await fetch(
-    "http://localhost:3000/api/report/export/pdf",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        report,
-        from: report.range.from,
-        to: report.range.to,
-      }),
-    }
-  );
+    const res = await fetch(
+      "http://localhost:3000/api/report/export/pdf",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          report,
+          from: report.range.from,
+          to: report.range.to,
+        }),
+      }
+    );
 
-  const blob = await res.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "khoj-operational-report.pdf";
-  a.click();
-};
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "khoj-operational-report.pdf";
+    a.click();
+  };
+
+  useEffect(() => {
+    generateReport();
+  }, []);
 
 
   return (
-    <section className={`mb-12 border rounded-2xl p-6 backdrop-blur-xl ${
+    <section className={`mb-6 border rounded-2xl p-5 backdrop-blur-xl transition-all duration-300 hover:shadow-xl ${
       theme === "dark"
         ? "bg-slate-950/60 border-white/10"
         : "bg-white/80 border-purple-200 shadow-lg"
     }`}>
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
         <div>
-          <h2 className={`text-xl font-semibold ${
+          <h2 className={`text-lg font-semibold flex items-center gap-2 ${
             theme === "dark" ? "text-white" : "text-slate-800"
           }`}>
+            <UploadCloud className="w-5 h-5 text-indigo-500" />
             Operational Intelligence Report
           </h2>
-          <p className={`text-sm ${
+          <p className={`text-xs mt-0.5 ${
             theme === "dark" ? "text-slate-400" : "text-slate-600"
           }`}>
             Agency overview · {agency.toUpperCase()}
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <RangeButton
             active={range === "24h"}
-            onClick={() => setRange("24h")}
+            onClick={() => { setRange("24h"); setCustomDate(""); }}
             theme={theme}
           >
             Last 24h
           </RangeButton>
           <RangeButton
             active={range === "48h"}
-            onClick={() => setRange("48h")}
+            onClick={() => { setRange("48h"); setCustomDate(""); }}
             theme={theme}
           >
             Last 48h
           </RangeButton>
+          <RangeButton
+            active={range === "custom"}
+            onClick={() => setRange("custom")}
+            theme={theme}
+          >
+            <Calendar className="w-4 h-4" />
+          </RangeButton>
+          {range === "custom" && (
+            <input
+              type="date"
+              value={customDate}
+              onChange={(e) => setCustomDate(e.target.value)}
+              className={`px-3 py-2 rounded-lg text-sm transition border ${
+                theme === "dark"
+                  ? "bg-slate-800 text-white border-slate-700"
+                  : "bg-white text-slate-800 border-purple-300"
+              }`}
+            />
+          )}
           <button
             onClick={generateReport}
-            className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-md hover:shadow-lg transition"
+            disabled={loading}
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Generate
+            {loading ? "Generating..." : "Refresh"}
           </button>
         </div>
       </div>
 
       {/* LOADING */}
       {loading && (
-        <div className="flex flex-col items-center justify-center py-12">
-          <Loader2 size={48} className="animate-spin text-indigo-500 mb-4" />
-          <p className={`font-medium ${
+        <div className="flex flex-col items-center justify-center py-8">
+          <Loader2 size={40} className="animate-spin text-indigo-500 mb-3" />
+          <p className={`text-sm font-medium ${
             theme === "dark" ? "text-slate-400" : "text-slate-600"
           }`}>
             Generating operational report…
@@ -142,53 +179,71 @@ export default function OperationalReportPanel({
       )}
 
       {/* REPORT */}
-      {report && (
+      {report && !loading && (
         <>
           {/* SUMMARY */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
             <SummaryCard
               icon={<UploadCloud />}
-              label="Uploaded"
+              label="Total Uploaded"
               value={report.summary.totalUploaded}
-              color="from-indigo-500/60 to-blue-500/60"
+              color="from-indigo-500 to-blue-500"
+              theme={theme}
             />
             <SummaryCard
               icon={<FileText />}
               label="PDFs"
               value={report.summary.pdfCount}
-              color="from-purple-500/60 to-fuchsia-500/60"
+              color="from-purple-500 to-fuchsia-500"
+              theme={theme}
             />
             <SummaryCard
               icon={<Image />}
               label="Images"
               value={report.summary.imageCount}
-              color="from-amber-500/60 to-orange-500/60"
+              color="from-amber-500 to-orange-500"
+              theme={theme}
+            />
+            <SummaryCard
+              icon={<Mic />}
+              label="Audio"
+              value={report.summary.audioCount || 0}
+              color="from-emerald-500 to-teal-500"
+              theme={theme}
             />
           </div>
 
           {/* GRAPH */}
-          <div className="mb-8">
-            <h3 className={`text-sm font-medium mb-3 ${
+          <div className="mb-5">
+            <h3 className={`text-sm font-semibold mb-2 ${
               theme === "dark" ? "text-slate-300" : "text-slate-700"
             }`}>
               Upload Timeline
             </h3>
 
-            <div className={`h-64 rounded-xl p-4 border ${
+            <div className={`h-56 rounded-xl p-3 border transition-all duration-300 ${
               theme === "dark"
-                ? "bg-slate-900/60 border-white/10"
+                ? "bg-slate-900/60 border-slate-700/50"
                 : "bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200"
             }`}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={report.timeline}>
-                  <XAxis dataKey="label" stroke="#94a3b8" />
-                  <YAxis stroke="#94a3b8" />
-                  <Tooltip />
+                  <XAxis dataKey="label" stroke="#94a3b8" fontSize={12} />
+                  <YAxis stroke="#94a3b8" fontSize={12} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: theme === "dark" ? "#1e293b" : "#ffffff",
+                      border: "1px solid #6366f1",
+                      borderRadius: "8px",
+                    }}
+                  />
                   <Line
                     type="monotone"
                     dataKey="count"
                     stroke="#6366f1"
-                    strokeWidth={3}
+                    strokeWidth={2.5}
+                    dot={{ fill: "#6366f1", r: 4 }}
+                    activeDot={{ r: 6 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -199,10 +254,10 @@ export default function OperationalReportPanel({
           <div className="flex justify-end">
             <button
               onClick={downloadReport}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition shadow-md hover:shadow-lg ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 ${
                 theme === "dark"
-                  ? "bg-slate-800 hover:bg-slate-700 text-white"
-                  : "bg-purple-600 hover:bg-purple-700 text-white"
+                  ? "bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-white"
+                  : "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
               }`}
             >
               <Download size={16} />
@@ -221,11 +276,11 @@ function RangeButton({ active, children, theme, ...props }) {
   return (
     <button
       {...props}
-      className={`px-3 py-2 rounded-lg text-sm transition ${
+      className={`px-3 py-2 rounded-lg text-sm transition-all duration-300 flex items-center gap-1 ${
         active
           ? theme === "dark"
-            ? "bg-slate-700 text-white"
-            : "bg-purple-600 text-white shadow-md"
+            ? "bg-slate-700 text-white shadow-md"
+            : "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md"
           : theme === "dark"
           ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
           : "bg-purple-100 text-purple-700 hover:bg-purple-200"
@@ -236,16 +291,16 @@ function RangeButton({ active, children, theme, ...props }) {
   );
 }
 
-function SummaryCard({ icon, label, value, color }) {
+function SummaryCard({ icon, label, value, color, theme }) {
   return (
     <div
-      className={`bg-gradient-to-br ${color} rounded-xl p-4 text-white flex items-center justify-between shadow`}
+      className={`bg-gradient-to-br ${color} rounded-xl p-3.5 text-white flex items-center justify-between shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 animate-fade-in`}
     >
       <div>
-        <p className="text-sm opacity-80">{label}</p>
-        <p className="text-2xl font-bold">{value}</p>
+        <p className="text-xs opacity-90 font-medium">{label}</p>
+        <p className="text-2xl font-bold mt-1">{value}</p>
       </div>
-      <div className="opacity-80">{icon}</div>
+      <div className="opacity-90 text-white">{icon}</div>
     </div>
   );
 }

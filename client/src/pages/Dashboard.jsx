@@ -70,40 +70,60 @@ export default function Dashboard() {
   return (
     <>
       <div className={`min-h-full ${
-        theme === "dark" ? "bg-slate-900" : ""
+        theme === "dark" ? "bg-slate-900" : "bg-gradient-to-br from-slate-50 to-purple-50"
       }`}>
-        <div className="max-w-7xl mx-auto p-8">
-          <div className="mb-8">
-            <h1 className={`text-3xl font-bold mb-2 ${
+        <div className="max-w-7xl mx-auto p-6">
+          <div className="mb-6">
+            <h1 className={`text-3xl font-bold mb-2 flex items-center gap-3 ${
               theme === "dark" ? "text-white" : "text-slate-800"
-            }`}>Dashboard</h1>
-            <p className={theme === "dark" ? "text-slate-400" : "text-slate-600"}>
-              Welcome back, <span className="text-indigo-400 font-medium">{user.username}</span>
+            }`}>
+              <TrendingUp className="w-8 h-8 text-indigo-500" />
+              Dashboard
+            </h1>
+            <p className={`text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-600"}`}>
+              Welcome back, <span className="text-indigo-500 font-semibold">{user.username}</span>
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             <StatCard
-              title="Uploads (24h)"
+              title="Platform Uploads (24h)"
+              value={data?.stats.platformLast24h || 0}
+              icon={<Globe size={20} />}
+              color="from-cyan-500 to-blue-500"
+              theme={theme}
+            />
+            <StatCard
+              title="Agency Uploads (24h)"
               value={data?.stats.last24h || 0}
-              icon={<Upload size={24} />}
-              color="from-indigo-500 to-blue-500"
+              icon={<Upload size={20} />}
+              color="from-indigo-500 to-purple-500"
+              theme={theme}
+            />
+            <StatCard
+              title={`${user.agency.toUpperCase()} Total`}
+              value={data?.agencyDocs.length || 0}
+              icon={<Building2 size={20} />}
+              color="from-emerald-500 to-teal-500"
+              theme={theme}
             />
             <StatCard
               title="My Uploads"
               value={data?.myDocs.length || 0}
-              icon={<Users size={24} />}
+              icon={<Users size={20} />}
               color="from-purple-500 to-fuchsia-500"
+              theme={theme}
             />
             <StatCard
-              title={`${user.agency.toUpperCase()} Uploads`}
-              value={data?.agencyDocs.length || 0}
-              icon={<Building2 size={24} />}
-              color="from-emerald-500 to-teal-500"
+              title="Team Members"
+              value={data?.stats.totalMembers || 0}
+              icon={<UserCheck size={20} />}
+              color="from-amber-500 to-orange-500"
+              theme={theme}
             />
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-5">
             <OperationalReportPanel token={token} agency={user.agency} />
 
             <ApprovalPanel />
@@ -113,8 +133,8 @@ export default function Dashboard() {
           }`}>Loading dashboard…</p>}
 
             {data && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="space-y-5">
                   <Section title="My Uploads">
                     <List docs={data.myDocs} showUser={false} />
                   </Section>
@@ -136,27 +156,26 @@ export default function Dashboard() {
   );
 }
 
-import { Upload, Users, Building2 } from "lucide-react";
+import { Upload, Users, Building2, Globe, UserCheck, TrendingUp } from "lucide-react";
 
-function StatCard({ title, value, color, icon }) {
-  const { theme } = useTheme();
+function StatCard({ title, value, color, icon, theme }) {
   return (
-    <div className={`backdrop-blur-sm border rounded-xl p-6 transition-all duration-300 ${
+    <div className={`backdrop-blur-sm border rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-xl animate-fade-in ${
       theme === "dark"
-        ? "bg-slate-800/50 border-slate-700/50 hover:border-indigo-500/50"
-        : "bg-white/80 border-purple-200 hover:border-purple-400 shadow-lg hover:shadow-xl"
+        ? "bg-slate-800/50 border-slate-700/50 hover:border-indigo-500/50 shadow-lg"
+        : "bg-white/90 border-purple-200 hover:border-purple-400 shadow-md"
     }`}>
-      <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-lg bg-gradient-to-br ${color} bg-opacity-10`}>
-          <div className={`text-transparent bg-clip-text bg-gradient-to-br ${color}`}>
+      <div className="flex items-center justify-between mb-3">
+        <div className={`p-2.5 rounded-lg bg-gradient-to-br ${color} shadow-md`}>
+          <div className="text-white">
             {icon}
           </div>
         </div>
       </div>
-      <p className={`text-sm mb-1 ${
+      <p className={`text-xs mb-1 font-medium ${
         theme === "dark" ? "text-slate-400" : "text-slate-600"
       }`}>{title}</p>
-      <p className={`text-3xl font-bold ${
+      <p className={`text-2xl font-bold ${
         theme === "dark" ? "text-white" : "text-slate-800"
       }`}>{value}</p>
     </div>
@@ -166,14 +185,17 @@ function StatCard({ title, value, color, icon }) {
 function Section({ title, children }) {
   const { theme } = useTheme();
   return (
-    <section className={`backdrop-blur-sm border rounded-xl p-6 ${
+    <section className={`backdrop-blur-sm border rounded-xl p-5 transition-all duration-300 hover:shadow-xl ${
       theme === "dark"
-        ? "bg-slate-800/50 border-slate-700/50"
-        : "bg-white/80 border-purple-200 shadow-lg"
+        ? "bg-slate-800/50 border-slate-700/50 shadow-lg"
+        : "bg-white/90 border-purple-200 shadow-md"
     }`}>
-      <h2 className={`text-lg font-semibold mb-4 ${
+      <h2 className={`text-base font-semibold mb-3 flex items-center gap-2 ${
         theme === "dark" ? "text-white" : "text-slate-800"
-      }`}>{title}</h2>
+      }`}>
+        <Upload className="w-4 h-4 text-indigo-500" />
+        {title}
+      </h2>
       {children}
     </section>
   );
@@ -197,18 +219,19 @@ function List({ docs, showUser }) {
           ? "scrollbar-thumb-slate-700"
           : "scrollbar-thumb-purple-300"
       } scrollbar-track-transparent`}>
-        {visibleDocs.map((d) => (
+        {visibleDocs.map((d, index) => (
           <li
             key={d._id}
-            className={`border p-4 rounded-lg transition-all duration-200 ${
+            className={`border p-3.5 rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-md ${
               theme === "dark"
                 ? "bg-slate-900/50 border-slate-700/50 hover:border-indigo-500/50"
-                : "bg-gradient-to-r from-purple-50/50 to-indigo-50/50 border-purple-200 hover:border-purple-400 hover:shadow-md"
+                : "bg-gradient-to-r from-purple-50/50 to-indigo-50/50 border-purple-200 hover:border-purple-400"
             }`}
+            style={{ animationDelay: `${index * 50}ms` }}
           >
             <div className="flex justify-between items-start gap-4">
               <div className="flex-1 min-w-0">
-                <p className={`font-medium truncate ${
+                <p className={`font-medium truncate text-sm ${
                   theme === "dark" ? "text-white" : "text-slate-800"
                 }`}>{d.filename}</p>
                 {showUser && (
@@ -232,7 +255,7 @@ function List({ docs, showUser }) {
       {visible < docs.length && (
         <button
           onClick={() => setVisible((v) => v + 10)}
-          className={`mt-4 text-sm transition font-medium ${
+          className={`mt-3 text-sm transition-all duration-300 font-medium hover:translate-x-1 ${
             theme === "dark"
               ? "text-indigo-400 hover:text-indigo-300"
               : "text-purple-600 hover:text-purple-700"

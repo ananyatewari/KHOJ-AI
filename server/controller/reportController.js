@@ -1,5 +1,6 @@
 import Document from "../models/Document.js";
 import OcrDocument from "../models/OcrDocument.js";
+import Transcription from "../models/Transcription.js";
 import { emitLog } from "../utils/logger.js";
 import { generateAISummary } from "../services/aiSummary.js";
 import PDFDocument from "pdfkit";
@@ -111,6 +112,11 @@ async function buildOperationalDataset({
     agency
   };
 
+  const audioMatch = {
+    createdAt: { $gte: start, $lte: end },
+    agency
+  };
+
   const [pdfAgg = { count: [], timeline: [], recent: [] }] =
     await Document.aggregate([
       { $match: docMatch },
@@ -123,23 +129,31 @@ async function buildOperationalDataset({
       { $facet: buildFacet(recentLimit, "Image/OCR") }
     ]);
 
+  const [audioAgg = { count: [], timeline: [], recent: [] }] =
+    await Transcription.aggregate([
+      { $match: audioMatch },
+      { $facet: buildFacet(recentLimit, "Audio") }
+    ]);
+
   const pdfCount = pdfAgg.count?.[0]?.total || 0;
   const imageCount = ocrAgg.count?.[0]?.total || 0;
+  const audioCount = audioAgg.count?.[0]?.total || 0;
 
   const summary = {
-    totalDocuments: pdfCount + imageCount,
+    totalUploaded: pdfCount + imageCount + audioCount,
     pdfCount,
-    imageCount
+    imageCount,
+    audioCount
   };
 
-  const timeline = mergeTimelines(pdfAgg.timeline, ocrAgg.timeline);
+  const timeline = mergeTimelines(pdfAgg.timeline, ocrAgg.timeline, audioAgg.timeline);
 
-  const recentDocuments = [...(pdfAgg.recent || []), ...(ocrAgg.recent || [])]
+  const recentDocuments = [...(pdfAgg.recent || []), ...(ocrAgg.recent || []), ...(audioAgg.recent || [])]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, recentLimit);
 
   const uploaderMap = new Map();
-  [...(pdfAgg.uploaders || []), ...(ocrAgg.uploaders || [])].forEach(
+  [...(pdfAgg.uploaders || []), ...(ocrAgg.uploaders || []), ...(audioAgg.uploaders || [])].forEach(
     ({ uploadedBy, count }) => {
       if (!uploadedBy) return;
       uploaderMap.set(uploadedBy, (uploaderMap.get(uploadedBy) || 0) + count);
@@ -170,7 +184,11 @@ async function hydrateDocumentDetails(recentDocuments = []) {
     .filter((doc) => doc.type !== "PDF")
     .map((doc) => doc.documentId);
 
-  const [pdfDocs, ocrDocs] = await Promise.all([
+  const audioIds = recentDocuments
+    .filter((doc) => doc.type === "Audio")
+    .map((doc) => doc.documentId);
+
+  const [pdfDocs, ocrDocs, audioDocs] = await Promise.all([
     pdfIds.length
       ? Document.find({ _id: { $in: pdfIds } })
           .select("filename uploadedBy createdAt text entities")
@@ -180,26 +198,37 @@ async function hydrateDocumentDetails(recentDocuments = []) {
       ? OcrDocument.find({ _id: { $in: imageIds } })
           .select("filename uploadedBy createdAt text entities")
           .lean()
+      : [],
+    audioIds.length
+      ? Transcription.find({ _id: { $in: audioIds } })
+          .select("filename uploadedBy createdAt transcript entities")
+          .lean()
       : []
   ]);
 
   const pdfMap = new Map(pdfDocs.map((doc) => [doc._id.toString(), doc]));
   const ocrMap = new Map(ocrDocs.map((doc) => [doc._id.toString(), doc]));
+  const audioMap = new Map(audioDocs.map((doc) => [doc._id.toString(), doc]));
 
   return recentDocuments
     .map((entry) => {
       const entryId = entry.documentId ? entry.documentId.toString() : null;
-      const source =
-        entry.type === "PDF"
-          ? pdfMap.get(entryId)
-          : ocrMap.get(entryId);
+      let source;
+      if (entry.type === "PDF") {
+        source = pdfMap.get(entryId);
+      } else if (entry.type === "Audio") {
+        source = audioMap.get(entryId);
+      } else {
+        source = ocrMap.get(entryId);
+      }
       if (!source) return null;
 
-      const cleanText = (source.text || "").replace(/\s+/g, " ").trim();
+      const textContent = source.text || source.transcript || "";
+      const cleanText = textContent.replace(/\s+/g, " ").trim();
 
       return {
         ...entry,
-        text: source.text || "",
+        text: textContent,
         snippet: cleanText.slice(0, 400),
         entities: source.entities || {},
         uploadedBy: source.uploadedBy || entry.uploadedBy,
@@ -368,7 +397,7 @@ export const exportOperationalPDF = async (req, res) => {
       .text("Executive Summary")
       .moveDown(0.3);
 
-    const { totalDocuments, pdfCount, imageCount } = summary;
+    const { totalUploaded, pdfCount, imageCount, audioCount } = summary;
     const busiestDay = timeline.reduce(
       (max, point) => (!max || point.count > max.count ? point : max),
       null
@@ -376,8 +405,8 @@ export const exportOperationalPDF = async (req, res) => {
 
     const autoSummary = aiSummary?.executiveSummary
       ? aiSummary.executiveSummary
-      : `During the selected period, the system handled ${totalDocuments} documents
-(${pdfCount} PDF and ${imageCount} Image/OCR uploads).
+      : `During the selected period, the system handled ${totalUploaded} documents
+(${pdfCount} PDF, ${imageCount} Image/OCR, and ${audioCount} Audio uploads).
 Activity was recorded on ${timeline.length} distinct days${
           busiestDay
             ? `, peaking on ${busiestDay.label} (${busiestDay.count} uploads)`
@@ -394,14 +423,15 @@ Activity was recorded on ${timeline.length} distinct days${
     doc.font("Helvetica-Bold").fontSize(14).text("Key Metrics").moveDown(0.3);
 
     const metrics = [
-      ["Total Documents", totalDocuments],
+      ["Total Documents", totalUploaded],
       ["PDF Documents", pdfCount],
       ["Image / OCR Documents", imageCount],
+      ["Audio Documents", audioCount],
       ["Active Uploaders", topUploaders.length],
       [
         "Average Docs / Uploader",
         topUploaders.length
-          ? (totalDocuments / topUploaders.length).toFixed(1)
+          ? (totalUploaded / topUploaders.length).toFixed(1)
           : "N/A"
       ]
     ];
