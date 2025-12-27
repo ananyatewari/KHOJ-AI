@@ -6,6 +6,8 @@ import { emitLog } from "../utils/logger.js";
 import aiService from "../services/aiService.js";
 import { extractEntitiesAI } from "../services/aiEntities.js";
 import { generateAnalysisPDF } from "../utils/pdfGenerator.js";
+import { findOrCreateEvent, updateEventTitle } from "../services/eventLinking.js";
+import { triggerAlertChecks } from "../utils/alertTriggers.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -99,6 +101,81 @@ router.post("/process", authMiddleware, upload.single("audio"), async (req, res)
       agency: agency,
       transcriptionId: transcription._id
     });
+
+    try {
+      await emitLog(io, {
+        level: "INFO",
+        message: "Checking for related documents...",
+        user: userId,
+        agency: agency
+      });
+
+      const { event, isNew } = await findOrCreateEvent(transcription, "Transcription");
+      
+      if (event) {
+        if (isNew) {
+          await updateEventTitle(event._id);
+        }
+
+        await emitLog(io, {
+          level: "SUCCESS",
+          message: isNew ? `New event created with ${event.documents.length} related document(s)` : "Transcription linked to existing event",
+          user: userId,
+          agency: agency
+        });
+
+        if (io) {
+          io.emit("event:updated", {
+            eventId: event._id,
+            isNew,
+            documentId: transcription._id
+          });
+        }
+      } else {
+        await emitLog(io, {
+          level: "INFO",
+          message: "No related documents found. Event will be created when a matching document is uploaded.",
+          user: userId,
+          agency: agency
+        });
+      }
+    } catch (eventErr) {
+      console.error("Event linking failed for transcription:", eventErr);
+      await emitLog(io, {
+        level: "WARNING",
+        message: "Event linking failed (transcription still saved)",
+        user: userId,
+        agency: agency
+      });
+    }
+
+    try {
+      await emitLog(io, {
+        level: "INFO",
+        message: "Running AI alert checks...",
+        user: userId,
+        agency: agency
+      });
+
+      const alerts = await triggerAlertChecks(transcription, "Transcription", io);
+      
+      if (alerts.length > 0) {
+        await emitLog(io, {
+          level: "WARNING",
+          message: `${alerts.length} alert(s) triggered`,
+          user: userId,
+          agency: agency
+        });
+      }
+    } catch (alertErr) {
+      console.error("Alert checks failed for transcription:", alertErr);
+      await emitLog(io, {
+        level: "WARNING",
+        message: "Alert checks failed",
+        user: userId,
+        agency: agency
+      });
+    }
 
     res.json({
       transcription: {

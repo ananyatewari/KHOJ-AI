@@ -1,5 +1,6 @@
 import { Shield, Brain, Network } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTheme } from "../context/ThemeContext";
 
 const users = [
   {
@@ -23,17 +24,25 @@ const users = [
 ];
 
 export default function WhoItsFor() {
+  const { theme } = useTheme();
+  
   return (
-    <section className="bg-gray-900 py-20">
+    <section className={`py-20 transition-colors duration-300 relative ${
+      theme === "dark" ? "bg-gray-900" : "bg-gradient-to-b from-purple-50/80 via-indigo-50/50 to-pink-50/30"
+    }`}>
       <div className="max-w-6xl mx-auto px-8">
-        <h3 className="text-3xl font-bold mb-10 text-center text-white">
-          Who It’s <span className="text-indigo-400">For</span>
+        <h3 className={`text-3xl font-bold mb-10 text-center transition-colors duration-300 ${
+          theme === "dark" ? "text-white" : "text-slate-900"
+        }`}>
+          Who It's <span className="text-indigo-400">For</span>
         </h3>
 
         <div className="grid md:grid-cols-[60px_1fr] gap-10">
           {/* LEFT TIMELINE */}
           <div className="relative flex flex-col items-center">
-            <div className="absolute h-full w-[2px] bg-white/15" />
+            <div className={`absolute h-full w-[2px] transition-colors duration-300 ${
+              theme === "dark" ? "bg-white/15" : "bg-purple-300"
+            }`} />
             {users.map((_, i) => (
               <div
                 key={i}
@@ -51,15 +60,16 @@ export default function WhoItsFor() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: false }}
                 transition={{ duration: 0.5 }}
-                className="
-                  bg-black/40
-                  border border-white/10
+                className={`
                   rounded-xl
                   p-6
-                  shadow-[0_20px_60px_rgba(0,0,0,0.7)]
-                  hover:border-indigo-400/40
-                  transition
-                "
+                  transition-all duration-300
+                  ${
+                    theme === "dark"
+                      ? "bg-black/40 border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.7)] hover:border-indigo-400/40"
+                      : "bg-gradient-to-br from-white/95 to-purple-50/70 border border-purple-200/60 shadow-lg hover:border-indigo-400 hover:shadow-xl backdrop-blur-sm"
+                  }
+                `}
               >
                 <div
                   className={`w-10 h-10 rounded-lg bg-gradient-to-r ${u.color} flex items-center justify-center mb-3`}
@@ -67,10 +77,14 @@ export default function WhoItsFor() {
                   {u.icon}
                 </div>
 
-                <h4 className="text-lg font-semibold mb-1 text-white">
+                <h4 className={`text-lg font-semibold mb-1 transition-colors duration-300 ${
+                  theme === "dark" ? "text-white" : "text-slate-900"
+                }`}>
                   {u.title}
                 </h4>
-                <p className="text-slate-300 text-sm">
+                <p className={`text-sm transition-colors duration-300 ${
+                  theme === "dark" ? "text-slate-300" : "text-slate-600"
+                }`}>
                   {u.desc}
                 </p>
               </motion.div>

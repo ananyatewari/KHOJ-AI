@@ -5,6 +5,7 @@ import {
   Lock,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTheme } from "../context/ThemeContext";
 
 const cards = [
   {
@@ -34,9 +35,15 @@ const cards = [
 ];
 
 export default function Impact() {
+  const { theme } = useTheme();
+  
   return (
-    <section className="max-w-6xl mx-auto py-24 px-8">
-      <h3 className="text-3xl font-bold text-center mb-14">
+    <section className={`max-w-6xl mx-auto py-24 px-8 relative ${
+      theme === "dark" ? "" : ""
+    }`}>
+      <h3 className={`text-3xl font-bold text-center mb-14 transition-colors duration-300 ${
+        theme === "dark" ? "text-white" : "text-slate-900"
+      }`}>
         Real-World <span className="text-indigo-400">Impact</span>
       </h3>
 
@@ -61,24 +68,29 @@ export default function Impact() {
 
                 {/* Card */}
                 <div
-                  className="
+                  className={`
                     relative
-                    bg-slate-950/85
-                    border border-white/10
                     backdrop-blur-xl
                     rounded-2xl
                     p-6
-                    shadow-[0_20px_60px_rgba(0,0,0,0.75)]
-                    hover:border-indigo-400/40
-                    transition
-                  "
+                    transition-all duration-300
+                    ${
+                      theme === "dark"
+                        ? "bg-slate-950/85 border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.75)] hover:border-indigo-400/40"
+                        : "bg-gradient-to-br from-white/95 via-purple-50/50 to-indigo-50/40 border border-purple-200/60 shadow-lg hover:border-indigo-400 hover:shadow-xl"
+                    }
+                  `}
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <div className="text-indigo-400">{c.icon}</div>
-                    <h4 className="text-lg font-semibold">{c.title}</h4>
+                    <h4 className={`text-lg font-semibold transition-colors duration-300 ${
+                      theme === "dark" ? "text-white" : "text-slate-900"
+                    }`}>{c.title}</h4>
                   </div>
 
-                  <p className="text-slate-300 text-sm leading-relaxed">
+                  <p className={`text-sm leading-relaxed transition-colors duration-300 ${
+                    theme === "dark" ? "text-slate-300" : "text-slate-600"
+                  }`}>
                     {c.desc}
                   </p>
                 </div>

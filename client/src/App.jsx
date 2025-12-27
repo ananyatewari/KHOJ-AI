@@ -8,6 +8,7 @@ import OcrPage from "./pages/OcrPage";
 import TranscriptionPage from "./pages/TranscriptionPage";
 import TranscriptionView from "./pages/TranscriptionView";
 import History from "./pages/History";
+import AlertsPage from "./pages/AlertsPage";
 import AppLayout from "./components/layout/AppLayout";
 import PublicLayout from "./components/layout/PublicLayout";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
@@ -15,7 +16,9 @@ import Landing from "./pages/Landing";
 import { OcrProvider } from "./context/OcrContext";
 import { TranscriptionProvider } from "./context/TranscriptionContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { AlertsProvider } from "./context/AlertsContext";
 import ChatPanel from "./components/dashboard/ChatPanel";
+import AlertToastContainer from "./components/alerts/AlertToastContainer";
 
 export default function App() {
   return (
@@ -49,7 +52,10 @@ export default function App() {
             <ProtectedRoute>
               <OcrProvider>
                 <TranscriptionProvider>
-                  <AppLayout />
+                  <AlertsProvider>
+                    <AppLayout />
+                    <AlertToastContainer />
+                  </AlertsProvider>
                 </TranscriptionProvider>
               </OcrProvider>
             </ProtectedRoute>
@@ -63,6 +69,7 @@ export default function App() {
           <Route path="transcription/:id" element={<TranscriptionView />} />
           <Route path="chatbot" element={<ChatPanel />} />
           <Route path="history" element={<History />} />
+          <Route path="alerts" element={<AlertsPage />} />
         </Route>
       </Routes>
       </BrowserRouter>

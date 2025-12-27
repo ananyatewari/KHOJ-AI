@@ -1,6 +1,8 @@
 import OcrDocument from "../models/OcrDocument.js";
 import { performOCR, extractEntities } from "../utils/dualOcrProcessor.js";
 import { generateAISummary } from "../services/aiSummary.js";
+import { findOrCreateEvent, updateEventTitle } from "../services/eventLinking.js";
+import { triggerAlertChecks } from "../utils/alertTriggers.js";
 import path from "path";
 import fs from "fs";
 
@@ -69,6 +71,26 @@ export const processDocument = async (file, userData = {}) => {
     newOcrDoc.status = "completed";
 
     await newOcrDoc.save();
+
+    try {
+      const { event, isNew } = await findOrCreateEvent(newOcrDoc, "OcrDocument");
+      if (event) {
+        if (isNew) {
+          await updateEventTitle(event._id);
+        }
+        console.log(`OCR document linked to event: ${event._id} (${isNew ? 'new' : 'existing'} event with ${event.documents.length} document(s))`);
+      } else {
+        console.log(`OCR document ${newOcrDoc._id}: No related documents found. Event will be created when a matching document is uploaded.`);
+      }
+    } catch (eventErr) {
+      console.error("Event linking failed for OCR document:", eventErr);
+    }
+
+    try {
+      await triggerAlertChecks(newOcrDoc, "OcrDocument", null);
+    } catch (alertErr) {
+      console.error("Alert checks failed for OCR document:", alertErr);
+    }
 
     return newOcrDoc;
   } catch (error) {

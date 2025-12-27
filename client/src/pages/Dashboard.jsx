@@ -6,6 +6,7 @@ import OperationalReportPanel from "../components/dashboard/OperationalReportPan
 import ChatPanel from "../components/dashboard/ChatPanel";
 import SharePanel from "../components/dashboard/SharePanel";
 import ApprovalPanel from "../components/dashboard/ApprovalPanel";
+import EventIntelligencePanel from "../components/dashboard/EventIntelligencePanel";
 
 export default function Dashboard() {
   const { token, user } = useAuth();
@@ -117,6 +118,8 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-5">
+            <EventIntelligencePanel />
+
             <OperationalReportPanel token={token} agency={user.agency} />
 
             <ApprovalPanel />

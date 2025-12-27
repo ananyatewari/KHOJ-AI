@@ -7,6 +7,8 @@ import { getEmbedding } from "../utils/embeddings.js";
 import { emitLog } from "../utils/logger.js";
 import { extractEntitiesAI } from "../services/aiEntities.js";
 import { generateAISummary } from "../services/aiSummary.js";
+import { findOrCreateEvent, updateEventTitle } from "../services/eventLinking.js";
+import { triggerAlertChecks } from "../utils/alertTriggers.js";
 
 const router = express.Router();
 
@@ -135,6 +137,80 @@ await emitLog(io, {
       agency: req.body.agency
     });
 
+    try {
+      await emitLog(io, {
+        level: "INFO",
+        message: "Checking for related documents...",
+        user: req.body.uploadedBy,
+        agency: req.body.agency
+      });
+
+      const { event, isNew } = await findOrCreateEvent(doc, "Document");
+      
+      if (event) {
+        if (isNew) {
+          await updateEventTitle(event._id);
+        }
+
+        await emitLog(io, {
+          level: "SUCCESS",
+          message: isNew ? `New event created with ${event.documents.length} related document(s)` : "Document linked to existing event",
+          user: req.body.uploadedBy,
+          agency: req.body.agency
+        });
+
+        if (io) {
+          io.emit("event:updated", {
+            eventId: event._id,
+            isNew,
+            documentId: doc._id
+          });
+        }
+      } else {
+        await emitLog(io, {
+          level: "INFO",
+          message: "No related documents found. Event will be created when a matching document is uploaded.",
+          user: req.body.uploadedBy,
+          agency: req.body.agency
+        });
+      }
+    } catch (eventErr) {
+      console.error("Event linking failed:", eventErr);
+      await emitLog(io, {
+        level: "WARNING",
+        message: "Event linking failed (document still indexed)",
+        user: req.body.uploadedBy,
+        agency: req.body.agency
+      });
+    }
+
+    try {
+      await emitLog(io, {
+        level: "INFO",
+        message: "Running AI alert checks...",
+        user: req.body.uploadedBy,
+        agency: req.body.agency
+      });
+
+      const alerts = await triggerAlertChecks(doc, "Document", io);
+      
+      if (alerts.length > 0) {
+        await emitLog(io, {
+          level: "WARNING",
+          message: `${alerts.length} alert(s) triggered`,
+          user: req.body.uploadedBy,
+          agency: req.body.agency
+        });
+      }
+    } catch (alertErr) {
+      console.error("Alert checks failed:", alertErr);
+      await emitLog(io, {
+        level: "WARNING",
+        message: "Alert checks failed",
+        user: req.body.uploadedBy,
+        agency: req.body.agency
+      });
+    }
 
     res.json({
       status: "success",

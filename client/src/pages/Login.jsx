@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { User, Lock } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
+import { User, Lock, Sun, Moon, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import BackgroundCanvas from "../components/BackgroundCanvas";
 
@@ -11,6 +12,7 @@ export default function Login() {
   const [error, setError] = useState("");
 
   const { login } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -35,24 +37,61 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center text-white overflow-hidden">
+    <div className={`relative min-h-screen flex items-center justify-center overflow-hidden transition-colors duration-300 ${
+      theme === "dark" ? "text-white" : "text-slate-900"
+    }`}>
+      {/* ===== BACK TO HOME BUTTON ===== */}
+      <Link
+        to="/"
+        className={`fixed top-6 left-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 ${
+          theme === "dark"
+            ? "bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 text-white"
+            : "bg-white hover:bg-purple-50 border border-purple-200 shadow-lg text-slate-900"
+        }`}
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span className="text-sm font-medium">Back to Home</span>
+      </Link>
+
+      {/* ===== THEME TOGGLE BUTTON ===== */}
+      <button
+        onClick={toggleTheme}
+        className={`fixed top-6 right-6 z-50 p-3 rounded-lg transition-all duration-200 ${
+          theme === "dark"
+            ? "bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700"
+            : "bg-white hover:bg-purple-50 border border-purple-200 shadow-lg"
+        }`}
+        aria-label="Toggle theme"
+      >
+        {theme === "dark" ? (
+          <Sun className="w-5 h-5 text-yellow-400" />
+        ) : (
+          <Moon className="w-5 h-5 text-indigo-600" />
+        )}
+      </button>
+
       {/* ===== INTERACTIVE BACKGROUND ===== */}
-      <div className="fixed inset-0 bg-black z-4">
+      <div className={`fixed inset-0 z-4 transition-colors duration-300 ${
+        theme === "dark" ? "bg-black" : "bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50"
+      }`}>
         <BackgroundCanvas></BackgroundCanvas>
         {/* gradient layer */}
         <div
-          className="
-            absolute inset-0
-            bg-[radial-gradient(circle_at_20%_20%,rgba(124,58,237,0.55),transparent_45%),
-                radial-gradient(circle_at_80%_25%,rgba(59,130,246,0.55),transparent_45%),
-                radial-gradient(circle_at_50%_75%,rgba(16,185,129,0.45),transparent_55%)]
-          "
+          className={`absolute inset-0 ${
+            theme === "dark"
+              ? "bg-[radial-gradient(circle_at_20%_20%,rgba(124,58,237,0.55),transparent_45%),radial-gradient(circle_at_80%_25%,rgba(59,130,246,0.55),transparent_45%),radial-gradient(circle_at_50%_75%,rgba(16,185,129,0.45),transparent_55%)]"
+              : "bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.08),transparent_50%),radial-gradient(circle_at_70%_60%,rgba(59,130,246,0.08),transparent_50%),radial-gradient(circle_at_40%_80%,rgba(236,72,153,0.06),transparent_50%)]"
+          }`}
         />
 
         {/* floating orbs */}
-        <div className="absolute w-102 h-102 bg-purple-500/20 rounded-full blur-3xl top-50 left-250 animate-pulse" />
-        <div className="absolute w-72 h-72 bg-purple-500/20 rounded-full blur-3xl top-10 left-10 animate-pulse" />
-        <div className="absolute w-screen h-22 bg-indigo-500/20 rounded-full blur-3xl bottom-0 animate-pulse delay-300" />
+        {theme === "dark" && (
+          <>
+            <div className="absolute w-102 h-102 bg-purple-500/20 rounded-full blur-3xl top-50 left-250 animate-pulse" />
+            <div className="absolute w-72 h-72 bg-purple-500/20 rounded-full blur-3xl top-10 left-10 animate-pulse" />
+            <div className="absolute w-screen h-22 bg-indigo-500/20 rounded-full blur-3xl bottom-0 animate-pulse delay-300" />
+          </>
+        )}
       </div>
 
       {/* ===== LOGIN CARD ===== */}
@@ -61,18 +100,28 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
         whileHover={{ scale: 1.01 }}
-        className="
+        className={`
           w-full max-w-sm
-          bg-slate-950/80
           p-8
           rounded-2xl
-          border border-white/10 z-10
-        "
+          z-10
+          backdrop-blur-2xl
+          transition-colors duration-300
+          ${
+            theme === "dark"
+              ? "bg-slate-950/80 border border-white/10"
+              : "bg-white/90 border border-purple-200/50 shadow-[0_20px_80px_rgba(139,92,246,0.2)]"
+          }
+        `}
       >
-        <h2 className="text-2xl font-bold mb-1 text-center">
+        <h2 className={`text-2xl font-bold mb-1 text-center transition-colors duration-300 ${
+          theme === "dark" ? "text-white" : "text-slate-900"
+        }`}>
           Welcome to KHOJ AI
         </h2>
-        <p className="text-sm text-slate-400 mb-6 text-center">
+        <p className={`text-sm mb-6 text-center transition-colors duration-300 ${
+          theme === "dark" ? "text-slate-400" : "text-slate-600"
+        }`}>
           Secure intelligence access
         </p>
 
@@ -88,13 +137,17 @@ export default function Login() {
             <User className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
             <input
               placeholder="Username"
-              className="
+              className={`
                 w-full pl-10 pr-3 py-3 rounded-lg
-                bg-slate-900/70
-                border border-white/10
+                border
                 focus:outline-none focus:ring-2 focus:ring-indigo-500
-                transition
-              "
+                transition-colors duration-300
+                ${
+                  theme === "dark"
+                    ? "bg-slate-900/70 border-white/10 text-white placeholder:text-slate-500"
+                    : "bg-white border-purple-200 text-slate-900 placeholder:text-slate-400"
+                }
+              `}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
@@ -106,13 +159,17 @@ export default function Login() {
             <input
               type="password"
               placeholder="Password"
-              className="
+              className={`
                 w-full pl-10 pr-3 py-3 rounded-lg
-                bg-slate-900/70
-                border border-white/10
-                focus:outline-none focus:ring-1 focus:ring-indigo-500
-                transition
-              "
+                border
+                focus:outline-none focus:ring-2 focus:ring-indigo-500
+                transition-colors duration-300
+                ${
+                  theme === "dark"
+                    ? "bg-slate-900/70 border-white/10 text-white placeholder:text-slate-500"
+                    : "bg-white border-purple-200 text-slate-900 placeholder:text-slate-400"
+                }
+              `}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -146,7 +203,9 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="text-sm mt-6 text-slate-400 text-center">
+        <p className={`text-sm mt-6 text-center transition-colors duration-300 ${
+          theme === "dark" ? "text-slate-400" : "text-slate-600"
+        }`}>
           No account?{" "}
           <Link to="/signup" className="text-indigo-400 hover:underline">
             Sign up
