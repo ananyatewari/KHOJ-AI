@@ -13,6 +13,7 @@ import PublicLayout from "./components/layout/PublicLayout";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import Landing from "./pages/Landing";
 import { OcrProvider } from "./context/OcrContext";
+import { TranscriptionProvider } from "./context/TranscriptionContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import ChatPanel from "./components/dashboard/ChatPanel";
 
@@ -47,7 +48,9 @@ export default function App() {
           element={
             <ProtectedRoute>
               <OcrProvider>
-                <AppLayout />
+                <TranscriptionProvider>
+                  <AppLayout />
+                </TranscriptionProvider>
               </OcrProvider>
             </ProtectedRoute>
           }

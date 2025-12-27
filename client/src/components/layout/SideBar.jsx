@@ -36,14 +36,57 @@ export default function SideBar() {
       <div className={`p-6 border-b ${
         theme === "dark" ? "border-white/10" : "border-purple-100"
       }`}>
-        <Link to="/">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-          KHOJ AI
-        </h1>
+        <Link to="/" className="flex items-center gap-3 group">
+          {/* Logo - Legal/Justice themed */}
+          <div className="relative w-10 h-10 flex-shrink-0">
+            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+              {/* Shield outline - represents protection and law */}
+              <path 
+                d="M20 4 L32 10 L32 18 C32 26 26 32 20 36 C14 32 8 26 8 18 L8 10 Z" 
+                stroke={theme === "dark" ? "#6366f1" : "#4f46e5"}
+                strokeWidth="1.8" 
+                fill="none"
+                className="transition-all duration-300 group-hover:stroke-[2.2]"
+              />
+              
+              {/* Document/file icon inside shield */}
+              <rect 
+                x="15" 
+                y="13" 
+                width="10" 
+                height="13" 
+                rx="1"
+                stroke={theme === "dark" ? "#6366f1" : "#4f46e5"}
+                strokeWidth="1.5"
+                fill="none"
+              />
+              
+              {/* Document lines */}
+              <line x1="17" y1="16" x2="23" y2="16" stroke={theme === "dark" ? "#6366f1" : "#4f46e5"} strokeWidth="1" strokeLinecap="round" />
+              <line x1="17" y1="19" x2="23" y2="19" stroke={theme === "dark" ? "#6366f1" : "#4f46e5"} strokeWidth="1" strokeLinecap="round" />
+              <line x1="17" y1="22" x2="21" y2="22" stroke={theme === "dark" ? "#6366f1" : "#4f46e5"} strokeWidth="1" strokeLinecap="round" />
+              
+              {/* Small AI indicator dots - subtle */}
+              <circle cx="12" cy="12" r="1" fill={theme === "dark" ? "#6366f1" : "#4f46e5"} opacity="0.6" />
+              <circle cx="28" cy="12" r="1" fill={theme === "dark" ? "#6366f1" : "#4f46e5"} opacity="0.6" />
+              <circle cx="12" cy="28" r="1" fill={theme === "dark" ? "#6366f1" : "#4f46e5"} opacity="0.6" />
+              <circle cx="28" cy="28" r="1" fill={theme === "dark" ? "#6366f1" : "#4f46e5"} opacity="0.6" />
+            </svg>
+          </div>
+          
+          <div className="flex-1">
+            <h1 className={`text-2xl font-bold transition-all duration-300 ${
+              theme === "dark" 
+                ? "text-indigo-400 group-hover:text-indigo-300" 
+                : "text-indigo-600 group-hover:text-indigo-700"
+            }`}>
+              KHOJ AI
+            </h1>
+            <p className={`text-xs mt-0.5 ${
+              theme === "dark" ? "text-slate-500" : "text-slate-600"
+            }`}>Intelligence Platform</p>
+          </div>
         </Link>
-        <p className={`text-xs mt-1 ${
-          theme === "dark" ? "text-slate-500" : "text-slate-600"
-        }`}>Intelligence Platform</p>
       </div>
 
       {/* Navigation */}

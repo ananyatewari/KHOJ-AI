@@ -663,17 +663,30 @@ export default function AudioUploader() {
               }`}>
                 Selected Files ({selectedFiles.length})
               </h3>
-              <button
-                type="button"
-                onClick={clearSelectedFiles}
-                className={`transition text-sm ${
-                  theme === "dark" 
-                    ? "text-gray-400 hover:text-red-400" 
-                    : "text-slate-600 hover:text-red-600"
-                }`}
-              >
-                Clear All
-              </button>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={clearSelectedFiles}
+                  className={`text-xs underline-offset-2 underline ${
+                    theme === "dark"
+                      ? "text-red-300 hover:text-red-200"
+                      : "text-red-600 hover:text-red-700"
+                  }`}
+                >
+                  Clear Selection
+                </button>
+                <button
+                  type="button"
+                  onClick={clearWorkspace}
+                  className={`text-xs underline-offset-2 underline ${
+                    theme === "dark"
+                      ? "text-gray-400 hover:text-gray-200"
+                      : "text-slate-600 hover:text-slate-800"
+                  }`}
+                >
+                  Reset Workspace
+                </button>
+              </div>
             </div>
             <ul className="space-y-2">
               {selectedFiles.map((file, idx) => (
@@ -753,16 +766,24 @@ export default function AudioUploader() {
 
       {transcriptions.length > 0 && (
         <div className="mt-8 space-y-6">
-          <div className="border-t border-gray-700 pt-6">
+          <div className={`border-t pt-6 ${
+            theme === "dark" ? "border-gray-700" : "border-gray-300"
+          }`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">
+              <h3 className={`text-lg font-semibold ${
+                theme === "dark" ? "text-white" : "text-slate-800"
+              }`}>
                 📊 Transcription Results
               </h3>
               {summary && (
                 <div className="flex items-center gap-2">
                   <button
                     onClick={downloadSummary}
-                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm transition"
+                    className={`px-3 py-1.5 rounded text-sm transition ${
+                      theme === "dark"
+                        ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                        : "bg-indigo-500 hover:bg-indigo-600 text-white"
+                    }`}
                   >
                     📥 Download Summary
                   </button>
