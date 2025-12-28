@@ -1,0 +1,44 @@
+CCTV METADATA ANALYSIS REPORT
+================================================================================
+
+File: meta-1.txt
+Agency: police
+Uploaded By: abhi
+Date: 28/12/2025, 10:12:51 pm
+
+================================================================================
+
+EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+A CCTV metadata record has been analyzed, revealing potential suspicious activity on MI Road in Jaipur. The footage, captured by a police agency, shows a black Hyundai Creta vehicle with registration number RJ14 AB 4321 stopping multiple times near closed shops. Additionally, a male individual, approximately 28-32 years old, was observed exchanging small packets with pedestrians while wearing a dark jacket and jeans. The activity is consistent with suspected narcotics distribution, indicating a high confidence level.
+
+KEY FINDINGS
+--------------------------------------------------------------------------------
+1. Vehicle Activity: A black Hyundai Creta with registration number RJ14 AB 4321 was observed stopping multiple times near closed shops on MI Road in Jaipur.
+2. Individual Activity: A male individual, approximately 28-32 years old, was seen exchanging small packets with pedestrians while wearing a dark jacket and jeans.
+3. Location: The activity took place on MI Road in Jaipur, a location linked to suspected narcotics distribution.
+4. Agency: The CCTV footage was captured by a police agency, indicating official interest in the activity.
+
+ANALYST TAKEAWAYS
+--------------------------------------------------------------------------------
+1. The activity observed on MI Road in Jaipur is consistent with suspected narcotics distribution, indicating a high confidence level.
+2. The involvement of a police agency suggests official interest in the activity, potentially indicating a larger-scale investigation.
+3. The black Hyundai Creta vehicle and the male individual involved in the activity may be linked to narcotics distribution, warranting further investigation.
+
+NEXT STEPS
+--------------------------------------------------------------------------------
+1. Conduct a thorough analysis of the CCTV footage to identify any additional leads or evidence.
+
+EXTRACTED ENTITIES
+--------------------------------------------------------------------------------
+
+Places:
+  - MI Road
+  - Jaipur
+
+Organizations:
+  - police
+
+
+================================================================================
+End of Report
