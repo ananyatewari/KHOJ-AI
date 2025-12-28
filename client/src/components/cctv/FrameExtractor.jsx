@@ -41,10 +41,12 @@ export default function FrameExtractor({ videoFile, onFramesExtracted }) {
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0);
 
-      // Convert canvas to blob
+      // Convert canvas to blob with higher quality
       const blob = await new Promise((resolve) => {
-        canvas.toBlob(resolve, "image/jpeg", 0.8);
+        canvas.toBlob(resolve, "image/jpeg", 0.95); // Increased quality to 0.95
       });
+
+      console.log(`Frame ${i + 1}: ${video.videoWidth}x${video.videoHeight}, blob size: ${blob.size} bytes`);
 
       frames.push({
         blob,
@@ -64,9 +66,32 @@ export default function FrameExtractor({ videoFile, onFramesExtracted }) {
     <div>
       <video ref={videoRef} style={{ display: "none" }} />
       <canvas ref={canvasRef} style={{ display: "none" }} />
-      <button onClick={extractFrames} disabled={extracting}>
-        {extracting ? `Extracting... ${progress}%` : "Extract Frames"}
+      
+      <button 
+        onClick={extractFrames} 
+        disabled={extracting}
+        className={`px-6 py-3 rounded-md font-medium transition-colors ${
+          extracting 
+            ? 'bg-gray-400 cursor-not-allowed text-white' 
+            : 'bg-blue-600 hover:bg-blue-700 text-white'
+        }`}
+      >
+        {extracting ? `Extracting Frames... ${progress}%` : "Start Frame Extraction"}
       </button>
+      
+      {extracting && (
+        <div className="mt-4">
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div 
+              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+          <p className="text-sm text-gray-600 mt-2 text-center">
+            Extracting frames from video... {progress}%
+          </p>
+        </div>
+      )}
     </div>
   );
 }

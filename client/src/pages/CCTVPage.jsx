@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import CCTVUpload from "../components/cctv/CCTVUpload.jsx";
 import DetectionResults from "../components/cctv/DetectionResults.jsx";
 import FrameExtractor from "../components/cctv/FrameExtractor.jsx";
+import MetadataUpload from "../components/cctv/MetadataUpload.jsx";
+import MetadataAnalysis from "../components/cctv/MetadataAnalysis.jsx";
+import VideoMetadataView from "../components/cctv/VideoMetadataView.jsx";
 import axios from "axios";
 import { getCCTVVideos } from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -14,9 +17,12 @@ const CCTVPage = ({}) => {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [processingFrames, setProcessingFrames] = useState(false);
+  const [metadataFiles, setMetadataFiles] = useState([]);
+  const [selectedMetadata, setSelectedMetadata] = useState(null);
 
   useEffect(() => {
     fetchVideos();
+    fetchMetadata();
   }, []);
 
   const fetchVideos = async () => {
@@ -31,10 +37,36 @@ const CCTVPage = ({}) => {
     }
   };
 
+  const fetchMetadata = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("/api/cctv/metadata", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setMetadataFiles(response.data.metadata || []);
+    } catch (error) {
+      console.error("Error fetching metadata:", error);
+    }
+  };
+
   const handleUploadSuccess = (uploadData) => {
     console.log("Upload successful:", uploadData);
     fetchVideos();
-    setActiveTab("library");
+    // Stay on upload tab to allow frame extraction
+  };
+
+  const handleMetadataUploadSuccess = (uploadData) => {
+    console.log("Metadata upload successful:", uploadData);
+    fetchMetadata();
+    // Switch to metadata library to see processing
+    setActiveTab("metadata-library");
+  };
+
+  const handleMetadataSelect = (metadata) => {
+    setSelectedMetadata(metadata);
+    setActiveTab("metadata-analysis");
   };
 
   const handleVideoSelect = (video) => {
@@ -97,53 +129,103 @@ const CCTVPage = ({}) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 py-8 bg-gray-50 dark:bg-gray-900">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">CCTV Analysis</h1>
-          <p className="text-gray-600 mt-2">
-            Upload and analyze CCTV footage for object detection and suspicious
-            activity
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">CCTV Analysis</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Upload and analyze CCTV footage for object detection and suspicious activity
           </p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab("upload")}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === "upload"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Upload Video
-            </button>
-
-            <button
-              onClick={() => setActiveTab("library")}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === "library"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Video Library ({videos.length})
-            </button>
-
-            {selectedVideo && (
+        <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+          <nav className="-mb-px flex flex-wrap gap-4">
+            {/* Video Section */}
+            <div className="flex items-center space-x-4 border-r border-gray-300 dark:border-gray-600 pr-4">
+              <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider">📹 Video</span>
               <button
-                onClick={() => setActiveTab("results")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "results"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                onClick={() => setActiveTab("upload")}
+                className={`py-2 px-3 border-b-2 font-medium text-sm ${
+                  activeTab === "upload"
+                    ? "border-purple-500 text-purple-600 dark:text-purple-400"
+                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-300 dark:hover:border-purple-600"
                 }`}
               >
-                Detection Results
+                Upload
               </button>
-            )}
+              <button
+                onClick={() => setActiveTab("library")}
+                className={`py-2 px-3 border-b-2 font-medium text-sm ${
+                  activeTab === "library"
+                    ? "border-purple-500 text-purple-600 dark:text-purple-400"
+                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-300 dark:hover:border-purple-600"
+                }`}
+              >
+                Library ({videos.length})
+              </button>
+              {selectedVideo && (
+                <>
+                  <button
+                    onClick={() => setActiveTab("results")}
+                    className={`py-2 px-3 border-b-2 font-medium text-sm ${
+                      activeTab === "results"
+                        ? "border-purple-500 text-purple-600 dark:text-purple-400"
+                        : "border-transparent text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-300 dark:hover:border-purple-600"
+                    }`}
+                  >
+                    Results
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("video-metadata")}
+                    className={`py-2 px-3 border-b-2 font-medium text-sm ${
+                      activeTab === "video-metadata"
+                        ? "border-purple-500 text-purple-600 dark:text-purple-400"
+                        : "border-transparent text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-300 dark:hover:border-purple-600"
+                    }`}
+                  >
+                    Intelligence
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Metadata Section */}
+            <div className="flex items-center space-x-4">
+              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">📄 Metadata Files</span>
+              <button
+                onClick={() => setActiveTab("metadata-upload")}
+                className={`py-2 px-3 border-b-2 font-medium text-sm ${
+                  activeTab === "metadata-upload"
+                    ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-600"
+                }`}
+              >
+                Upload
+              </button>
+              <button
+                onClick={() => setActiveTab("metadata-library")}
+                className={`py-2 px-3 border-b-2 font-medium text-sm ${
+                  activeTab === "metadata-library"
+                    ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-600"
+                }`}
+              >
+                Library ({metadataFiles.length})
+              </button>
+              {selectedMetadata && (
+                <button
+                  onClick={() => setActiveTab("metadata-analysis")}
+                  className={`py-2 px-3 border-b-2 font-medium text-sm ${
+                    activeTab === "metadata-analysis"
+                      ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-600"
+                  }`}
+                >
+                  Analysis
+                </button>
+              )}
+            </div>
           </nav>
         </div>
 
@@ -153,16 +235,16 @@ const CCTVPage = ({}) => {
             <CCTVUpload user={user} onUploadSuccess={handleUploadSuccess} />
           )}
           {activeTab === "library" && (
-            <div className="bg-white rounded-lg shadow-md">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
               <div className="p-6">
-                <h2 className="text-xl font-bold mb-4 text-gray-800">
+                <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
                   Video Library
                 </h2>
 
                 {loading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span className="ml-2 text-gray-600">
+                    <span className="ml-2 text-gray-600 dark:text-gray-400">
                       Loading videos...
                     </span>
                   </div>
@@ -181,42 +263,42 @@ const CCTVPage = ({}) => {
                         d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
                       />
                     </svg>
-                    <p className="mt-2 text-gray-500">No videos uploaded yet</p>
+                    <p className="mt-2 text-gray-500 dark:text-gray-400">No videos uploaded yet</p>
                     <button
                       onClick={() => setActiveTab("upload")}
-                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      className="mt-4 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600"
                     >
                       Upload First Video
                     </button>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Video
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Camera Location
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Duration
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Status
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Risk Score
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Actions
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {videos.map((video) => (
-                          <tr key={video._id} className="hover:bg-gray-50">
+                          <tr key={video._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <div className="flex-shrink-0 h-10 w-10">
@@ -237,10 +319,10 @@ const CCTVPage = ({}) => {
                                   </div>
                                 </div>
                                 <div className="ml-4">
-                                  <div className="text-sm font-medium text-gray-900">
+                                  <div className="text-sm font-medium text-gray-900 dark:text-white">
                                     {video.originalName}
                                   </div>
-                                  <div className="text-sm text-gray-500">
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">
                                     {formatFileSize(
                                       video.videoMetadata?.size || 0
                                     )}
@@ -249,11 +331,11 @@ const CCTVPage = ({}) => {
                               </div>
                             </td>
 
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                               {video.cameraInfo?.location || "Unknown"}
                             </td>
 
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                               {video.videoMetadata?.duration
                                 ? formatDuration(video.videoMetadata.duration)
                                 : "Unknown"}
@@ -269,29 +351,26 @@ const CCTVPage = ({}) => {
                               </span>
                             </td>
 
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                               {video.detectionSummary?.riskScore || 0}
                             </td>
 
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              {video.processingStatus === "uploaded" && (
+                              {video.processingStatus === "completed" ? (
                                 <button
-                                  onClick={() => setSelectedVideo(video)}
-                                  className="text-green-600 hover:text-green-900 mr-3"
+                                  onClick={() => handleVideoSelect(video)}
+                                  className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-3"
                                 >
-                                  Extract Frames
+                                  View Results
                                 </button>
+                              ) : (
+                                <span className="text-gray-400 dark:text-gray-500 mr-3">
+                                  {video.processingStatus === "uploaded" 
+                                    ? "Awaiting processing" 
+                                    : "Processing..."}
+                                </span>
                               )}
-                              <button
-                                onClick={() => handleVideoSelect(video)}
-                                className="text-blue-600 hover:text-blue-900 mr-3"
-                                disabled={
-                                  video.processingStatus !== "completed"
-                                }
-                              >
-                                View Results
-                              </button>
-                              <button className="text-red-600 hover:text-red-900">
+                              <button className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
                                 Delete
                               </button>
                             </td>
@@ -305,42 +384,29 @@ const CCTVPage = ({}) => {
             </div>
           )}
 
-          {/* Frame Extractor for selected video */}
-          {selectedVideo && selectedVideo.processingStatus === "uploaded" && (
-            <div className="bg-white rounded-lg shadow-md p-6 mt-6">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                Extract Frames & Analyze: {selectedVideo.originalName}
-              </h3>
-              <div className="text-sm text-gray-600 mb-4">
-                Note: You need to re-upload the video file to extract frames
-                since the file is not stored in the browser after upload.
-              </div>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                <input
-                  type="file"
-                  accept="video/*"
-                  onChange={(e) => {
-                    if (e.target.files[0]) {
-                      const file = e.target.files[0];
-                      if (file.name === selectedVideo.originalName) {
-                        // Create a temporary FrameExtractor with this file
-                        const tempVideo = { ...selectedVideo, file };
-                        setSelectedVideo(tempVideo);
-                      } else {
-                        alert(
-                          "Please select the same video file: " +
-                            selectedVideo.originalName
-                        );
-                      }
-                    }
-                  }}
-                  className="hidden"
-                  id="file-reupload"
-                />
-                <label htmlFor="file-reupload" className="cursor-pointer">
-                  <div className="text-gray-400">
+
+          {activeTab === "metadata-upload" && (
+            <MetadataUpload user={user} onUploadSuccess={handleMetadataUploadSuccess} />
+          )}
+
+          {activeTab === "metadata-library" && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+              <div className="p-6">
+                <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
+                  Metadata Library
+                </h2>
+
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="ml-2 text-gray-600 dark:text-gray-400">
+                      Loading metadata files...
+                    </span>
+                  </div>
+                ) : metadataFiles.length === 0 ? (
+                  <div className="text-center py-8">
                     <svg
-                      className="mx-auto h-12 w-12"
+                      className="mx-auto h-12 w-12 text-gray-400"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -349,34 +415,118 @@ const CCTVPage = ({}) => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
+                    <p className="mt-2 text-gray-500 dark:text-gray-400">No metadata files uploaded yet</p>
+                    <button
+                      onClick={() => setActiveTab("metadata-upload")}
+                      className="mt-4 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600"
+                    >
+                      Upload First Metadata File
+                    </button>
                   </div>
-                  <p className="mt-2 text-sm text-gray-600">
-                    Click to select the video file: {selectedVideo.originalName}
-                  </p>
-                </label>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            File
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Location
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Uploaded
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {metadataFiles.map((metadata) => (
+                          <tr key={metadata._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-10 w-10">
+                                  <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                    <svg
+                                      className="h-6 w-6 text-gray-400"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                      />
+                                    </svg>
+                                  </div>
+                                </div>
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                    {metadata.originalName}
+                                  </div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                                    {(metadata.fileSize / 1024).toFixed(2)} KB
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                              {metadata.cameraInfo?.location || "N/A"}
+                            </td>
+
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span
+                                className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                  metadata.processingStatus === "completed"
+                                    ? "text-green-600 bg-green-100"
+                                    : metadata.processingStatus === "processing"
+                                    ? "text-yellow-600 bg-yellow-100"
+                                    : "text-red-600 bg-red-100"
+                                }`}
+                              >
+                                {metadata.processingStatus}
+                              </span>
+                            </td>
+
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                              {new Date(metadata.createdAt).toLocaleDateString()}
+                            </td>
+
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <button
+                                onClick={() => handleMetadataSelect(metadata)}
+                                className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
+                              >
+                                View Analysis
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-              {selectedVideo.file && (
-                <div className="mt-4">
-                  <FrameExtractor
-                    videoFile={selectedVideo.file}
-                    onFramesExtracted={handleFramesExtracted}
-                  />
-                  {processingFrames && (
-                    <div className="mt-4">
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                        <span className="text-sm text-gray-600">
-                          Processing frames with Roboflow...
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
+          )}
+
+          {activeTab === "video-metadata" && selectedVideo && (
+            <VideoMetadataView videoId={selectedVideo._id} user={user} />
+          )}
+
+          {activeTab === "metadata-analysis" && selectedMetadata && (
+            <MetadataAnalysis metadataId={selectedMetadata._id} user={user} />
           )}
 
           {activeTab === "results" && selectedVideo && (
