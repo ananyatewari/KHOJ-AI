@@ -29,7 +29,14 @@ const CCTVVideoSchema = new mongoose.Schema({
     fps: Number,
     format: String,
     size: Number,            // in bytes
-    codec: String
+    codec: String,
+    bitrate: Number,
+    quality: String,         // excellent, good, fair, poor
+    // Comprehensive metadata including GPS, camera info, analysis
+    comprehensive: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    }
   },
   
   // Camera information
@@ -124,6 +131,42 @@ const CCTVVideoSchema = new mongoose.Schema({
       type: Number,
       default: 0
     }
+  },
+
+  // AI-extracted intelligence for inter-agency coordination
+  intelligence: {
+    threatLevel: {
+      type: String,
+      enum: ['high', 'medium', 'low', 'none'],
+      default: 'none'
+    },
+    incidentType: String,
+    summary: String,
+    keyFindings: [String],
+    entitiesDetected: {
+      persons: [String],
+      vehicles: [String],
+      objects: [String],
+      locations: [String]
+    },
+    temporalAnalysis: {
+      peakActivity: String,
+      patterns: [String],
+      anomalies: [String]
+    },
+    riskIndicators: [String],
+    agencyAlerts: [{
+      agency: String,
+      reason: String,
+      priority: {
+        type: String,
+        enum: ['high', 'medium', 'low']
+      }
+    }],
+    recommendations: [String],
+    crossReferenceOpportunities: [String],
+    analysisTimestamp: Date,
+    detectionStats: mongoose.Schema.Types.Mixed
   },
   
   // Visibility and sharing

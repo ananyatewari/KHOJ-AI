@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Roboflow API</title>
+</head>
+<body>
+    <h1>Roboflow API Test</h1>
+    <p>Open browser console (F12) to see results</p>
+    
+    <script>
+        // Your credentials
+        const API_KEY = 'rf_diUT6VcpgOYVZi2HjUPQ06cOO5i2';
+        const MODEL_ID = 'coco-128/5';
+        
+        console.log('Testing Roboflow API...');
+        console.log('Model ID:', MODEL_ID);
+        console.log('API Key:', API_KEY.substring(0, 10) + '...');
+        
+        // Create a simple test image (1x1 red pixel)
+        const canvas = document.createElement('canvas');
+        canvas.width = 100;
+        canvas.height = 100;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'red';
+        ctx.fillRect(0, 0, 100, 100);
+        
+        canvas.toBlob(async (blob) => {
+            const formData = new FormData();
+            formData.append('file', blob);
+            
+            const url = `https://detect.roboflow.com/${MODEL_ID}?api_key=${API_KEY}`;
+            console.log('Calling:', url.replace(API_KEY, 'API_KEY_HIDDEN'));
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response statusText:', response.statusText);
+                
+                const text = await response.text();
+                console.log('Response body:', text);
+                
+                if (response.ok) {
+                    console.log('✅ SUCCESS! Roboflow API is working');
+                    const data = JSON.parse(text);
+                    console.log('Predictions:', data.predictions?.length || 0);
+                } else {
+                    console.error('❌ FAILED! Status:', response.status);
+                    console.error('Error message:', text);
+                    
+                    if (response.status === 403) {
+                        console.error('');
+                        console.error('403 Forbidden means:');
+                        console.error('1. Invalid API key');
+                        console.error('2. Model ID does not exist');
+                        console.error('3. You do not have access to this model');
+                        console.error('');
+                        console.error('Try these models instead:');
+                        console.error('- microsoft-coco/3');
+                        console.error('- coco/3');
+                        console.error('');
+                        console.error('Or create your own model at https://roboflow.com');
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Network error:', error);
+            }
+        }, 'image/jpeg');
+    </script>
+</body>
+</html>

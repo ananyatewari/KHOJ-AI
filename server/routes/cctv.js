@@ -3,10 +3,17 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import CCTVVideo from "../models/CCTVVideo.js";
+import CCTVMetadata from "../models/CCTVMetadata.js";
 import VideoProcessor from "../services/videoProcessor.js";
 import ObjectDetectionService from "../services/objectDetection.js";
 import FaceDetectionService from "../services/faceDetection.js";
 import { emitLog } from "../utils/logger.js";
+import { extractTextFromFile, isValidMetadataFile } from "../services/textExtractor.js";
+import { extractEntities } from "../utils/nlp.js";
+import { extractEntitiesAI } from "../services/aiEntities.js";
+import { generateAISummary } from "../services/aiSummary.js";
+import { extractVideoMetadata, analyzeVideoMetadata } from "../services/videoMetadataExtractor.js";
+import { extractVideoIntelligence } from "../services/videoIntelligenceExtractor.js";
 
 const router = express.Router();
 const videoProcessor = new VideoProcessor();
@@ -39,6 +46,223 @@ const upload = multer({
       return cb(new Error('Invalid video format. Allowed formats: MP4, AVI, MOV, MKV'), false);
     }
     cb(null, true);
+  }
+});
+
+// Configure multer for metadata file uploads
+const metadataStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), 'uploads', 'metadata');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'metadata-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const metadataUpload = multer({
+  storage: metadataStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    if (!isValidMetadataFile(file.mimetype)) {
+      return cb(new Error('Invalid file format. Allowed formats: PDF, TXT, DOC, DOCX'), false);
+    }
+    cb(null, true);
+  }
+});
+
+/**
+ * Upload CCTV metadata file (PDF, TXT, Word)
+ * IMPORTANT: This route must come BEFORE /:videoId to avoid route conflicts
+ */
+router.post("/metadata/upload", metadataUpload.single("file"), async (req, res) => {
+  const io = req.app.get("io");
+  
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    await emitLog(io, {
+      level: "INFO",
+      message: `CCTV metadata file received – ${req.file.originalname}`,
+      user: req.body.uploadedBy,
+      agency: req.body.agency
+    });
+
+    // Create initial metadata record
+    const metadata = new CCTVMetadata({
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      agency: req.body.agency,
+      uploadedBy: req.body.uploadedBy,
+      filePath: req.file.path,
+      fileType: req.file.mimetype,
+      fileSize: req.file.size,
+      processingStatus: "processing",
+      visibility: [req.body.agency],
+      cameraInfo: {
+        cameraId: req.body.cameraId || "",
+        location: req.body.location || "",
+        coordinates: {
+          latitude: parseFloat(req.body.latitude) || 0,
+          longitude: parseFloat(req.body.longitude) || 0
+        }
+      }
+    });
+
+    await metadata.save();
+
+    // Process file asynchronously
+    processMetadataAsync(metadata._id, req.file.path, req.file.mimetype, io);
+
+    res.status(200).json({
+      message: "Metadata file uploaded successfully. Processing...",
+      metadataId: metadata._id,
+      status: "processing"
+    });
+
+  } catch (error) {
+    console.error('Error uploading metadata file:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get all CCTV metadata for agency
+ */
+router.get("/metadata", async (req, res) => {
+  try {
+    if (!req.user || !req.user.agency) {
+      return res.status(401).json({ 
+        error: "Authentication required"
+      });
+    }
+
+    const { page = 1, limit = 10, status } = req.query;
+    const filter = {
+      $or: [
+        { agency: req.user.agency },
+        { visibility: req.user.agency }
+      ]
+    };
+
+    if (status) {
+      filter.processingStatus = status;
+    }
+
+    const metadataFiles = await CCTVMetadata.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(limit * 1);
+
+    const total = await CCTVMetadata.countDocuments(filter);
+
+    res.json({
+      metadata: metadataFiles,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      total
+    });
+
+  } catch (error) {
+    console.error('Error fetching metadata:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get CCTV metadata by ID
+ */
+router.get("/metadata/:metadataId", async (req, res) => {
+  try {
+    const metadata = await CCTVMetadata.findById(req.params.metadataId);
+    
+    if (!metadata) {
+      return res.status(404).json({ error: "Metadata not found" });
+    }
+
+    // Check visibility permissions
+    if (!metadata.visibility.includes(req.user.agency) && metadata.agency !== req.user.agency) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    res.json(metadata);
+
+  } catch (error) {
+    console.error('Error fetching metadata:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Save video metadata from browser
+ */
+router.post("/:videoId/metadata", async (req, res) => {
+  try {
+    const { metadata } = req.body;
+    const video = await CCTVVideo.findById(req.params.videoId);
+    
+    if (!video) {
+      return res.status(404).json({ error: "Video not found" });
+    }
+
+    // Update video with browser-extracted metadata
+    await CCTVVideo.findByIdAndUpdate(req.params.videoId, {
+      videoMetadata: {
+        duration: metadata.duration || 0,
+        width: metadata.width || 0,
+        height: metadata.height || 0,
+        fps: metadata.fps || 0,
+        format: metadata.format || 'mp4',
+        size: metadata.size || 0,
+        codec: metadata.codec || 'unknown',
+        quality: metadata.quality || 'unknown',
+        comprehensive: {
+          basic: metadata,
+          browserExtracted: true
+        }
+      }
+    });
+
+    res.json({ success: true, message: "Metadata saved successfully" });
+  } catch (error) {
+    console.error('Error saving video metadata:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Download metadata analysis as PDF
+ */
+router.get("/metadata/:metadataId/download", async (req, res) => {
+  try {
+    const metadata = await CCTVMetadata.findById(req.params.metadataId);
+    
+    if (!metadata) {
+      return res.status(404).json({ error: "Metadata not found" });
+    }
+
+    // Check permissions
+    if (!metadata.visibility.includes(req.user.agency) && metadata.agency !== req.user.agency) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    // Generate downloadable text report
+    const report = generateMetadataReport(metadata);
+    
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Disposition', `attachment; filename="${metadata.originalName}_analysis.txt"`);
+    res.send(report);
+
+  } catch (error) {
+    console.error('Error downloading metadata:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -85,8 +309,8 @@ router.post("/upload", upload.single("video"), async (req, res) => {
     // Save initial record
     await cctvVideo.save();
 
-    // Skip ffmpeg-based processing since we're using browser-based extraction
-    // processVideoAsync(cctvVideo._id, req.file.path, io);
+    // Don't extract metadata server-side - will be done in browser
+    // extractVideoMetadataAsync(cctvVideo._id, req.file.path, io);
 
     res.status(200).json({
       message: "Video uploaded successfully. Ready for frame extraction.",
@@ -466,16 +690,504 @@ router.post('/:videoId/detections', async (req, res) => {
       return res.status(404).json({ error: 'Video not found' });
     }
 
-    // Store detections
-    video.objectDetections = detections;
-    video.processingStatus = 'completed';
-    await video.save();
+    if (!detections || !Array.isArray(detections) || detections.length === 0) {
+      console.error('No detections provided');
+      return res.status(400).json({ 
+        error: 'No detections provided. Please check Roboflow API configuration.' 
+      });
+    }
 
-    res.json({ success: true });
+    console.log(`Saving ${detections.length} detection frames for video ${req.params.videoId}`);
+
+    // Calculate detection summary - track per frame for accurate counts
+    let maxPersonsInFrame = 0;
+    let maxVehiclesInFrame = 0;
+    let maxWeaponsInFrame = 0;
+    let totalPersonsAcrossFrames = 0;
+    let totalVehiclesAcrossFrames = 0;
+    let totalWeaponsAcrossFrames = 0;
+    let framesWithDetections = 0;
+    let highConfidenceDetections = 0;
+    let totalDetections = 0;
+
+    detections.forEach(frame => {
+      if (frame.objects && Array.isArray(frame.objects)) {
+        let personsInThisFrame = 0;
+        let vehiclesInThisFrame = 0;
+        let weaponsInThisFrame = 0;
+        
+        frame.objects.forEach(obj => {
+          const label = obj.class || obj.label || '';
+          const confidence = obj.confidence || 0;
+
+          totalDetections++;
+
+          if (confidence > 0.7) {
+            highConfidenceDetections++;
+          }
+
+          // Count persons
+          if (label.toLowerCase().includes('person') || label.toLowerCase().includes('people')) {
+            personsInThisFrame++;
+          }
+          // Count vehicles
+          else if (label.toLowerCase().includes('car') || 
+                   label.toLowerCase().includes('truck') || 
+                   label.toLowerCase().includes('vehicle') ||
+                   label.toLowerCase().includes('bus') ||
+                   label.toLowerCase().includes('motorcycle') ||
+                   label.toLowerCase().includes('bike')) {
+            vehiclesInThisFrame++;
+          }
+          // Count weapons
+          else if (label.toLowerCase().includes('weapon') || 
+                   label.toLowerCase().includes('gun') || 
+                   label.toLowerCase().includes('knife')) {
+            weaponsInThisFrame++;
+          }
+        });
+        
+        // Track maximums and totals
+        if (frame.objects.length > 0) {
+          framesWithDetections++;
+        }
+        maxPersonsInFrame = Math.max(maxPersonsInFrame, personsInThisFrame);
+        maxVehiclesInFrame = Math.max(maxVehiclesInFrame, vehiclesInThisFrame);
+        maxWeaponsInFrame = Math.max(maxWeaponsInFrame, weaponsInThisFrame);
+        totalPersonsAcrossFrames += personsInThisFrame;
+        totalVehiclesAcrossFrames += vehiclesInThisFrame;
+        totalWeaponsAcrossFrames += weaponsInThisFrame;
+      }
+    });
+    
+    // Calculate averages
+    const avgPersonsPerFrame = framesWithDetections > 0 ? Math.round(totalPersonsAcrossFrames / framesWithDetections) : 0;
+    const avgVehiclesPerFrame = framesWithDetections > 0 ? Math.round(totalVehiclesAcrossFrames / framesWithDetections) : 0;
+
+    // Check if we actually got any detections
+    if (totalDetections === 0) {
+      console.warn(`No objects detected in any frames for video ${req.params.videoId}`);
+      video.processingStatus = 'completed';
+      video.objectDetections = detections;
+      video.detectionSummary = {
+        totalPersons: 0,
+        totalVehicles: 0,
+        totalWeapons: 0,
+        uniqueFaces: 0,
+        highConfidenceDetections: 0,
+        suspiciousActivity: false,
+        riskScore: 0
+      };
+      video.processedAt = new Date();
+      await video.save();
+      
+      return res.json({ 
+        success: true,
+        warning: 'No objects detected in video. This may indicate Roboflow API issues or empty frames.',
+        summary: video.detectionSummary
+      });
+    }
+
+    // Calculate risk score based on peak counts
+    console.log('Extracting intelligence from detections...');
+    const intelligence = await extractVideoIntelligence({
+      detections,
+      cameraInfo: video.cameraInfo,
+      videoMetadata: video.videoMetadata,
+      originalName: video.originalName
+    });
+
+    // Update video with detections, summary, and intelligence
+    await CCTVVideo.findByIdAndUpdate(req.params.videoId, {
+      objectDetections: detections,
+      detectionSummary: {
+        totalPersons: maxPersonsInFrame,
+        totalVehicles: maxVehiclesInFrame,
+        totalWeapons: maxWeaponsInFrame,
+        highConfidenceDetections,
+        suspiciousActivity: maxWeaponsInFrame > 0 || maxPersonsInFrame > 20,
+        riskScore: calculateRiskScore(maxPersonsInFrame, maxVehiclesInFrame, maxWeaponsInFrame)
+      },
+      intelligence: intelligence || {},
+      processingStatus: 'completed'
+    });
+
+    console.log('Detection summary:', {
+      totalPersons: maxPersonsInFrame,
+      totalVehicles: maxVehiclesInFrame,
+      totalWeapons: maxWeaponsInFrame,
+      totalDetections,
+      highConfidenceDetections,
+      framesWithDetections,
+      riskScore: calculateRiskScore(maxPersonsInFrame, maxVehiclesInFrame, maxWeaponsInFrame),
+      intelligenceExtracted: !!intelligence
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Detections saved and intelligence extracted successfully',
+      summary: {
+        totalPersons: maxPersonsInFrame,
+        totalVehicles: maxVehiclesInFrame,
+        totalWeapons: maxWeaponsInFrame,
+        totalDetections,
+        highConfidenceDetections,
+        framesProcessed: detections.length
+      },
+      intelligence: intelligence ? {
+        threatLevel: intelligence.threatLevel,
+        incidentType: intelligence.incidentType,
+        summary: intelligence.summary
+      } : null
+    });
   } catch (error) {
     console.error('Error saving detections:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+/**
+ * Async metadata processing function
+ */
+async function processMetadataAsync(metadataId, filePath, mimetype, io) {
+  try {
+    const startTime = Date.now();
+    
+    // Extract text from file
+    const text = await extractTextFromFile(filePath, mimetype);
+    
+    if (!text || text.length < 50) {
+      throw new Error("Could not extract meaningful text from file");
+    }
+
+    // Update with extracted text
+    await CCTVMetadata.findByIdAndUpdate(metadataId, {
+      textContent: text
+    });
+
+    // Extract entities using rule-based approach
+    const ruleEntities = extractEntities(text);
+
+    // Extract entities using AI
+    let aiEntities = null;
+    try {
+      aiEntities = await extractEntitiesAI(text);
+    } catch (e) {
+      console.error("AI entity extraction failed:", e.message);
+    }
+
+    const entities = aiEntities || ruleEntities;
+
+    // Normalize entities to match schema (convert string arrays to object arrays)
+    const normalizedEntities = {
+      persons: Array.isArray(entities.persons) 
+        ? entities.persons.map(p => typeof p === 'string' ? { text: p, count: 1 } : p)
+        : [],
+      places: Array.isArray(entities.places)
+        ? entities.places.map(p => typeof p === 'string' ? { text: p, count: 1 } : p)
+        : [],
+      organizations: Array.isArray(entities.organizations)
+        ? entities.organizations.map(o => typeof o === 'string' ? { text: o, count: 1 } : o)
+        : [],
+      dates: entities.dates || [],
+      phones: entities.phones || [],
+      emails: entities.emails || []
+    };
+
+    // Generate AI summary and analysis
+    let aiAnalysis = null;
+    try {
+      aiAnalysis = await generateAISummary({
+        documents: [{ text, entities }]
+      });
+    } catch (e) {
+      console.error("AI summary generation failed:", e.message);
+    }
+
+    // Update metadata with results
+    await CCTVMetadata.findByIdAndUpdate(metadataId, {
+      entities: normalizedEntities,
+      aiAnalysis: aiAnalysis,
+      processingStatus: 'completed',
+      processedAt: new Date()
+    });
+
+    const metadata = await CCTVMetadata.findById(metadataId);
+
+    // Emit completion event
+    io.emit('cctv:metadata_completed', {
+      metadataId,
+      agency: metadata.agency
+    });
+
+    await emitLog(io, {
+      level: "INFO",
+      message: `CCTV metadata processing completed – ${metadata.originalName}`,
+      user: metadata.uploadedBy,
+      agency: metadata.agency
+    });
+
+  } catch (error) {
+    console.error('Error processing metadata:', error);
+    
+    await CCTVMetadata.findByIdAndUpdate(metadataId, {
+      processingStatus: 'failed'
+    });
+
+    io.emit('cctv:metadata_failed', {
+      metadataId,
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Generate text report from metadata analysis
+ */
+function generateMetadataReport(metadata) {
+  let report = `CCTV METADATA ANALYSIS REPORT\n`;
+  report += `${'='.repeat(80)}\n\n`;
+  
+  report += `File: ${metadata.originalName}\n`;
+  report += `Agency: ${metadata.agency}\n`;
+  report += `Uploaded By: ${metadata.uploadedBy}\n`;
+  report += `Date: ${metadata.createdAt.toLocaleString()}\n`;
+  
+  if (metadata.cameraInfo?.location) {
+    report += `Camera Location: ${metadata.cameraInfo.location}\n`;
+  }
+  if (metadata.cameraInfo?.cameraId) {
+    report += `Camera ID: ${metadata.cameraInfo.cameraId}\n`;
+  }
+  
+  report += `\n${'='.repeat(80)}\n\n`;
+  
+  // AI Analysis
+  if (metadata.aiAnalysis) {
+    report += `EXECUTIVE SUMMARY\n`;
+    report += `${'-'.repeat(80)}\n`;
+    report += `${metadata.aiAnalysis.executiveSummary || 'N/A'}\n\n`;
+    
+    if (metadata.aiAnalysis.keyFindings?.length > 0) {
+      report += `KEY FINDINGS\n`;
+      report += `${'-'.repeat(80)}\n`;
+      metadata.aiAnalysis.keyFindings.forEach((finding, idx) => {
+        report += `${idx + 1}. ${finding}\n`;
+      });
+      report += `\n`;
+    }
+    
+    if (metadata.aiAnalysis.analystTakeaways?.length > 0) {
+      report += `ANALYST TAKEAWAYS\n`;
+      report += `${'-'.repeat(80)}\n`;
+      metadata.aiAnalysis.analystTakeaways.forEach((takeaway, idx) => {
+        report += `${idx + 1}. ${takeaway}\n`;
+      });
+      report += `\n`;
+    }
+    
+    if (metadata.aiAnalysis.nextSteps?.length > 0) {
+      report += `NEXT STEPS\n`;
+      report += `${'-'.repeat(80)}\n`;
+      metadata.aiAnalysis.nextSteps.forEach((step, idx) => {
+        report += `${idx + 1}. ${step}\n`;
+      });
+      report += `\n`;
+    }
+  }
+  
+  // Entities
+  if (metadata.entities) {
+    report += `EXTRACTED ENTITIES\n`;
+    report += `${'-'.repeat(80)}\n`;
+    
+    if (metadata.entities.persons?.length > 0) {
+      report += `\nPersons:\n`;
+      metadata.entities.persons.forEach(person => {
+        const name = typeof person === 'string' ? person : person.text;
+        report += `  - ${name}\n`;
+      });
+    }
+    
+    if (metadata.entities.places?.length > 0) {
+      report += `\nPlaces:\n`;
+      metadata.entities.places.forEach(place => {
+        const name = typeof place === 'string' ? place : place.text;
+        report += `  - ${name}\n`;
+      });
+    }
+    
+    if (metadata.entities.organizations?.length > 0) {
+      report += `\nOrganizations:\n`;
+      metadata.entities.organizations.forEach(org => {
+        const name = typeof org === 'string' ? org : org.text;
+        report += `  - ${name}\n`;
+      });
+    }
+    
+    if (metadata.entities.phones?.length > 0) {
+      report += `\nPhone Numbers:\n`;
+      metadata.entities.phones.forEach(phone => {
+        report += `  - ${phone}\n`;
+      });
+    }
+    
+    if (metadata.entities.emails?.length > 0) {
+      report += `\nEmail Addresses:\n`;
+      metadata.entities.emails.forEach(email => {
+        report += `  - ${email}\n`;
+      });
+    }
+    
+    report += `\n`;
+  }
+  
+  report += `\n${'='.repeat(80)}\n`;
+  report += `End of Report\n`;
+  
+  return report;
+}
+
+/**
+ * Async video metadata extraction function
+ */
+async function extractVideoMetadataAsync(videoId, videoPath, io) {
+  try {
+    await emitLog(io, {
+      level: "INFO",
+      message: "Extracting video metadata...",
+      user: "system",
+      agency: "system"
+    });
+
+    // Extract comprehensive metadata
+    const metadata = await extractVideoMetadata(videoPath);
+    
+    // Generate AI analysis
+    const analysis = analyzeVideoMetadata(metadata);
+
+    // Update video record with metadata and analysis
+    await CCTVVideo.findByIdAndUpdate(videoId, {
+      videoMetadata: {
+        duration: metadata.basic.duration,
+        width: metadata.video?.width || 0,
+        height: metadata.video?.height || 0,
+        fps: metadata.video?.fps || 0,
+        format: metadata.basic.format,
+        size: metadata.basic.size,
+        codec: metadata.video?.codec || 'unknown',
+        bitrate: metadata.basic.bitrate,
+        quality: metadata.derived.quality,
+        // Store comprehensive metadata in a separate field
+        comprehensive: {
+          ...metadata,
+          analysis
+        }
+      }
+    });
+
+    const video = await CCTVVideo.findById(videoId);
+
+    // Emit completion event
+    io.emit('cctv:metadata_extracted', {
+      videoId,
+      metadata: metadata.derived,
+      analysis,
+      agency: video.agency
+    });
+
+    await emitLog(io, {
+      level: "INFO",
+      message: `Video metadata extracted: ${metadata.derived.resolution}, ${metadata.derived.quality} quality, ${analysis.suitability.rating} for CCTV analysis`,
+      user: "system",
+      agency: video.agency
+    });
+
+  } catch (error) {
+    console.error('Error extracting video metadata:', error);
+    
+    // If FFmpeg is not installed, use basic file metadata
+    if (error.message.includes('Cannot find ffprobe') || error.message.includes('ffmpeg')) {
+      console.log('FFmpeg not found, using basic metadata extraction...');
+      
+      try {
+        const fs = await import('fs');
+        const stats = fs.statSync(videoPath);
+        
+        // Store basic metadata without FFmpeg
+        await CCTVVideo.findByIdAndUpdate(videoId, {
+          videoMetadata: {
+            size: stats.size,
+            format: 'mp4',
+            quality: 'unknown',
+            comprehensive: {
+              basic: {
+                size: stats.size,
+                format: 'mp4'
+              },
+              ffmpegNotInstalled: true,
+              message: 'FFmpeg not installed. Install FFmpeg for comprehensive metadata extraction.'
+            }
+          }
+        });
+
+        const video = await CCTVVideo.findById(videoId);
+
+        // Emit completion event even with basic metadata
+        io.emit('cctv:metadata_extracted', {
+          videoId,
+          ffmpegNotInstalled: true,
+          agency: video.agency
+        });
+
+        await emitLog(io, {
+          level: "WARNING",
+          message: `Video uploaded but FFmpeg not installed. Install FFmpeg for comprehensive metadata extraction.`,
+          user: "system",
+          agency: video.agency
+        });
+      } catch (fallbackError) {
+        console.error('Fallback metadata extraction failed:', fallbackError);
+      }
+    } else {
+      await emitLog(io, {
+        level: "ERROR",
+        message: `Failed to extract video metadata: ${error.message}`,
+        user: "system",
+        agency: "system"
+      });
+    }
+  }
+}
+
+/**
+ * Calculate risk score based on detection counts
+ */
+function calculateRiskScore(persons, vehicles, weapons) {
+  let score = 0;
+  
+  // Weapons are highest priority
+  if (weapons > 0) {
+    score += 50;
+  }
+  
+  // Large crowds
+  if (persons > 20) {
+    score += 30;
+  } else if (persons > 10) {
+    score += 20;
+  } else if (persons > 5) {
+    score += 10;
+  }
+  
+  // Vehicle concentration
+  if (vehicles > 10) {
+    score += 20;
+  } else if (vehicles > 5) {
+    score += 10;
+  }
+  
+  return Math.min(score, 100);
+}
 
 export default router;
