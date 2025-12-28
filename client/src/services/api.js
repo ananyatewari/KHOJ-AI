@@ -33,3 +33,18 @@ export async function getStats() {
     }
   }).then(res => res.json());
 }
+
+function getAuthHeaders() {
+  const token = localStorage.getItem("token");
+  return {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+  };
+}
+
+export async function getCCTVVideos() {
+  const response = await fetch("http://localhost:3000/api/cctv", {
+    headers: getAuthHeaders()
+  });
+  return response.json();
+}

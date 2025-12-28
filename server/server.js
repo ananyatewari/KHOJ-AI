@@ -25,6 +25,7 @@ import transcriptionRoutes from "./routes/transcription.js";
 import historyRoutes from "./routes/history.js";
 import eventsRoutes from "./routes/events.js";
 import alertsRoutes from "./routes/alerts.js";
+import cctvRoutes from "./routes/cctv.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -58,6 +59,8 @@ app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/events", eventsRoutes);
 app.use("/api/alerts", alertsRoutes);
+import authMiddleware from "./middleware/auth.js";
+app.use("/api/cctv", authMiddleware, cctvRoutes);
 server.listen(3000, () => {
   console.log("Server running on 3000");
 });

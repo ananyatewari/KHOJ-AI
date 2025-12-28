@@ -9,6 +9,7 @@ import TranscriptionPage from "./pages/TranscriptionPage";
 import TranscriptionView from "./pages/TranscriptionView";
 import History from "./pages/History";
 import AlertsPage from "./pages/AlertsPage";
+import CCTVPage from "./pages/CCTVPage";
 import AppLayout from "./components/layout/AppLayout";
 import PublicLayout from "./components/layout/PublicLayout";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
@@ -24,54 +25,55 @@ export default function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
-      <Routes>
-        {/* PUBLIC */}
-        <Route path="/" element={<Landing />} />
-        <Route
-          path="/login"
-          element={
-            <PublicLayout>
-              <Login />
-            </PublicLayout>
-          }
-        />
+        <Routes>
+          {/* PUBLIC */}
+          <Route path="/" element={<Landing />} />
+          <Route
+            path="/login"
+            element={
+              <PublicLayout>
+                <Login />
+              </PublicLayout>
+            }
+          />
 
-        <Route
-          path="/signup"
-          element={
-            <PublicLayout>
-              <Signup />
-            </PublicLayout>
-          }
-        />
+          <Route
+            path="/signup"
+            element={
+              <PublicLayout>
+                <Signup />
+              </PublicLayout>
+            }
+          />
 
-        {/* PROTECTED */}
-        <Route
-          path="/app"
-          element={
-            <ProtectedRoute>
-              <OcrProvider>
-                <TranscriptionProvider>
-                  <AlertsProvider>
-                    <AppLayout />
-                    <AlertToastContainer />
-                  </AlertsProvider>
-                </TranscriptionProvider>
-              </OcrProvider>
-            </ProtectedRoute>
-          }
-        >
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="search" element={<IntelligenceSearch />} />
-          <Route path="document/:id" element={<DocumentView />} />
-          <Route path="ocr" element={<OcrPage />} />
-          <Route path="transcription" element={<TranscriptionPage />} />
-          <Route path="transcription/:id" element={<TranscriptionView />} />
-          <Route path="chatbot" element={<ChatPanel />} />
-          <Route path="history" element={<History />} />
-          <Route path="alerts" element={<AlertsPage />} />
-        </Route>
-      </Routes>
+          {/* PROTECTED */}
+          <Route
+            path="/app"
+            element={
+              <ProtectedRoute>
+                <OcrProvider>
+                  <TranscriptionProvider>
+                    <AlertsProvider>
+                      <AppLayout />
+                      <AlertToastContainer />
+                    </AlertsProvider>
+                  </TranscriptionProvider>
+                </OcrProvider>
+              </ProtectedRoute>
+            }
+          >
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="search" element={<IntelligenceSearch />} />
+            <Route path="document/:id" element={<DocumentView />} />
+            <Route path="ocr" element={<OcrPage />} />
+            <Route path="transcription" element={<TranscriptionPage />} />
+            <Route path="transcription/:id" element={<TranscriptionView />} />
+            <Route path="chatbot" element={<ChatPanel />} />
+            <Route path="cctv" element={<CCTVPage />} />
+            <Route path="history" element={<History />} />
+            <Route path="alerts" element={<AlertsPage />} />
+          </Route>
+        </Routes>
       </BrowserRouter>
     </ThemeProvider>
   );
