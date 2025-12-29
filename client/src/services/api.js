@@ -41,10 +41,3 @@ function getAuthHeaders() {
     "Authorization": `Bearer ${token}`
   };
 }
-
-export async function getCCTVVideos() {
-  const response = await fetch("http://localhost:3000/api/cctv", {
-    headers: getAuthHeaders()
-  });
-  return response.json();
-}

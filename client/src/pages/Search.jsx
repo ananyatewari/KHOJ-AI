@@ -40,7 +40,6 @@ export default function Search() {
 
   const [previewDoc, setPreviewDoc] = useState(null);
 
-  // Restore document context from localStorage on mount
   useEffect(() => {
     const savedContext = localStorage.getItem('intelligenceSearchContext');
     if (savedContext) {
@@ -72,14 +71,13 @@ export default function Search() {
   };
 
   const handleUpload = async () => {
-  if (!file) return alert("Select a PDF");
+  if (!file) return alert("Select a File");
 
   const formData = new FormData();
   formData.append("file", file);
   formData.append("agency", agency);
   formData.append("uploadedBy", user.username);
 
-  // 🔥 RESET DOCUMENT CONTEXT
   setSummary(null);
   setSummaryLoading(false);
   setPrimaryDocId(null);
@@ -105,7 +103,6 @@ export default function Search() {
   setPrimaryDocId(data.documentId);
   setUploadedFileName(file.name);
 
-  // Save to localStorage for persistence
   localStorage.setItem('intelligenceSearchContext', JSON.stringify({
     fileName: file.name,
     primaryDoc: newPrimaryDoc,
@@ -117,7 +114,6 @@ export default function Search() {
 
   const handleClearDocument = () => {
     if (confirm('Are you sure you want to clear the current document? This will remove all saved context.')) {
-      // Clear all document-related state
       setFile(null);
       setUploadedFileName(null);
       setPrimaryDoc({ text: "", entities: {} });
@@ -127,7 +123,6 @@ export default function Search() {
       setPreviewDoc(null);
       setActiveTab("document");
       
-      // Clear localStorage
       localStorage.removeItem('intelligenceSearchContext');
     }
   };
@@ -188,7 +183,7 @@ export default function Search() {
       Authorization: `Bearer ${localStorage.getItem("token")}`
     },
     body: JSON.stringify({
-      documentId: primaryDocId // 🔥 THIS FIXES EVERYTHING
+      documentId: primaryDocId
     })
   });
 
@@ -228,9 +223,6 @@ const downloadReport = async () => {
   a.remove();
   window.URL.revokeObjectURL(url);
 };
-
-
-
 
   const filteredResults = semanticResults.filter((r) =>
     r.filename.toLowerCase().includes(docFilter)
@@ -342,12 +334,12 @@ const downloadReport = async () => {
                 <span className={`text-sm ${
                   theme === "dark" ? "text-slate-300" : "text-slate-700"
                 }`}>
-                  {file ? file.name : "Choose PDF file..."}
+                  {file ? file.name : "Choose file to upload..."}
                 </span>
               </div>
               <input
                 type="file"
-                accept="application/pdf"
+                accept="application/pdf, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/plain, .txt, .doc, .docx"
                 onChange={(e) => setFile(e.target.files[0])}
                 className="hidden"
               />
@@ -366,7 +358,7 @@ const downloadReport = async () => {
               ) : (
                 <>
                   <UploadIcon size={18} />
-                  Ingest PDF
+                  Ingest File
                 </>
               )}
             </button>
@@ -456,7 +448,7 @@ const downloadReport = async () => {
                             : "bg-purple-100 text-purple-700 hover:bg-purple-200"
                         }`}
                       >
-                        Agency Intelligence
+                        Agency Specific
                       </button>
                     </div>
 
@@ -562,9 +554,7 @@ const downloadReport = async () => {
               )}
             </div>
 
-            {/* Right Sidebar */}
             <div className="flex flex-col gap-6">
-              {/* SEARCH */}
               <div className={`backdrop-blur-sm border rounded-xl ${
                 theme === "dark"
                   ? "bg-slate-800/50 border-slate-700/50"

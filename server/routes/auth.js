@@ -7,9 +7,9 @@ const router = express.Router();
 
 /* ---------- SIGNUP ---------- */
 router.post("/signup", async (req, res) => {
-  const { username, password, agency } = req.body;
+  const { username, password, agency, role } = req.body;
 
-  if (!username || !password || !agency) {
+  if (!username || !password || !agency || !role) {
     return res.status(400).json({ error: "Missing fields" });
   }
 
@@ -24,6 +24,7 @@ router.post("/signup", async (req, res) => {
     username,
     password: hashed,
     agency,
+    role,
   });
 
   res.json({ success: true });
@@ -44,7 +45,7 @@ router.post("/login", async (req, res) => {
   }
 
   const token = jwt.sign(
-    { username: user.username, agency: user.agency },
+    { username: user.username, agency: user.agency, role: user.role },
     process.env.JWT_SECRET,
     { expiresIn: "1d" }
   );
@@ -54,6 +55,7 @@ router.post("/login", async (req, res) => {
     user: {
       username: user.username,
       agency: user.agency,
+      role: user.role,
     },
   });
 });

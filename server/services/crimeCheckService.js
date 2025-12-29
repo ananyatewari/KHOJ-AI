@@ -4,19 +4,12 @@ import CriminalRecord from '../models/CriminalRecord.js';
 const CRIMECHECK_API_BASE = process.env.CRIMECHECK_API_URL || 'https://api.crimecheck.in';
 const CRIMECHECK_API_KEY = process.env.CRIMECHECK_API_KEY;
 
-/**
- * Check if a person has criminal records in Indian court database
- * @param {string} personName - Name of the person to check
- * @param {object} additionalDetails - Optional details like DOB, location
- * @returns {Promise<object>} Criminal record information
- */
 export async function checkCriminalRecord(personName, additionalDetails = {}) {
   try {
     if (!personName || personName.trim().length < 3) {
       return { hasRecord: false, records: [], cached: false };
     }
 
-    // Check cache first (avoid repeated API calls)
     const cached = await CriminalRecord.findOne({
       name: { $regex: new RegExp(`^${personName}$`, 'i') },
       updatedAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // 7 days cache
@@ -32,13 +25,11 @@ export async function checkCriminalRecord(personName, additionalDetails = {}) {
       };
     }
 
-    // If no API key, return mock data for demo purposes
     if (!CRIMECHECK_API_KEY || CRIMECHECK_API_KEY === 'demo') {
       console.log(`[CrimeCheck] Using mock data for: ${personName}`);
       return await getMockCriminalData(personName);
     }
 
-    // Make API call to CrimeCheck.in
     console.log(`[CrimeCheck] Querying API for: ${personName}`);
     const response = await axios.post(
       `${CRIMECHECK_API_BASE}/records`,
@@ -54,14 +45,13 @@ export async function checkCriminalRecord(personName, additionalDetails = {}) {
           'Authorization': `Bearer ${CRIMECHECK_API_KEY}`,
           'Content-Type': 'application/json'
         },
-        timeout: 10000 // 10 second timeout
+        timeout: 10000
       }
     );
 
     const hasRecord = response.data.records && response.data.records.length > 0;
     const records = hasRecord ? response.data.records.map(formatCourtCase) : [];
 
-    // Cache the result
     await CriminalRecord.findOneAndUpdate(
       { name: personName },
       {
@@ -85,7 +75,6 @@ export async function checkCriminalRecord(personName, additionalDetails = {}) {
   } catch (error) {
     console.error(`[CrimeCheck] Error checking criminal record for ${personName}:`, error.message);
     
-    // On error, try to return cached data even if expired
     const expiredCache = await CriminalRecord.findOne({
       name: { $regex: new RegExp(`^${personName}$`, 'i') }
     });
@@ -247,13 +236,9 @@ export async function requestDetailedReport(personName, callbackUrl) {
   }
 }
 
-/**
- * Mock data for demo purposes (when API key not available)
- */
 async function getMockCriminalData(personName) {
   const lowerName = personName.toLowerCase();
   
-  // Demo criminal records for specific names
   const mockDatabase = {
     'rajesh kumar': {
       hasRecord: true,
@@ -302,7 +287,6 @@ async function getMockCriminalData(personName) {
   const match = mockDatabase[lowerName];
   
   if (match) {
-    // Save to database so profile route can find it
     await CriminalRecord.findOneAndUpdate(
       { name: personName },
       {
