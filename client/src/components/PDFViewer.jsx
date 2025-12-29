@@ -40,8 +40,7 @@ export default function PDFViewer({
   if (searchTerm) {
     highlightedText = highlightedText.replace(
       new RegExp(searchTerm, "gi"),
-      (match) =>
-        `<mark class="bg-yellow-300 text-black">${match}</mark>`
+      (match) => `<mark class="bg-yellow-300 text-black">${match}</mark>`
     );
   }
 
@@ -54,11 +53,37 @@ export default function PDFViewer({
           : "bg-white text-slate-800 border border-purple-200"
       }`}
     >
-      <h2 className={`text-lg font-semibold mb-2 ${
-        theme === "dark" ? "text-white" : "text-slate-800"
-      }`}>
-        Extracted File Text (Entity Highlighted)
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2
+          className={`text-lg font-semibold ${
+            theme === "dark" ? "text-white" : "text-slate-800"
+          }`}
+        >
+          Extracted File Text (Entity Highlighted)
+        </h2>
+        <div className="flex items-center gap-4 text-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-blue-400 rounded"></div>
+            <span>Persons</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-green-400 rounded"></div>
+            <span>Places</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-pink-400 rounded"></div>
+            <span>Organizations</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-purple-400 rounded"></div>
+            <span>Dates</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-orange-400 rounded"></div>
+            <span>Phone</span>
+          </div>
+        </div>
+      </div>
 
       <div
         className="whitespace-pre-wrap leading-relaxed"

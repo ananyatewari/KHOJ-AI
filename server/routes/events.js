@@ -382,6 +382,86 @@ router.post("/document/:documentId/cross-agency-search", auth, async (req, res) 
   }
 });
 
+router.patch("/:eventId/acknowledge", auth, async (req, res) => {
+  try {
+    const { agency, username } = req.user;
+    const { eventId } = req.params;
+    const { acknowledged = true, note } = req.body;
+    
+    const event = await Event.findOne({
+      _id: eventId,
+      agencies: agency
+    });
+    
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+    
+    event.status = "archived";
+    event.acknowledged = {
+      acknowledged,
+      acknowledgedBy: username,
+      acknowledgedAt: new Date(),
+      note: note || ""
+    };
+    
+    await event.save();
+    
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("event:updated", {
+        eventId: event._id,
+        status: event.status,
+        acknowledged: event.acknowledged,
+        updatedBy: username
+      });
+    }
+    
+    res.json({ 
+      event,
+      message: acknowledged ? "Event acknowledged and archived" : "Event unacknowledged"
+    });
+  } catch (error) {
+    console.error("Error acknowledging event:", error);
+    res.status(500).json({ error: "Failed to acknowledge event" });
+  }
+});
+
+router.delete("/:eventId", auth, async (req, res) => {
+  try {
+    const { agency, username } = req.user;
+    const { eventId } = req.params;
+    
+    const event = await Event.findOne({
+      _id: eventId,
+      agencies: agency
+    });
+    
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+    
+    await Event.findByIdAndDelete(eventId);
+    
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("event:deleted", {
+        eventId: event._id,
+        deletedBy: username,
+        eventTitle: event.title
+      });
+    }
+    
+    res.json({ 
+      message: "Event deleted successfully",
+      deletedEvent: event
+    });
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    res.status(500).json({ error: "Failed to delete event" });
+  }
+});
+
 router.get("/debug/all-events", auth, async (req, res) => {
   try {
     const { agency } = req.user;

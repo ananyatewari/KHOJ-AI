@@ -11,6 +11,9 @@ import {
   X,
   Shield,
   Eye,
+  CheckCircle,
+  Trash2,
+  Archive,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -41,6 +44,17 @@ export default function EventIntelligencePanel() {
 
       if (selectedEvent && data.eventId === selectedEvent._id) {
         fetchEventDetails(data.eventId);
+      }
+    });
+
+    socket.on("event:deleted", (data) => {
+      console.log("Event deleted:", data);
+      fetchActiveEvents();
+      fetchEventStats();
+
+      if (selectedEvent && data.eventId === selectedEvent._id) {
+        setSelectedEvent(null);
+        setEventDetails(null);
       }
     });
 
@@ -96,6 +110,63 @@ export default function EventIntelligencePanel() {
   const handleEventClick = (event) => {
     setSelectedEvent(event);
     fetchEventDetails(event._id);
+  };
+
+  const handleAcknowledgeEvent = async (eventId, note = "") => {
+    try {
+      const res = await fetch(
+        `http://localhost:3000/api/events/${eventId}/acknowledge`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ acknowledged: true, note }),
+        }
+      );
+
+      if (res.ok) {
+        fetchActiveEvents();
+        fetchEventStats();
+        if (selectedEvent && selectedEvent._id === eventId) {
+          setSelectedEvent(null);
+          setEventDetails(null);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to acknowledge event:", error);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this event? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:3000/api/events/${eventId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        fetchActiveEvents();
+        fetchEventStats();
+        if (selectedEvent && selectedEvent._id === eventId) {
+          setSelectedEvent(null);
+          setEventDetails(null);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to delete event:", error);
+    }
   };
 
   const fetchFullDocumentDetails = async (doc) => {
@@ -252,7 +323,6 @@ export default function EventIntelligencePanel() {
             {events.map((event) => (
               <div
                 key={event._id}
-                onClick={() => handleEventClick(event)}
                 className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md ${
                   theme === "dark"
                     ? "bg-slate-700 border-slate-600 hover:border-slate-500"
@@ -264,14 +334,45 @@ export default function EventIntelligencePanel() {
                     className={`font-semibold text-sm flex-1 ${
                       theme === "dark" ? "text-white" : "text-slate-800"
                     }`}
+                    onClick={() => handleEventClick(event)}
                   >
                     {event.title}
                   </h3>
-                  <ChevronRight
-                    className={`w-4 h-4 ${
-                      theme === "dark" ? "text-slate-400" : "text-slate-500"
-                    }`}
-                  />
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAcknowledgeEvent(event._id);
+                      }}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        theme === "dark"
+                          ? "hover:bg-green-600 text-green-400 hover:text-white"
+                          : "hover:bg-green-100 text-green-600 hover:text-green-700"
+                      }`}
+                      title="Acknowledge Event"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteEvent(event._id);
+                      }}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        theme === "dark"
+                          ? "hover:bg-red-600 text-red-400 hover:text-white"
+                          : "hover:bg-red-100 text-red-600 hover:text-red-700"
+                      }`}
+                      title="Delete Event"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <ChevronRight
+                      className={`w-4 h-4 ${
+                        theme === "dark" ? "text-slate-400" : "text-slate-500"
+                      }`}
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-3 mb-2">
@@ -326,6 +427,8 @@ export default function EventIntelligencePanel() {
             setEventDetails(null);
           }}
           onPreview={fetchFullDocumentDetails}
+          onAcknowledge={handleAcknowledgeEvent}
+          onDelete={handleDeleteEvent}
           theme={theme}
         />
       )}
@@ -352,6 +455,8 @@ function EventDetailsModal({
   onClose,
   onPreview,
   theme,
+  onAcknowledge,
+  onDelete,
 }) {
   if (!event) return null;
 
@@ -374,14 +479,38 @@ function EventDetailsModal({
           >
             {event.title}
           </h2>
-          <button
-            onClick={onClose}
-            className={`p-2 rounded-lg hover:bg-opacity-10 hover:bg-slate-500 ${
-              theme === "dark" ? "text-slate-400" : "text-slate-600"
-            }`}
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onAcknowledge(event._id)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                theme === "dark"
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : "bg-green-500 hover:bg-green-600 text-white"
+              }`}
+            >
+              <CheckCircle className="w-4 h-4" />
+              <span className="text-sm">Acknowledge</span>
+            </button>
+            <button
+              onClick={() => onDelete(event._id)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                theme === "dark"
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : "bg-red-500 hover:bg-red-600 text-white"
+              }`}
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="text-sm">Delete</span>
+            </button>
+            <button
+              onClick={onClose}
+              className={`p-2 rounded-lg hover:bg-opacity-10 hover:bg-slate-500 ${
+                theme === "dark" ? "text-slate-400" : "text-slate-600"
+              }`}
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
@@ -696,7 +825,7 @@ function EntityList({ title, icon, entities, theme }) {
 function DocumentPreviewModal({ document, loading, onClose, theme }) {
   if (loading || !document) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60] p-4">
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-60 p-4">
         <div
           className={`rounded-lg shadow-2xl w-full max-w-4xl p-12 flex flex-col items-center justify-center ${
             theme === "dark" ? "bg-slate-800" : "bg-white"
@@ -804,7 +933,7 @@ function DocumentPreviewModal({ document, loading, onClose, theme }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60] p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-60 p-4">
       <div
         className={`rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col ${
           theme === "dark" ? "bg-slate-800" : "bg-white"
