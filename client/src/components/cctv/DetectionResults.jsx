@@ -264,7 +264,7 @@ const DetectionResults = ({ videoId, user }) => {
         )}
       </div>
 
-      <div className="bg-white rounded-lg shadow-md p-6">
+      {/* <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-xl font-bold mb-4 text-gray-800">
           Face Detections
         </h3>
@@ -337,7 +337,7 @@ const DetectionResults = ({ videoId, user }) => {
             Share with Other Agencies
           </button>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

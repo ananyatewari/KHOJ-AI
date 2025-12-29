@@ -32,16 +32,19 @@ class SocialMediaService {
       "break in", "break-in", "carjacking", "home invasion", "looting", "riot",
       
       // Emergency situations
-      "112", "emergency", "help", "danger", "flee", "escape", "chase", "ambulance", "fire"
+      "112", "emergency", "help", "danger", "flee", "escape", "chase", "ambulance", "fire",
+      "stampede", "panic", "crowd crush", "accident", "incident", "tragedy"
     ];
     
     // API endpoints (you can update these with actual URLs)
     this.apiEndpoints = [
       {
         name: "primary_social_media_api",
-        url: process.env.SOCIAL_MEDIA_API_URL
+        url: process.env.SOCIAL_MEDIA_API_URL || "https://dummy-social-media-a9ip.onrender.com/api/posts"
       }
     ];
+    
+    console.log("Social Media API URL:", this.apiEndpoints[0].url);
   }
 
   async start() {
@@ -90,17 +93,46 @@ class SocialMediaService {
     
     for (const endpoint of this.apiEndpoints) {
       try {
+        if (!endpoint.url) {
+          console.error(`No URL configured for ${endpoint.name}`);
+          continue;
+        }
+        
+        console.log(`Fetching from: ${endpoint.url}`);
+        
         const response = await axios.get(endpoint.url, {
-          headers: endpoint.headers,
-          timeout: 10000 // 10 second timeout
+          timeout: 15000, // 15 second timeout
+          validateStatus: (status) => status < 500 // Accept any status < 500
         });
         
-        if (response.data && Array.isArray(response.data)) {
-          await this.processPosts(response.data, endpoint.name);
+        console.log(`Response status: ${response.status}`);
+        console.log(`Response data type: ${Array.isArray(response.data) ? 'array' : typeof response.data}`);
+        
+        // Handle different response structures
+        let posts = [];
+        if (Array.isArray(response.data)) {
+          posts = response.data;
+        } else if (response.data && Array.isArray(response.data.posts)) {
+          posts = response.data.posts;
+        } else if (response.data && Array.isArray(response.data.data)) {
+          posts = response.data.data;
+        } else {
+          console.error(`Unexpected response structure from ${endpoint.name}`);
+          continue;
+        }
+        
+        console.log(`Found ${posts.length} posts to process`);
+        
+        if (posts.length > 0) {
+          await this.processPosts(posts, endpoint.name);
         }
         
       } catch (error) {
         console.error(`Error fetching from ${endpoint.name}:`, error.message);
+        if (error.response) {
+          console.error(`Response status: ${error.response.status}`);
+          console.error(`Response data:`, error.response.data);
+        }
         // Continue with next endpoint
         continue;
       }
@@ -110,6 +142,10 @@ class SocialMediaService {
   async processPosts(posts, source) {
     console.log(`Processing ${posts.length} posts from ${source}`);
     
+    let processedCount = 0;
+    let crimeRelatedCount = 0;
+    let duplicateCount = 0;
+    
     for (const postData of posts) {
       try {
         // Normalize post data
@@ -118,11 +154,16 @@ class SocialMediaService {
         // Check if post already exists
         const existingPost = await SocialMediaPost.findOne({ postId: normalizedPost.postId });
         if (existingPost) {
+          duplicateCount++;
           continue; // Skip duplicate posts
         }
 
         // Analyze post for crime-related content
         const analysis = await this.analyzePost(normalizedPost);
+        
+        // Log every post analysis for debugging
+        const contentPreview = normalizedPost.content.text.substring(0, 50);
+        console.log(`Post ${normalizedPost.postId}: "${contentPreview}..." | Crime=${analysis.isCrimeRelated}, Confidence=${analysis.confidence}%, Type=${analysis.crimeType}, Keywords=[${analysis.keywords.slice(0, 5).join(', ')}]`);
         
         // Create post document
         const post = new SocialMediaPost({
@@ -132,9 +173,11 @@ class SocialMediaService {
         });
 
         await post.save();
+        processedCount++;
 
         // If crime-related, check for event creation
         if (analysis.isCrimeRelated) {
+          crimeRelatedCount++;
           await this.handleCrimeRelatedPost(post);
         }
 
@@ -143,6 +186,8 @@ class SocialMediaService {
         continue;
       }
     }
+    
+    console.log(`Processing complete: ${processedCount} new posts saved, ${crimeRelatedCount} crime-related, ${duplicateCount} duplicates skipped`);
   }
 
   normalizePostData(postData, source) {
@@ -189,7 +234,12 @@ class SocialMediaService {
   }
 
   async analyzePost(post) {
-    const text = post.content.text.toLowerCase();
+    // Safely get text content
+    const text = (post.content?.text || post.content || "").toLowerCase();
+    
+    if (!text) {
+      console.log("Warning: Empty text content for post", post.postId);
+    }
     
     // Check for crime-related keywords
     const foundKeywords = this.crimeKeywords.filter(keyword => 
@@ -239,7 +289,7 @@ class SocialMediaService {
       "drugs": ["drugs", "narcotics", "overdose"],
       "fraud": ["fraud", "scam"],
       "vandalism": ["vandalism", "arson", "looting"],
-      "suspicious_activity": ["suspicious", "strange", "unusual", "concerning"]
+      "suspicious_activity": ["suspicious", "strange", "unusual", "concerning", "stampede", "panic", "crowd crush", "accident", "incident", "tragedy"]
     };
 
     for (const [type, typeKeywords] of Object.entries(crimeTypeMap)) {
