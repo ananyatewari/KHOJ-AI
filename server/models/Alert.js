@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const AlertSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ["entity_match", "geo_spike", "risk_profile", "cross_agency", "custom", "event_created", "document_created", "new_document", "new_ocr_document", "new_transcription"],
+    enum: ["entity_match", "geo_spike", "risk_profile", "cross_agency", "custom", "event_created", "document_created", "new_document", "new_ocr_document", "new_transcription", "criminal_match"],
     required: true
   },
   
@@ -41,6 +41,19 @@ const AlertSchema = new mongoose.Schema({
       location: String,
       incidentCount: Number,
       timeWindow: String
+    },
+    criminalRecord: {
+      personName: String,
+      caseCount: Number,
+      riskLevel: String,
+      courtCases: [{
+        caseNumber: String,
+        charges: [String],
+        court: String,
+        status: String,
+        severity: String
+      }],
+      source: String
     },
     metadata: mongoose.Schema.Types.Mixed
   },

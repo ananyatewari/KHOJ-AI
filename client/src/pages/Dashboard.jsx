@@ -7,6 +7,7 @@ import ChatPanel from "../components/dashboard/ChatPanel";
 import SharePanel from "../components/dashboard/SharePanel";
 import ApprovalPanel from "../components/dashboard/ApprovalPanel";
 import EventIntelligencePanel from "../components/dashboard/EventIntelligencePanel";
+import CriminalAlertsWidget from "../components/dashboard/CriminalAlertsWidget";
 
 export default function Dashboard() {
   const { token, user } = useAuth();
@@ -119,6 +120,8 @@ export default function Dashboard() {
 
           <div className="space-y-5">
             <EventIntelligencePanel />
+
+            <CriminalAlertsWidget />
 
             <OperationalReportPanel token={token} agency={user.agency} />
 

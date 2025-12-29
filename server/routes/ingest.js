@@ -183,6 +183,35 @@ await emitLog(io, {
     try {
       await emitLog(io, {
         level: "INFO",
+        message: "Checking criminal database...",
+        user: req.body.uploadedBy,
+        agency: req.body.agency
+      });
+
+      const { checkCriminalRecordsForDocument } = await import("../utils/criminalCheckHelper.js");
+      const criminalAlerts = await checkCriminalRecordsForDocument(doc, "Document", io);
+      
+      if (criminalAlerts.length > 0) {
+        await emitLog(io, {
+          level: "WARNING",
+          message: `Court records found for ${criminalAlerts.length} person(s)`,
+          user: req.body.uploadedBy,
+          agency: req.body.agency
+        });
+      }
+    } catch (criminalErr) {
+      console.error("Criminal check failed:", criminalErr);
+      await emitLog(io, {
+        level: "WARNING",
+        message: "Criminal database check failed",
+        user: req.body.uploadedBy,
+        agency: req.body.agency
+      });
+    }
+
+    try {
+      await emitLog(io, {
+        level: "INFO",
         message: "Running AI alert checks...",
         user: req.body.uploadedBy,
         agency: req.body.agency
