@@ -15,12 +15,16 @@ import {
   Sun,
   Moon,
   Video,
+  TrendingUp,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 
 export default function SideBar() {
   const { logout, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [socialMediaExpanded, setSocialMediaExpanded] = useState(false);
 
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
@@ -262,6 +266,22 @@ export default function SideBar() {
             <Video size={18} />
             CCTV Analysis
           </NavLink>
+
+          <NavLink
+                  to="/app/social-media"
+                  className={({ isActive }) =>
+                    `${linkBase} text-lg ${
+                      isActive
+                        ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg"
+                        : theme === "dark"
+                        ? "text-slate-300 hover:bg-white/5"
+                        : "text-slate-600 hover:bg-purple-50"
+                    }`
+                  }
+                >
+                <TrendingUp size={18} />
+                Social Media
+                  </NavLink>
 
           <NavLink
             to="/app/history"
