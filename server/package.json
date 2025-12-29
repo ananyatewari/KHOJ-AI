@@ -34,6 +34,7 @@
     "groq-sdk": "^0.37.0",
     "jsdom": "^27.3.0",
     "jsonwebtoken": "^9.0.3",
+    "mammoth": "^1.11.0",
     "mongoose": "^8.4.1",
     "multer": "^2.0.2",
     "path": "^0.12.7",
