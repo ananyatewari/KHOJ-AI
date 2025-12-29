@@ -3,16 +3,14 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useTheme } from "../context/ThemeContext";
 
-// Entity type colors for visual distinction
 const entityColors = {
-  persons: "#4f46e5", // Indigo
-  places: "#059669", // Emerald
-  organizations: "#d97706", // Amber
-  phoneNumbers: "#dc2626", // Red
-  dates: "#7c3aed", // Purple
+  persons: "#4f46e5", 
+  places: "#059669", 
+  organizations: "#d97706", 
+  phoneNumbers: "#dc2626", 
+  dates: "#7c3aed", 
 };
 
-// Human-readable entity type labels
 const entityLabels = {
   persons: "Person",
   places: "Location",
@@ -36,12 +34,10 @@ export default function DocumentView() {
   const containerRef = useRef(null);
   const svgRef = useRef(null);
 
-  // Fetch document details
   useEffect(() => {
     const fetchDocument = async () => {
       try {
         console.log("Fetching document with ID:", id);
-        // Try OCR endpoint first
         try {
           const response = await axios.get(`/api/ocr/${id}`);
           console.log("OCR Document data received:", response.data);
@@ -49,7 +45,6 @@ export default function DocumentView() {
           setLoading(false);
         } catch (ocrErr) {
           console.log("OCR endpoint failed, trying document endpoint");
-          // Fall back to regular document endpoint
           const docResponse = await axios.get(`/api/document/${id}`);
           console.log("Document data received:", docResponse.data);
           setDocument(docResponse.data);
@@ -68,7 +63,6 @@ export default function DocumentView() {
     fetchDocument();
   }, [id]);
 
-  // Update image size when the image loads or window resizes
   useEffect(() => {
     const updateImageSize = () => {
       if (imageRef.current) {
@@ -77,10 +71,8 @@ export default function DocumentView() {
       }
     };
 
-    // Set up event listeners
     window.addEventListener("resize", updateImageSize);
 
-    // Initial update
     if (document && !loading) {
       const img = new Image();
       img.onload = updateImageSize;
@@ -92,19 +84,15 @@ export default function DocumentView() {
     };
   }, [document, loading]);
 
-  // Scale bounding box coordinates relative to displayed image size
   const scaleBoundingBox = (box) => {
     if (!imageRef.current || !box) return null;
 
-    // Get the natural dimensions of the image (the actual size of the image file)
     const naturalWidth = imageRef.current.naturalWidth;
     const naturalHeight = imageRef.current.naturalHeight;
 
-    // Calculate the scale factors
     const scaleX = imageSize.width / naturalWidth;
     const scaleY = imageSize.height / naturalHeight;
 
-    // Scale the bounding box
     return {
       x: box.x * scaleX,
       y: box.y * scaleY,
@@ -157,7 +145,6 @@ export default function DocumentView() {
     return merged;
   }, [document]);
 
-  // Helper function to get all entities as a flat array
   const getAllEntities = () => {
     if (!displayEntities || !Object.keys(displayEntities).length) return [];
 
@@ -171,7 +158,6 @@ export default function DocumentView() {
     return allEntities;
   };
 
-  // Handle entity hover
   const handleEntityHover = (entity) => {
     setActiveEntity(entity ? { ...entity } : null);
   };
@@ -219,7 +205,6 @@ export default function DocumentView() {
           : "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 text-slate-800"
       }`}
     >
-      {/* Header */}
       <header
         className={`px-6 py-4 border-b flex flex-wrap items-center justify-between gap-3 ${
           theme === "dark"
@@ -267,9 +252,7 @@ export default function DocumentView() {
         </button>
       </header>
 
-      {/* Main content */}
       <div className="flex flex-1 overflow-hidden" ref={containerRef}>
-        {/* Left panel - Original Image with SVG Overlay */}
         <div
           className={`w-1/2 border-r relative overflow-auto p-4 custom-scrollbar ${
             theme === "dark" ? "border-gray-700" : "border-purple-200"
@@ -283,7 +266,6 @@ export default function DocumentView() {
             Original Document
           </h2>
           <div className="relative">
-            {/* Original Image */}
             {document.originalImage ? (
               <img
                 ref={imageRef}
@@ -319,7 +301,6 @@ export default function DocumentView() {
               </div>
             )}
 
-            {/* SVG Overlay for bounding boxes */}
             <svg
               ref={svgRef}
               className="absolute top-0 left-0 w-full h-full pointer-events-none"
@@ -355,13 +336,11 @@ export default function DocumentView() {
           </div>
         </div>
 
-        {/* Right panel - Text and Entities */}
         <div
           className={`w-1/2 flex flex-col overflow-hidden ${
             theme === "dark" ? "bg-gray-850" : "bg-white/60"
           }`}
         >
-          {/* Text Panel */}
           <div
             className={`flex-1 overflow-auto p-4 border-b custom-scrollbar ${
               theme === "dark" ? "border-gray-700" : "border-purple-200"
@@ -385,7 +364,6 @@ export default function DocumentView() {
             </div>
           </div>
 
-          {/* Entity Panel */}
           <div className="h-2/5 overflow-auto p-4 custom-scrollbar">
             <h2
               className={`text-lg font-medium mb-3 ${
@@ -395,7 +373,6 @@ export default function DocumentView() {
               Detected Entities
             </h2>
 
-            {/* Entity Type Sections */}
             <div className="space-y-4">
               {Object.entries(displayEntities).map(
                 ([type, entities]) =>
@@ -432,7 +409,6 @@ export default function DocumentView() {
                           >
                             <span>{entity.text}</span>
 
-                            {/* Confidence indicator */}
                             <span
                               className="px-1.5 py-0.5 rounded-full text-xs"
                               style={{

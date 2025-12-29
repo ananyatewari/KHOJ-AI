@@ -16,14 +16,13 @@ const VideoMetadataView = ({ videoId, user }) => {
     const initializeMetadata = async () => {
       await fetchVideoMetadata();
 
-      // Setup Socket.IO listener for metadata extraction completion
       socket = io("http://localhost:3000");
       
       socket.on("cctv:metadata_extracted", (data) => {
         if (data.videoId === videoId) {
           console.log("Metadata extraction completed:", data);
           setExtracting(false);
-          fetchVideoMetadata(); // Refresh video data
+          fetchVideoMetadata(); 
         }
       });
     };
@@ -51,7 +50,6 @@ const VideoMetadataView = ({ videoId, user }) => {
       });
       setVideo(response.data);
       
-      // Check if metadata extraction is still in progress
       if (!response.data.videoMetadata?.comprehensive || Object.keys(response.data.videoMetadata.comprehensive).length === 0) {
         setExtracting(true);
       } else {
@@ -82,7 +80,6 @@ const VideoMetadataView = ({ videoId, user }) => {
     );
   }
 
-  // Helper functions
   const getQualityColor = (quality) => {
     switch (quality) {
       case "excellent":
@@ -139,11 +136,10 @@ const VideoMetadataView = ({ videoId, user }) => {
   const comprehensive = metadata.comprehensive || {};
   const analysis = comprehensive.analysis || {};
 
-  // Calculate additional metrics
   const calculateBitrate = () => {
     if (metadata.size && metadata.duration) {
-      const bitrate = (metadata.size * 8) / metadata.duration; // bits per second
-      return (bitrate / 1000000).toFixed(2); // Convert to Mbps
+      const bitrate = (metadata.size * 8) / metadata.duration; 
+      return (bitrate / 1000000).toFixed(2); 
     }
     return 'N/A';
   };
@@ -174,7 +170,6 @@ const VideoMetadataView = ({ videoId, user }) => {
 
   const suitability = getCCTVSuitability();
 
-  // Check if we have AI-extracted intelligence
   const hasIntelligence = video.intelligence && Object.keys(video.intelligence).length > 0;
 
   if (hasIntelligence) {
@@ -182,7 +177,6 @@ const VideoMetadataView = ({ videoId, user }) => {
     
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
-        {/* Threat Level Banner */}
         <div className={`p-4 rounded-lg mb-6 border-l-4 ${
           intel.threatLevel === 'high' ? 'bg-red-50 border-red-500' :
           intel.threatLevel === 'medium' ? 'bg-yellow-50 border-yellow-500' :
@@ -219,7 +213,6 @@ const VideoMetadataView = ({ videoId, user }) => {
           </div>
         </div>
 
-        {/* Executive Summary */}
         {intel.summary && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Executive Summary</h3>
@@ -229,7 +222,6 @@ const VideoMetadataView = ({ videoId, user }) => {
           </div>
         )}
 
-        {/* Key Findings */}
         {intel.keyFindings && intel.keyFindings.length > 0 && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Key Findings</h3>
@@ -246,7 +238,6 @@ const VideoMetadataView = ({ videoId, user }) => {
           </div>
         )}
 
-        {/* Entities Detected */}
         {intel.entitiesDetected && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Entities Detected</h3>
@@ -315,7 +306,6 @@ const VideoMetadataView = ({ videoId, user }) => {
           </div>
         )}
 
-        {/* Agency Alerts */}
         {intel.agencyAlerts && intel.agencyAlerts.length > 0 && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Inter-Agency Alerts</h3>
@@ -351,7 +341,6 @@ const VideoMetadataView = ({ videoId, user }) => {
           </div>
         )}
 
-        {/* Recommendations */}
         {intel.recommendations && intel.recommendations.length > 0 && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Actionable Recommendations</h3>
@@ -368,7 +357,6 @@ const VideoMetadataView = ({ videoId, user }) => {
           </div>
         )}
 
-        {/* Cross-Reference Opportunities */}
         {intel.crossReferenceOpportunities && intel.crossReferenceOpportunities.length > 0 && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Cross-Reference Opportunities</h3>
@@ -385,7 +373,6 @@ const VideoMetadataView = ({ videoId, user }) => {
           </div>
         )}
 
-        {/* Detection Statistics */}
         {intel.detectionStats && (
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Detection Statistics</h3>
@@ -413,7 +400,6 @@ const VideoMetadataView = ({ videoId, user }) => {
     );
   }
 
-  // Fallback: Check if using browser-extracted metadata
   if (comprehensive?.browserExtracted || !comprehensive || Object.keys(comprehensive).length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -433,7 +419,6 @@ const VideoMetadataView = ({ videoId, user }) => {
           </div>
         </div>
 
-        {/* CCTV Suitability Assessment */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-3">CCTV Analysis Suitability</h3>
           <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-5 rounded-lg border-2 border-gray-200">
@@ -451,7 +436,6 @@ const VideoMetadataView = ({ videoId, user }) => {
           </div>
         </div>
 
-        {/* Video Information Grid */}
         <div className="space-y-6">
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Technical Specifications</h3>
@@ -522,7 +506,6 @@ const VideoMetadataView = ({ videoId, user }) => {
             </div>
           </div>
 
-          {/* CCTV Analysis Recommendations */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Analysis Recommendations</h3>
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
@@ -569,7 +552,6 @@ const VideoMetadataView = ({ videoId, user }) => {
             </div>
           </div>
 
-          {/* File Details */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-3">File Information</h3>
             <div className="bg-white border-2 border-gray-200 p-4 rounded-lg space-y-3">
@@ -600,10 +582,8 @@ const VideoMetadataView = ({ videoId, user }) => {
     );
   }
 
-  // For videos with full comprehensive metadata (FFmpeg-extracted)
   return (
     <div className="bg-white rounded-lg shadow-md">
-      {/* Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
@@ -625,7 +605,6 @@ const VideoMetadataView = ({ videoId, user }) => {
           </div>
         </div>
 
-        {/* Camera Info */}
         {(video.cameraInfo?.location || video.cameraInfo?.cameraId) && (
           <div className="mt-4 flex items-center space-x-4 text-sm text-gray-600">
             {video.cameraInfo.cameraId && (
@@ -674,7 +653,6 @@ const VideoMetadataView = ({ videoId, user }) => {
         )}
       </div>
 
-      {/* Tab Navigation */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8 px-6">
           <button
@@ -724,11 +702,9 @@ const VideoMetadataView = ({ videoId, user }) => {
         </nav>
       </div>
 
-      {/* Tab Content */}
       <div className="p-6">
         {activeTab === "overview" && (
           <div className="space-y-6">
-            {/* Basic Info Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-500 mb-1">Duration</p>
@@ -756,7 +732,6 @@ const VideoMetadataView = ({ videoId, user }) => {
               </div>
             </div>
 
-            {/* Summary */}
             {analysis.summary && (
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                 <h3 className="text-sm font-semibold text-blue-900 mb-2">
@@ -766,7 +741,6 @@ const VideoMetadataView = ({ videoId, user }) => {
               </div>
             )}
 
-            {/* Suitability Assessment */}
             {analysis.suitability && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
@@ -806,7 +780,6 @@ const VideoMetadataView = ({ videoId, user }) => {
 
         {activeTab === "technical" && (
           <div className="space-y-6">
-            {/* Video Stream */}
             {comprehensive.video && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
@@ -841,7 +814,6 @@ const VideoMetadataView = ({ videoId, user }) => {
               </div>
             )}
 
-            {/* Audio Stream */}
             {comprehensive.audio && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
@@ -876,7 +848,6 @@ const VideoMetadataView = ({ videoId, user }) => {
               </div>
             )}
 
-            {/* Format Info */}
             {comprehensive.basic && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
@@ -897,7 +868,6 @@ const VideoMetadataView = ({ videoId, user }) => {
 
         {activeTab === "embedded" && comprehensive.embedded && (
           <div className="space-y-6">
-            {/* Creation Time */}
             {comprehensive.embedded.creationTime && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -909,7 +879,6 @@ const VideoMetadataView = ({ videoId, user }) => {
               </div>
             )}
 
-            {/* Camera/Device Info */}
             {(comprehensive.embedded.make || comprehensive.embedded.model) && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -921,7 +890,6 @@ const VideoMetadataView = ({ videoId, user }) => {
               </div>
             )}
 
-            {/* GPS Location */}
             {comprehensive.embedded.location && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -946,7 +914,6 @@ const VideoMetadataView = ({ videoId, user }) => {
               </div>
             )}
 
-            {/* Other Metadata */}
             {Object.entries(comprehensive.embedded)
               .filter(([key]) => !['creationTime', 'make', 'model', 'location'].includes(key))
               .map(([key, value]) => (
@@ -962,7 +929,6 @@ const VideoMetadataView = ({ videoId, user }) => {
 
         {activeTab === "analysis" && analysis && (
           <div className="space-y-6">
-            {/* Recommendations */}
             {analysis.recommendations && analysis.recommendations.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
@@ -991,7 +957,6 @@ const VideoMetadataView = ({ videoId, user }) => {
               </div>
             )}
 
-            {/* Alerts */}
             {analysis.alerts && analysis.alerts.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">

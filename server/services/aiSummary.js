@@ -16,16 +16,13 @@ export async function generateAISummary({ documents }) {
 
   const entityContext = documents.map(d => d.entities);
 
-  // Phase 1: Free-form analysis
   const narrative = await generateNarrative({
     combinedText,
     entityContext
   });
 
-  // Phase 2: Structured JSON
   const structured = await structureNarrativeToJson(narrative);
 
-  // If some fields are empty, synthesize them from the narrative and entity context
   const synthesized = synthesizeMissingFields(structured, narrative, entityContext);
   return synthesized;
 }
@@ -80,29 +77,25 @@ Example output (must match schema):
 
   const raw = completion.choices?.[0]?.message?.content || "";
 
-  // Try to extract JSON code block or nearest {...}
   const match = raw.match(/```json\s*([\s\S]*?)\s*```/) || raw.match(/\{[\s\S]*\}/);
   const jsonText = match ? (match[1] || match[0]) : raw;
 
-  // Try straightforward parse first
   try {
     return JSON.parse(jsonText);
   } catch (err) {
-    // Attempt to sanitize common JSON issues: replace single quotes, remove trailing commas
     let sanitized = jsonText
-      .replace(/\u2018|\u2019|\u201c|\u201d/g, '"') // smart quotes
+      .replace(/\u2018|\u2019|\u201c|\u201d/g, '"') 
       .replace(/\\n/g, ' ')
       .replace(/\'(?=,|\s|\:)/g, "'")
       .replace(/([\{\[,])\s*'/g, '$1"')
       .replace(/'\s*([\}\],])/g, '"$1')
-      .replace(/(['"])?([a-zA-Z0-9_\-]+)(['"])??\s*:/g, '"$2":') // ensure keys quoted
-      .replace(/,\s*([\}\]])/g, '$1'); // remove trailing commas
+      .replace(/(['"])?([a-zA-Z0-9_\-]+)(['"])??\s*:/g, '"$2":') 
+      .replace(/,\s*([\}\]])/g, '$1');
 
     try {
       return JSON.parse(sanitized);
     } catch (err2) {
       console.warn('Failed to parse structured JSON from AI. Raw:', raw, 'Sanitized:', sanitized, 'Errors:', err.message, err2.message);
-      // Return a partial structure that will be synthesized later
       return {
         executiveSummary: narrativeText.slice(0, 1000),
         keyFindings: [],
@@ -157,7 +150,6 @@ ${JSON.stringify(entityContext, null, 2)}
 function synthesizeMissingFields(structured, narrative, entityContext) {
   const result = { ...structured };
 
-  // Ensure keys exist
   result.executiveSummary = result.executiveSummary || (narrative ? narrative.split('\n')[0].slice(0, 1000) : '');
   result.keyFindings = Array.isArray(result.keyFindings) ? result.keyFindings : [];
   result.entityInsights = result.entityInsights || { persons: [], places: [], organizations: [] };
@@ -169,7 +161,6 @@ function synthesizeMissingFields(structured, narrative, entityContext) {
   result.importantDeadlines = Array.isArray(result.importantDeadlines) ? result.importantDeadlines : [];
   result.takeaways = Array.isArray(result.takeaways) ? result.takeaways : [];
 
-  // If entityInsights empty, fill from entityContext
   const flattenEntities = (ctx) => {
     const persons = new Set();
     const places = new Set();
@@ -193,7 +184,6 @@ function synthesizeMissingFields(structured, narrative, entityContext) {
     result.entityInsights.organizations = entFlat.organizations;
   }
 
-  // If keyFindings empty, pick top sentences from narrative that look like findings
   if (!result.keyFindings || result.keyFindings.length === 0) {
     const sentences = (narrative || '').split(/[\.\n]\s+/).map(s => s.trim()).filter(Boolean);
     const candidates = [];
@@ -206,7 +196,6 @@ function synthesizeMissingFields(structured, narrative, entityContext) {
     result.keyFindings = candidates.slice(0, 6);
   }
 
-  // If analystTakeaways empty, produce concise takeaways
   if (!result.analystTakeaways || result.analystTakeaways.length === 0) {
     const sentences = (narrative || '').split(/[\.\n]\s+/).map(s => s.trim()).filter(Boolean);
     const takeaways = sentences.filter(s => s.toLowerCase().includes('should') || s.toLowerCase().includes('recommend') || s.toLowerCase().includes('consider'));

@@ -53,11 +53,8 @@ const DocumentSchema = new mongoose.Schema({
 DocumentSchema.index({ visibility: 1, createdAt: 1 });
 DocumentSchema.index({ agency: 1, createdAt: 1 });
 
-// Post-save hook to trigger real-time alerts
 DocumentSchema.post('save', async function(doc) {
-  // Only trigger on new document creation
   if (doc.isNew) {
-    // Create Alert document in MongoDB
     await createRealTimeAlert({
       type: "new_document",
       severity: "medium",
@@ -77,7 +74,6 @@ DocumentSchema.post('save', async function(doc) {
       }
     });
     
-    // Emit WebSocket event for real-time notification
     const io = global.io;
     if (io) {
       io.emit('document:created', {
@@ -91,7 +87,6 @@ DocumentSchema.post('save', async function(doc) {
         type: 'document'
       });
       
-      // Send agency-specific notification
       io.emit(`agency:${doc.agency}:document`, {
         type: 'new_document',
         documentId: doc._id,

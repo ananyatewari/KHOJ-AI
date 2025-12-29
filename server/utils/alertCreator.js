@@ -9,7 +9,6 @@ export async function createRealTimeAlert(alertData) {
 
     await alert.save();
 
-    // Emit WebSocket notification
     const io = global.io;
     if (io) {
       if (alert.agencies && alert.agencies.length > 0) {

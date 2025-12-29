@@ -229,7 +229,6 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   }
 });
 
-// Helper function to create alerts from MongoDB hooks
 export async function createRealTimeAlert(alertData) {
   try {
     const alert = new Alert({
@@ -239,7 +238,6 @@ export async function createRealTimeAlert(alertData) {
 
     await alert.save();
 
-    // Emit WebSocket notification
     const io = global.io;
     if (io) {
       if (alert.agencies && alert.agencies.length > 0) {

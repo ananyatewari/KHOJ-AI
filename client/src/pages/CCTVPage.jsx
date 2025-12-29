@@ -54,13 +54,11 @@ const CCTVPage = ({}) => {
   const handleUploadSuccess = (uploadData) => {
     console.log("Upload successful:", uploadData);
     fetchVideos();
-    // Stay on upload tab to allow frame extraction
   };
 
   const handleMetadataUploadSuccess = (uploadData) => {
     console.log("Metadata upload successful:", uploadData);
     fetchMetadata();
-    // Switch to metadata library to see processing
     setActiveTab("metadata-library");
   };
 
@@ -87,7 +85,6 @@ const CCTVPage = ({}) => {
       });
     }
 
-    // Send detections to backend
     await fetch(`/api/cctv/${selectedVideo._id}/detections`, {
       method: "POST",
       headers: {
@@ -98,7 +95,7 @@ const CCTVPage = ({}) => {
     });
 
     setProcessingFrames(false);
-    fetchVideos(); // Refresh to update status
+    fetchVideos();
   };
 
   const getStatusColor = (status) => {
@@ -138,10 +135,8 @@ const CCTVPage = ({}) => {
           </p>
         </div>
 
-        {/* Tab Navigation */}
         <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
           <nav className="-mb-px flex flex-wrap gap-4">
-            {/* Video Section */}
             <div className="flex items-center space-x-4 border-r border-gray-300 dark:border-gray-600 pr-4">
               <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider">📹 Video</span>
               <button
@@ -190,7 +185,6 @@ const CCTVPage = ({}) => {
               )}
             </div>
 
-            {/* Metadata Section */}
             <div className="flex items-center space-x-4">
               <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">📄 Metadata Files</span>
               <button
@@ -229,7 +223,6 @@ const CCTVPage = ({}) => {
           </nav>
         </div>
 
-        {/* Tab Content */}
         <div>
           {activeTab === "upload" && (
             <CCTVUpload user={user} onUploadSuccess={handleUploadSuccess} />

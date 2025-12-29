@@ -8,13 +8,11 @@ export async function checkEntityCrossMatch(entityName, entityType, documentId, 
   try {
     const matchingDocs = [];
     
-    // Document model stores entities as simple strings
     const documents = await Document.find({
       [`entities.${entityType}s`]: entityName,
       _id: { $ne: documentId }
     }).limit(10);
     
-    // OcrDocument and Transcription store entities as objects with 'text' field
     const ocrDocs = await OcrDocument.find({
       [`entities.${entityType}s.text`]: entityName,
       _id: { $ne: documentId }
@@ -91,13 +89,11 @@ export async function checkGeoFenceSpike(location, agency) {
   try {
     const timeWindow = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    // Document model stores places as simple strings
     const recentDocs = await Document.countDocuments({
       "entities.places": location,
       createdAt: { $gte: timeWindow }
     });
 
-    // OcrDocument and Transcription store places as objects with 'text' field
     const recentOcr = await OcrDocument.countDocuments({
       "entities.places.text": location,
       createdAt: { $gte: timeWindow }
@@ -232,7 +228,6 @@ export async function triggerAlertChecks(document, documentType, io) {
     const alerts = [];
 
     if (document.entities) {
-      // Handle persons - extract text from objects or use strings directly
       if (document.entities.persons) {
         for (const person of document.entities.persons) {
           const personName = typeof person === 'string' ? person : person.text;
@@ -243,7 +238,6 @@ export async function triggerAlertChecks(document, documentType, io) {
         }
       }
 
-      // Handle organizations - extract text from objects or use strings directly
       if (document.entities.organizations) {
         for (const org of document.entities.organizations) {
           const orgName = typeof org === 'string' ? org : org.text;
@@ -254,7 +248,6 @@ export async function triggerAlertChecks(document, documentType, io) {
         }
       }
 
-      // Handle places - extract text from objects or use strings directly
       if (document.entities.places) {
         for (const place of document.entities.places) {
           const placeName = typeof place === 'string' ? place : place.text;

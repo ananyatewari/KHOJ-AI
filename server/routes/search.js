@@ -159,7 +159,6 @@ router.post("/summary", authMiddleware, async (req, res) => {
       return res.status(404).json({ error: "Document not found" });
     }
 
-    // Check if AI summary already exists
     if (doc.aiSummary) {
       await emitLog(req.app.get("io"), {
         level: "INFO",
@@ -170,7 +169,6 @@ router.post("/summary", authMiddleware, async (req, res) => {
       return res.json(doc.aiSummary);
     }
 
-    // Generate new summary only if it doesn't exist
     await emitLog(req.app.get("io"), {
       level: "INFO",
       message: `Generating AI summary for document ${documentId}...`,
@@ -182,7 +180,6 @@ router.post("/summary", authMiddleware, async (req, res) => {
       documents: [doc]
     });
 
-    // Save the generated summary to the document
     doc.aiSummary = summary;
     await doc.save();
 

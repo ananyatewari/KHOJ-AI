@@ -49,7 +49,6 @@ const MetadataUpload = ({ user, onUploadSuccess }) => {
       setUploading(false);
       setUploadedMetadataId(response.data.metadataId);
       
-      // Reset form
       setCameraInfo({
         cameraId: "",
         location: "",
@@ -74,7 +73,7 @@ const MetadataUpload = ({ user, onUploadSuccess }) => {
       "application/msword": [".doc"],
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
     },
-    maxSize: 10 * 1024 * 1024, // 10MB
+    maxSize: 10 * 1024 * 1024,
     multiple: false,
   });
 
@@ -91,7 +90,6 @@ const MetadataUpload = ({ user, onUploadSuccess }) => {
         Upload CCTV Metadata
       </h2>
 
-      {/* Info Banner */}
       <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400 rounded">
         <div className="flex items-start">
           <svg className="h-5 w-5 text-blue-500 dark:text-blue-400 mt-0.5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -108,7 +106,6 @@ const MetadataUpload = ({ user, onUploadSuccess }) => {
         </div>
       </div>
 
-      {/* File Upload Area */}
       <div
         {...getRootProps()}
         className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
@@ -165,14 +162,12 @@ const MetadataUpload = ({ user, onUploadSuccess }) => {
         )}
       </div>
 
-      {/* Error Message */}
       {error && (
         <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/20 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-400 rounded">
           {error}
         </div>
       )}
 
-      {/* Success Message */}
       {uploadedMetadataId && !error && (
         <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-200 dark:border-green-700">
           <div className="flex items-center">
@@ -189,7 +184,6 @@ const MetadataUpload = ({ user, onUploadSuccess }) => {
         </div>
       )}
 
-      {/* Upload Guidelines */}
       <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
         <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">What to Upload:</h3>
         <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">

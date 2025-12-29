@@ -92,7 +92,6 @@ const MetadataAnalysis = ({ metadataId, user }) => {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
-      {/* Header */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div>
@@ -149,7 +148,6 @@ const MetadataAnalysis = ({ metadataId, user }) => {
           </div>
         </div>
 
-        {/* Camera Info */}
         {(metadata.cameraInfo?.location || metadata.cameraInfo?.cameraId) && (
           <div className="mt-4 flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
             {metadata.cameraInfo.cameraId && (
@@ -211,7 +209,7 @@ const MetadataAnalysis = ({ metadataId, user }) => {
 
       {metadata.processingStatus === "completed" && metadata.aiAnalysis && (
         <div className="p-6 space-y-6">
-          {/* Executive Summary */}
+
           {metadata.aiAnalysis.executiveSummary && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
@@ -225,7 +223,6 @@ const MetadataAnalysis = ({ metadataId, user }) => {
             </div>
           )}
 
-          {/* Key Findings */}
           {metadata.aiAnalysis.keyFindings?.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
@@ -244,7 +241,6 @@ const MetadataAnalysis = ({ metadataId, user }) => {
             </div>
           )}
 
-          {/* Extracted Entities */}
           {metadata.entities && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
@@ -323,7 +319,6 @@ const MetadataAnalysis = ({ metadataId, user }) => {
             </div>
           )}
 
-          {/* Analyst Takeaways */}
           {metadata.aiAnalysis.analystTakeaways?.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">

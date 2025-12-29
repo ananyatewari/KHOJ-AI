@@ -21,19 +21,16 @@ const CCTVMetadataSchema = new mongoose.Schema({
     required: true
   },
   
-  // Associated CCTV video (optional)
   cctvVideoId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'CCTVVideo'
   },
   
-  // Extracted text content
   textContent: {
     type: String,
     default: ""
   },
   
-  // AI-extracted entities
   entities: {
     persons: [{
       text: String,
@@ -52,7 +49,6 @@ const CCTVMetadataSchema = new mongoose.Schema({
     emails: [String]
   },
   
-  // AI-generated summary and analysis
   aiAnalysis: {
     executiveSummary: String,
     keyFindings: [String],
@@ -74,7 +70,6 @@ const CCTVMetadataSchema = new mongoose.Schema({
     takeaways: [String]
   },
   
-  // Camera/location context
   cameraInfo: {
     cameraId: String,
     location: String,
@@ -84,20 +79,17 @@ const CCTVMetadataSchema = new mongoose.Schema({
     }
   },
   
-  // Processing status
   processingStatus: {
     type: String,
     enum: ["uploaded", "processing", "completed", "failed"],
     default: "uploaded"
   },
   
-  // Visibility and sharing
   visibility: {
     type: [String],
     default: []
   },
   
-  // File info
   filePath: String,
   fileType: String,
   fileSize: Number,
@@ -110,7 +102,6 @@ const CCTVMetadataSchema = new mongoose.Schema({
   processedAt: Date
 });
 
-// Indexes for efficient queries
 CCTVMetadataSchema.index({ agency: 1, createdAt: -1 });
 CCTVMetadataSchema.index({ cctvVideoId: 1 });
 CCTVMetadataSchema.index({ processingStatus: 1 });

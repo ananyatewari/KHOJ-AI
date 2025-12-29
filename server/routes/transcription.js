@@ -14,7 +14,6 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const router = express.Router();
 
-// Process and upload audio file
 router.post("/process", authMiddleware, upload.single("audio"), async (req, res) => {
   const io = req.app.get("io");
 
@@ -27,7 +26,6 @@ router.post("/process", authMiddleware, upload.single("audio"), async (req, res)
     const agency = req.body.agency || req.user.agency;
     const startTime = Date.now();
 
-    // Emit processing started
     await emitLog(io, {
       level: "INFO",
       message: "Audio transcription processing started",
@@ -36,18 +34,15 @@ router.post("/process", authMiddleware, upload.single("audio"), async (req, res)
       filename: req.file.originalname
     });
 
-    // Step 1: Transcribe audio using Whisper
     console.log("Transcribing audio file...");
     const transcript = await aiService.transcribeAudio(req.file.path);
 
-    // Step 2: Extract entities from the transcript (use Groq AI entity extractor)
     console.log("Extracting entities from transcript using Groq...");
     let entities = await extractEntitiesAI(transcript);
     if (!entities) {
       entities = { persons: [], places: [], organizations: [] };
     }
 
-    // Normalize entities to expected schema: arrays of { text, confidence, source }
     const ensureArray = (arr) => Array.isArray(arr) ? arr : [];
     entities.persons = ensureArray(entities.persons).map(e => (typeof e === 'string' ? { text: e, confidence: 0.85, source: 'groq' } : { text: e.text || '', confidence: e.confidence || 0.85, source: e.source || 'groq' }));
     entities.places = ensureArray(entities.places).map(e => (typeof e === 'string' ? { text: e, confidence: 0.85, source: 'groq' } : { text: e.text || '', confidence: e.confidence || 0.85, source: e.source || 'groq' }));
@@ -55,13 +50,10 @@ router.post("/process", authMiddleware, upload.single("audio"), async (req, res)
     entities.dates = ensureArray(entities.dates).map(e => (typeof e === 'string' ? { text: e, confidence: 0.85, source: 'groq' } : { text: e.text || '', confidence: e.confidence || 0.85, source: e.source || 'groq' }));
     entities.phoneNumbers = ensureArray(entities.phoneNumbers).map(e => (typeof e === 'string' ? { text: e, confidence: 0.85, source: 'groq' } : { text: e.text || '', confidence: e.confidence || 0.85, source: e.source || 'groq' }));
 
-    // Step 3: Process transcript to get key points, action items, etc.
     console.log("Processing transcript for summary...");
     let aiSummary = null;
     try {
       const processedMinutes = await aiService.processTranscript(transcript, entities);
-      // `generateAISummary` returns the intelligence schema:
-      // { executiveSummary, keyFindings, entityInsights, analystTakeaways }
       aiSummary = processedMinutes || {
         executiveSummary: "",
         keyFindings: [],
@@ -78,7 +70,6 @@ router.post("/process", authMiddleware, upload.single("audio"), async (req, res)
       };
     }
 
-    // Create transcription record in database
     const transcription = new Transcription({
       filename: req.file.originalname,
       originalAudio: `/uploads/${req.file.filename}`,
@@ -204,7 +195,6 @@ router.post("/process", authMiddleware, upload.single("audio"), async (req, res)
   }
 });
 
-// Get transcription by ID
 router.get("/:id", authMiddleware, async (req, res) => {
   const io = req.app.get("io");
 
@@ -214,7 +204,6 @@ router.get("/:id", authMiddleware, async (req, res) => {
       return res.status(404).json({ error: "Transcription not found" });
     }
 
-    // Check if transcription is accessible to user's agency
     const hasAccess = transcription.visibility.includes(req.user.agency);
     if (!hasAccess) {
       await emitLog(io, {
@@ -253,7 +242,6 @@ router.get("/:id", authMiddleware, async (req, res) => {
   }
 });
 
-// Get all transcriptions for user's agency
 router.get("/", authMiddleware, async (req, res) => {
   const io = req.app.get("io");
 
@@ -280,7 +268,7 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
-// Download transcription analysis as PDF
+
 router.get("/download-analysis/:id", authMiddleware, async (req, res) => {
   try {
     const transcription = await Transcription.findById(req.params.id);
@@ -289,17 +277,15 @@ router.get("/download-analysis/:id", authMiddleware, async (req, res) => {
       return res.status(404).json({ error: "Transcription not found" });
     }
 
-    // Check access
     const hasAccess = transcription.visibility.includes(req.user.agency);
     if (!hasAccess) {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    // Prepare item for PDF generation (match expected structure)
     const item = {
       filename: transcription.filename,
       transcript: transcription.transcript,
-      text: transcription.transcript, // alias for compatibility
+      text: transcription.transcript, 
       entities: transcription.entities,
       aiSummary: transcription.aiSummary,
       uploadedBy: transcription.uploadedBy,
@@ -307,7 +293,6 @@ router.get("/download-analysis/:id", authMiddleware, async (req, res) => {
       createdAt: transcription.createdAt
     };
 
-    // Generate PDF
     const pdfBuffer = await generateAnalysisPDF(item, "transcription");
     const filename = `${transcription.filename.replace(/\.[^/.]+$/, "")}_analysis.pdf`;
 

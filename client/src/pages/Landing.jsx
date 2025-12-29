@@ -18,7 +18,6 @@ import {
 import BackgroundGradient from "../components/BackgroundCanvas"
 import { useTheme } from "../context/ThemeContext";
 
-// NEW SECTIONS
 import WhoItsFor from "../components/WhoItsFor";
 import HowItWorks from "../components/HowItWorks";
 import Impact from "../components/Impact";
@@ -72,7 +71,6 @@ export default function Landing() {
           </button>
         </div>
       </nav>
-      {/* BADGE */}
 <div className={`mb-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full backdrop-blur absolute top-40 left-160 transition-colors duration-300 ${
   theme === "dark"
     ? "bg-gradient-to-r from-purple-500/20 via-fuchsia-500/20 to-indigo-500/20 border border-white/10 shadow-[0_0_20px_rgba(168,85,247,0.35)]"
@@ -85,7 +83,6 @@ export default function Landing() {
   </span>
 </div>
 
-      {/* ===== HERO ===== */}
       <section className={`max-w-6xl mx-auto mt-34 mb-40 grid md:grid-cols-2 gap-14 items-center backdrop-blur-2xl rounded-3xl p-12 transition-colors duration-300 ${
         theme === "dark"
           ? "bg-slate-950/80 border border-white/10 shadow-[0_40px_140px_rgba(0,0,0,0.85)]"
@@ -121,7 +118,6 @@ export default function Landing() {
 >
   <span className="relative z-10">Get Started</span>
 
-  {/* subtle shine */}
   <span
     className="
       absolute inset-0
@@ -160,12 +156,10 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ===== NEW INTERACTIVE SECTIONS ===== */}
       <WhoItsFor />
       <HowItWorks />
       <Impact />
 
-      {/* ===== FOOTER ===== */}
       <footer className={`border-t backdrop-blur-xl py-12 text-center text-sm transition-colors duration-300 ${
         theme === "dark"
           ? "border-white/10 text-slate-400"
@@ -177,7 +171,6 @@ export default function Landing() {
   );
 }
 
-/* ===== SMALL HELPERS ===== */
 
 function FeatureItem({ icon, text, theme }) {
   return (

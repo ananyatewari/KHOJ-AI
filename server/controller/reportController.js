@@ -270,9 +270,6 @@ export const getOperationalReport = async (req, res) => {
   }
 };
 
-/**
- * Export Operational Intelligence Report (PDF)
- */
 export const exportOperationalPDF = async (req, res) => {
   try {
     const { from, to } = req.body;
@@ -350,20 +347,14 @@ export const exportOperationalPDF = async (req, res) => {
 
     doc.pipe(res);
 
-    /* ===============================
-       HEADER WITH LOGO
-    ================================ */
-
     const startY = doc.y;
-    
-    // Draw shield logo
+   
     const logoX = 275;
     const logoY = startY + 20;
     const shieldPath = `M ${logoX} ${logoY} L ${logoX + 12} ${logoY + 6} L ${logoX + 12} ${logoY + 14} C ${logoX + 12} ${logoY + 22} ${logoX + 6} ${logoY + 28} ${logoX} ${logoY + 32} C ${logoX - 6} ${logoY + 28} ${logoX - 12} ${logoY + 22} ${logoX - 12} ${logoY + 14} L ${logoX - 12} ${logoY + 6} Z`;
     
     doc.path(shieldPath).fillAndStroke("#4F46E5", "#4F46E5");
-    
-    // Document icon inside shield
+   
     doc.rect(logoX - 5, logoY + 9, 10, 13).stroke("#FFFFFF");
     doc.moveTo(logoX - 3, logoY + 12).lineTo(logoX + 3, logoY + 12).stroke("#FFFFFF");
     doc.moveTo(logoX - 3, logoY + 15).lineTo(logoX + 3, logoY + 15).stroke("#FFFFFF");
@@ -371,7 +362,6 @@ export const exportOperationalPDF = async (req, res) => {
     
     doc.moveDown(3);
     
-    // Brand name
     doc
       .font("Helvetica-Bold")
       .fontSize(28)
@@ -386,14 +376,12 @@ export const exportOperationalPDF = async (req, res) => {
       .text("Intelligence Platform", { align: "center" })
       .moveDown(0.5);
 
-    // Report title
     doc
       .fontSize(18)
       .fillColor("#1F2937")
       .text("Operational Intelligence Report", { align: "center" })
       .moveDown(0.5);
 
-    // Report metadata
     doc
       .fontSize(10)
       .fillColor("#374151")
@@ -407,7 +395,6 @@ export const exportOperationalPDF = async (req, res) => {
       )
       .moveDown(0.5);
 
-    // Decorative divider
     doc
       .moveTo(50, doc.y)
       .lineTo(550, doc.y)
@@ -420,10 +407,6 @@ export const exportOperationalPDF = async (req, res) => {
       .lineWidth(0.5)
       .stroke("#E5E7EB");
     doc.moveDown();
-
-    /* ===============================
-       EXECUTIVE SUMMARY (AI READY)
-    ================================ */
 
     doc
       .font("Helvetica-Bold")
@@ -451,10 +434,6 @@ Activity was recorded on ${timeline.length} distinct days${
 
     doc.font("Helvetica").fontSize(11).fillColor("black").text(autoSummary.trim()).moveDown();
 
-    /* ===============================
-       KEY METRICS
-    ================================ */
-
     doc.font("Helvetica-Bold").fontSize(14).text("Key Metrics").moveDown(0.3);
 
     const metrics = [
@@ -477,10 +456,6 @@ Activity was recorded on ${timeline.length} distinct days${
 
     doc.moveDown();
 
-    /* ===============================
-       UPLOAD TIMELINE
-    ================================ */
-
     doc.font("Helvetica-Bold").fontSize(14).text("Upload Activity Timeline").moveDown(0.3);
 
     if (!timeline.length) {
@@ -491,10 +466,6 @@ Activity was recorded on ${timeline.length} distinct days${
       });
       doc.moveDown();
     }
-
-    /* ===============================
-       RECENT DOCUMENTS
-    ================================ */
 
     doc.font("Helvetica-Bold").fontSize(14).text("Recent Documents").moveDown(0.3);
 
@@ -568,10 +539,6 @@ Activity was recorded on ${timeline.length} distinct days${
         doc.fillColor("black");
       });
     }
-
-    /* ===============================
-       KEY FINDINGS & ENTITY INSIGHTS (AI)
-    ================================ */
 
     if (aiSummary) {
       doc.font("Helvetica-Bold").fontSize(14).text("Key Findings").moveDown(0.3);
@@ -677,10 +644,6 @@ Activity was recorded on ${timeline.length} distinct days${
       });
     }
 
-    /* ===============================
-       FOOTER WITH BRANDING
-    ================================ */
-
     doc.moveDown(2);
     doc
       .moveTo(50, doc.y)
@@ -717,10 +680,6 @@ Activity was recorded on ${timeline.length} distinct days${
       );
 
     doc.end();
-
-    /* ===============================
-       AUDIT LOG
-    ================================ */
 
     await emitLog(req.app.get("io"), {
       level: "SUCCESS",

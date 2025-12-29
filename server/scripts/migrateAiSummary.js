@@ -14,7 +14,6 @@ async function migrate() {
   for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
     const old = doc.aiSummary || {};
 
-    // Detect old schema (keyDiscussionPoints etc) and skip if already in new schema
     const isOld = !!(old.keyDiscussionPoints || old.decisionsMade || old.actionItems || old.takeaways);
     const isNew = !!(old.keyFindings || old.entityInsights || old.analystTakeaways);
     if (!isOld || isNew) continue;

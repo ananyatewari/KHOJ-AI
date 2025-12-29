@@ -138,7 +138,6 @@ export default function History() {
           </p>
         </div>
 
-        {/* Filter Tabs */}
         <div className={`backdrop-blur-sm border rounded-xl p-6 mb-8 ${
           theme === "dark"
             ? "bg-slate-800/50 border-slate-700/50"
@@ -169,7 +168,6 @@ export default function History() {
           </div>
         </div>
 
-        {/* History Items Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 size={40} className="animate-spin text-indigo-500" />
@@ -203,7 +201,6 @@ export default function History() {
                     : "bg-white/80 border-purple-200 shadow-lg hover:border-indigo-400"
                 }`}
               >
-                {/* Header */}
                 <div className="flex items-start gap-3 mb-4">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
                     theme === "dark" ? "bg-slate-700/50" : "bg-purple-100"
@@ -222,7 +219,6 @@ export default function History() {
                   </div>
                 </div>
 
-                {/* Metadata */}
                 <div className={`space-y-2 mb-4 text-sm ${
                   theme === "dark" ? "text-slate-400" : "text-slate-600"
                 }`}>
@@ -236,7 +232,6 @@ export default function History() {
                   </div>
                 </div>
 
-                {/* Preview Info */}
                 {item.entities && (
                   <div className={`p-3 rounded-lg mb-4 ${
                     theme === "dark" ? "bg-slate-700/30" : "bg-purple-50"
@@ -266,7 +261,6 @@ export default function History() {
                   </div>
                 )}
 
-                {/* AI Summary Preview */}
                 {item.aiSummary?.executiveSummary && (
                   <div className={`p-3 rounded-lg mb-4 ${
                     theme === "dark" ? "bg-indigo-500/10" : "bg-indigo-50"
@@ -284,7 +278,6 @@ export default function History() {
                   </div>
                 )}
 
-                {/* Actions */}
                 <button
                   onClick={() => handlePreview(item)}
                   className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
@@ -302,7 +295,6 @@ export default function History() {
         )}
       </div>
 
-      {/* Preview Modal */}
       {showPreview && selectedItem && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className={`rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl ${
@@ -310,7 +302,6 @@ export default function History() {
               ? "bg-slate-900 border border-slate-700"
               : "bg-white border border-purple-200"
           }`}>
-            {/* Modal Header */}
             <div className={`sticky top-0 p-6 border-b flex items-center justify-between ${
               theme === "dark"
                 ? "bg-slate-900 border-slate-700"
@@ -343,9 +334,7 @@ export default function History() {
               </button>
             </div>
 
-            {/* Modal Content */}
             <div className="p-6 space-y-6">
-              {/* Text Preview */}
               {(selectedItem.text || selectedItem.transcript) && (
                 <div>
                   <h3 className={`text-lg font-semibold mb-3 ${
@@ -365,7 +354,6 @@ export default function History() {
                 </div>
               )}
 
-              {/* Entities */}
               {selectedItem.entities && (
                 <div>
                   <h3 className={`text-lg font-semibold mb-3 ${
@@ -406,7 +394,6 @@ export default function History() {
                 </div>
               )}
 
-              {/* AI Summary */}
               <div>
                 <h3 className={`text-lg font-semibold mb-3 ${
                   theme === "dark" ? "text-white" : "text-slate-800"
@@ -564,7 +551,6 @@ export default function History() {
               </div>
             </div>
 
-            {/* Modal Footer */}
             <div className={`sticky bottom-0 p-6 border-t flex gap-3 ${
               theme === "dark"
                 ? "bg-slate-900 border-slate-700"

@@ -2,21 +2,18 @@ import mongoose from "mongoose";
 import { createRealTimeAlert } from "../utils/alertCreator.js";
 
 const OcrDocumentSchema = new mongoose.Schema({
-  // Original document reference (for linking to existing document system)
   documentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Document',
     required: false
   },
   
-  // Basic document info
   filename: String,
-  originalImage: String, // URL to the original uploaded image/document
+  originalImage: String, 
   text: String,
   agency: String,
   uploadedBy: String,
   
-  // OCR extracted entities with bounding boxes
   entities: {
     persons: [{
       text: String,
@@ -90,7 +87,6 @@ const OcrDocumentSchema = new mongoose.Schema({
     }]
   },
 
-  // Processing metadata
   processingTime: Number,
   status: {
     type: String,
@@ -108,15 +104,11 @@ const OcrDocumentSchema = new mongoose.Schema({
     analystTakeaways: [String]
   },
   
-  // Timestamps
   createdAt: { type: Date, default: Date.now }
 });
 
-// Post-save hook to trigger real-time alerts
 OcrDocumentSchema.post('save', async function(doc) {
-  // Only trigger on new document creation and when status is completed
   if (doc.isNew && doc.status === 'completed') {
-    // Create Alert document in MongoDB
     await createRealTimeAlert({
       type: "new_ocr_document",
       severity: "medium",
@@ -136,7 +128,6 @@ OcrDocumentSchema.post('save', async function(doc) {
       }
     });
     
-    // Emit WebSocket event for real-time notification
     const io = global.io;
     if (io) {
       io.emit('document:created', {
@@ -150,7 +141,6 @@ OcrDocumentSchema.post('save', async function(doc) {
         type: 'ocr_document'
       });
       
-      // Send agency-specific notification
       io.emit(`agency:${doc.agency}:document`, {
         type: 'new_ocr_document',
         documentId: doc._id,

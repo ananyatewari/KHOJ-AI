@@ -20,7 +20,6 @@ const videoProcessor = new VideoProcessor();
 const objectDetection = new ObjectDetectionService();
 const faceDetection = new FaceDetectionService();
 
-// Configure multer for video uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(process.cwd(), 'uploads', 'videos');
@@ -38,7 +37,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 100 * 1024 * 1024 // 100MB
+    fileSize: 100 * 1024 * 1024
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/mkv'];
@@ -49,7 +48,6 @@ const upload = multer({
   }
 });
 
-// Configure multer for metadata file uploads
 const metadataStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(process.cwd(), 'uploads', 'metadata');
@@ -67,7 +65,7 @@ const metadataStorage = multer.diskStorage({
 const metadataUpload = multer({
   storage: metadataStorage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB
+    fileSize: 10 * 1024 * 1024 
   },
   fileFilter: (req, file, cb) => {
     if (!isValidMetadataFile(file.mimetype)) {
@@ -77,10 +75,6 @@ const metadataUpload = multer({
   }
 });
 
-/**
- * Upload CCTV metadata file (PDF, TXT, Word)
- * IMPORTANT: This route must come BEFORE /:videoId to avoid route conflicts
- */
 router.post("/metadata/upload", metadataUpload.single("file"), async (req, res) => {
   const io = req.app.get("io");
   
@@ -96,7 +90,6 @@ router.post("/metadata/upload", metadataUpload.single("file"), async (req, res) 
       agency: req.body.agency
     });
 
-    // Create initial metadata record
     const metadata = new CCTVMetadata({
       filename: req.file.filename,
       originalName: req.file.originalname,
@@ -119,7 +112,6 @@ router.post("/metadata/upload", metadataUpload.single("file"), async (req, res) 
 
     await metadata.save();
 
-    // Process file asynchronously
     processMetadataAsync(metadata._id, req.file.path, req.file.mimetype, io);
 
     res.status(200).json({
@@ -134,9 +126,6 @@ router.post("/metadata/upload", metadataUpload.single("file"), async (req, res) 
   }
 });
 
-/**
- * Get all CCTV metadata for agency
- */
 router.get("/metadata", async (req, res) => {
   try {
     if (!req.user || !req.user.agency) {
@@ -176,9 +165,6 @@ router.get("/metadata", async (req, res) => {
   }
 });
 
-/**
- * Get CCTV metadata by ID
- */
 router.get("/metadata/:metadataId", async (req, res) => {
   try {
     const metadata = await CCTVMetadata.findById(req.params.metadataId);
@@ -187,7 +173,6 @@ router.get("/metadata/:metadataId", async (req, res) => {
       return res.status(404).json({ error: "Metadata not found" });
     }
 
-    // Check visibility permissions
     if (!metadata.visibility.includes(req.user.agency) && metadata.agency !== req.user.agency) {
       return res.status(403).json({ error: "Access denied" });
     }
@@ -200,9 +185,6 @@ router.get("/metadata/:metadataId", async (req, res) => {
   }
 });
 
-/**
- * Save video metadata from browser
- */
 router.post("/:videoId/metadata", async (req, res) => {
   try {
     const { metadata } = req.body;
@@ -212,7 +194,6 @@ router.post("/:videoId/metadata", async (req, res) => {
       return res.status(404).json({ error: "Video not found" });
     }
 
-    // Update video with browser-extracted metadata
     await CCTVVideo.findByIdAndUpdate(req.params.videoId, {
       videoMetadata: {
         duration: metadata.duration || 0,
@@ -237,9 +218,6 @@ router.post("/:videoId/metadata", async (req, res) => {
   }
 });
 
-/**
- * Download metadata analysis as PDF
- */
 router.get("/metadata/:metadataId/download", async (req, res) => {
   try {
     const metadata = await CCTVMetadata.findById(req.params.metadataId);
@@ -248,12 +226,10 @@ router.get("/metadata/:metadataId/download", async (req, res) => {
       return res.status(404).json({ error: "Metadata not found" });
     }
 
-    // Check permissions
     if (!metadata.visibility.includes(req.user.agency) && metadata.agency !== req.user.agency) {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    // Generate downloadable text report
     const report = generateMetadataReport(metadata);
     
     res.setHeader('Content-Type', 'text/plain');
@@ -266,9 +242,6 @@ router.get("/metadata/:metadataId/download", async (req, res) => {
   }
 });
 
-/**
- * Upload and process CCTV video
- */
 router.post("/upload", upload.single("video"), async (req, res) => {
   console.log("Headers:", req.headers);
   console.log("Body:", req.body);
@@ -288,7 +261,6 @@ router.post("/upload", upload.single("video"), async (req, res) => {
       return res.status(400).json({ error: "No video uploaded" });
     }
 
-    // Create CCTV video record
     const cctvVideo = new CCTVVideo({
       filename: req.file.filename,
       originalName: req.file.originalname,
@@ -306,11 +278,7 @@ router.post("/upload", upload.single("video"), async (req, res) => {
       visibility: [req.body.agency]
     });
 
-    // Save initial record
     await cctvVideo.save();
-
-    // Don't extract metadata server-side - will be done in browser
-    // extractVideoMetadataAsync(cctvVideo._id, req.file.path, io);
 
     res.status(200).json({
       message: "Video uploaded successfully. Ready for frame extraction.",
@@ -324,9 +292,6 @@ router.post("/upload", upload.single("video"), async (req, res) => {
   }
 });
 
-/**
- * Get CCTV video by ID
- */
 router.get("/:videoId", async (req, res) => {
   try {
     const video = await CCTVVideo.findById(req.params.videoId);
@@ -335,7 +300,6 @@ router.get("/:videoId", async (req, res) => {
       return res.status(404).json({ error: "Video not found" });
     }
 
-    // Check visibility permissions
     if (!video.visibility.includes(req.user.agency) && video.agency !== req.user.agency) {
       return res.status(403).json({ error: "Access denied" });
     }
@@ -348,12 +312,8 @@ router.get("/:videoId", async (req, res) => {
   }
 });
 
-/**
- * Get all CCTV videos for agency
- */
 router.get("/", async (req, res) => {
   try {
-    // Check if user is authenticated and has an agency
     if (!req.user || !req.user.agency) {
       console.error('Authentication error - Missing user or agency:', {
         hasUser: !!req.user,
@@ -401,9 +361,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-/**
- * Get detection results for a video
- */
 router.get("/:videoId/detections", async (req, res) => {
   try {
     const video = await CCTVVideo.findById(req.params.videoId);
@@ -412,7 +369,6 @@ router.get("/:videoId/detections", async (req, res) => {
       return res.status(404).json({ error: "Video not found" });
     }
 
-    // Check visibility permissions
     if (!video.visibility.includes(req.user.agency) && video.agency !== req.user.agency) {
       return res.status(403).json({ error: "Access denied" });
     }
@@ -429,9 +385,6 @@ router.get("/:videoId/detections", async (req, res) => {
   }
 });
 
-/**
- * Update video status
- */
 router.patch("/:videoId/status", async (req, res) => {
   try {
     const { status } = req.body;
@@ -454,9 +407,6 @@ router.patch("/:videoId/status", async (req, res) => {
   }
 });
 
-/**
- * Delete video and associated files
- */
 router.delete("/:videoId", async (req, res) => {
   try {
     const video = await CCTVVideo.findById(req.params.videoId);
@@ -465,12 +415,10 @@ router.delete("/:videoId", async (req, res) => {
       return res.status(404).json({ error: "Video not found" });
     }
 
-    // Check permissions
     if (video.agency !== req.user.agency) {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    // Delete files
     if (fs.existsSync(video.filePath)) {
       fs.unlinkSync(video.filePath);
     }
@@ -479,10 +427,8 @@ router.delete("/:videoId", async (req, res) => {
       fs.unlinkSync(video.thumbnailPath);
     }
 
-    // Clean up frames
     await videoProcessor.cleanup(video._id.toString());
 
-    // Delete database record
     await CCTVVideo.findByIdAndDelete(req.params.videoId);
 
     res.json({ message: "Video deleted successfully" });
@@ -493,14 +439,10 @@ router.delete("/:videoId", async (req, res) => {
   }
 });
 
-/**
- * Async video processing function
- */
 async function processVideoAsync(videoId, videoPath, io) {
   try {
     const startTime = Date.now();
     
-    // Update status to processing
     await CCTVVideo.findByIdAndUpdate(videoId, {
       processingStatus: 'processing',
       'processingLogs': [{
@@ -511,7 +453,6 @@ async function processVideoAsync(videoId, videoPath, io) {
       }]
     });
 
-    // Extract metadata
     const metadata = await videoProcessor.extractMetadata(videoPath);
     
     await CCTVVideo.findByIdAndUpdate(videoId, {
@@ -525,7 +466,6 @@ async function processVideoAsync(videoId, videoPath, io) {
       }]
     });
 
-    // Generate thumbnail
     const thumbnailPath = await videoProcessor.generateThumbnail(videoPath, videoId);
     
     await CCTVVideo.findByIdAndUpdate(videoId, {
@@ -538,7 +478,6 @@ async function processVideoAsync(videoId, videoPath, io) {
       }]
     });
 
-    // Extract frames
     const frameInterval = Math.max(1, Math.floor(metadata.duration / 50)); // Max 50 frames
     const framesInfo = await videoProcessor.extractFrames(videoPath, videoId, frameInterval);
     
@@ -557,7 +496,6 @@ async function processVideoAsync(videoId, videoPath, io) {
       }]
     });
 
-    // Process frames for object detection
     const allDetections = [];
     const allFaceDetections = [];
     
@@ -570,15 +508,12 @@ async function processVideoAsync(videoId, videoPath, io) {
       try {
         const frameBuffer = await videoProcessor.getFrameBuffer(framePath);
         
-        // Object detection
         const detection = await objectDetection.detectObjects(frameBuffer, frameNumber, timestamp);
         allDetections.push(detection);
         
-        // Face detection
         const faceDetectionResult = await faceDetection.detectFaces(frameBuffer, frameNumber, timestamp);
         allFaceDetections.push(faceDetectionResult);
         
-        // Update progress
         if (i % 10 === 0) {
           await CCTVVideo.findByIdAndUpdate(videoId, {
             'processingLogs': [{
@@ -594,11 +529,9 @@ async function processVideoAsync(videoId, videoPath, io) {
       }
     }
 
-    // Calculate summary
     const summary = objectDetection.calculateSummary(allDetections);
     const faceSummary = faceDetection.calculateFaceSummary(allFaceDetections);
     
-    // Update video with detection results
     await CCTVVideo.findByIdAndUpdate(videoId, {
       objectDetections: allDetections,
       faceDetections: allFaceDetections,
@@ -619,14 +552,12 @@ async function processVideoAsync(videoId, videoPath, io) {
       }]
     });
 
-    // Emit completion event
     io.emit('cctv:processing_completed', {
       videoId,
       summary,
       agency: (await CCTVVideo.findById(videoId)).agency
     });
 
-    // Clean up temporary files
     await videoProcessor.cleanup(videoId);
 
   } catch (error) {
@@ -649,9 +580,7 @@ async function processVideoAsync(videoId, videoPath, io) {
   }
 };
 
-/**
- * Get detection results for a video
- */
+
 router.get('/:videoId/detections', async (req, res) => {
   try {
     const video = await CCTVVideo.findById(req.params.videoId);
@@ -660,7 +589,6 @@ router.get('/:videoId/detections', async (req, res) => {
       return res.status(404).json({ error: 'Video not found' });
     }
 
-    // Check permissions
     if (video.agency !== req.user.agency && !video.visibility.includes(req.user.agency)) {
       return res.status(403).json({ error: 'Access denied' });
     }
@@ -678,9 +606,6 @@ router.get('/:videoId/detections', async (req, res) => {
   }
 });
 
-/**
- * Save detection results from Roboflow
- */
 router.post('/:videoId/detections', async (req, res) => {
   try {
     const { detections } = req.body;
@@ -699,7 +624,6 @@ router.post('/:videoId/detections', async (req, res) => {
 
     console.log(`Saving ${detections.length} detection frames for video ${req.params.videoId}`);
 
-    // Calculate detection summary - track per frame for accurate counts
     let maxPersonsInFrame = 0;
     let maxVehiclesInFrame = 0;
     let maxWeaponsInFrame = 0;
@@ -726,11 +650,10 @@ router.post('/:videoId/detections', async (req, res) => {
             highConfidenceDetections++;
           }
 
-          // Count persons
           if (label.toLowerCase().includes('person') || label.toLowerCase().includes('people')) {
             personsInThisFrame++;
           }
-          // Count vehicles
+
           else if (label.toLowerCase().includes('car') || 
                    label.toLowerCase().includes('truck') || 
                    label.toLowerCase().includes('vehicle') ||
@@ -739,7 +662,6 @@ router.post('/:videoId/detections', async (req, res) => {
                    label.toLowerCase().includes('bike')) {
             vehiclesInThisFrame++;
           }
-          // Count weapons
           else if (label.toLowerCase().includes('weapon') || 
                    label.toLowerCase().includes('gun') || 
                    label.toLowerCase().includes('knife')) {
@@ -747,7 +669,6 @@ router.post('/:videoId/detections', async (req, res) => {
           }
         });
         
-        // Track maximums and totals
         if (frame.objects.length > 0) {
           framesWithDetections++;
         }
@@ -760,11 +681,9 @@ router.post('/:videoId/detections', async (req, res) => {
       }
     });
     
-    // Calculate averages
     const avgPersonsPerFrame = framesWithDetections > 0 ? Math.round(totalPersonsAcrossFrames / framesWithDetections) : 0;
     const avgVehiclesPerFrame = framesWithDetections > 0 ? Math.round(totalVehiclesAcrossFrames / framesWithDetections) : 0;
 
-    // Check if we actually got any detections
     if (totalDetections === 0) {
       console.warn(`No objects detected in any frames for video ${req.params.videoId}`);
       video.processingStatus = 'completed';
@@ -788,7 +707,6 @@ router.post('/:videoId/detections', async (req, res) => {
       });
     }
 
-    // Calculate risk score based on peak counts
     console.log('Extracting intelligence from detections...');
     const intelligence = await extractVideoIntelligence({
       detections,
@@ -797,7 +715,6 @@ router.post('/:videoId/detections', async (req, res) => {
       originalName: video.originalName
     });
 
-    // Update video with detections, summary, and intelligence
     await CCTVVideo.findByIdAndUpdate(req.params.videoId, {
       objectDetections: detections,
       detectionSummary: {
@@ -846,29 +763,22 @@ router.post('/:videoId/detections', async (req, res) => {
   }
 });
 
-/**
- * Async metadata processing function
- */
 async function processMetadataAsync(metadataId, filePath, mimetype, io) {
   try {
     const startTime = Date.now();
     
-    // Extract text from file
     const text = await extractTextFromFile(filePath, mimetype);
     
     if (!text || text.length < 50) {
       throw new Error("Could not extract meaningful text from file");
     }
 
-    // Update with extracted text
     await CCTVMetadata.findByIdAndUpdate(metadataId, {
       textContent: text
     });
 
-    // Extract entities using rule-based approach
     const ruleEntities = extractEntities(text);
 
-    // Extract entities using AI
     let aiEntities = null;
     try {
       aiEntities = await extractEntitiesAI(text);
@@ -878,7 +788,6 @@ async function processMetadataAsync(metadataId, filePath, mimetype, io) {
 
     const entities = aiEntities || ruleEntities;
 
-    // Normalize entities to match schema (convert string arrays to object arrays)
     const normalizedEntities = {
       persons: Array.isArray(entities.persons) 
         ? entities.persons.map(p => typeof p === 'string' ? { text: p, count: 1 } : p)
@@ -894,7 +803,6 @@ async function processMetadataAsync(metadataId, filePath, mimetype, io) {
       emails: entities.emails || []
     };
 
-    // Generate AI summary and analysis
     let aiAnalysis = null;
     try {
       aiAnalysis = await generateAISummary({
@@ -904,7 +812,6 @@ async function processMetadataAsync(metadataId, filePath, mimetype, io) {
       console.error("AI summary generation failed:", e.message);
     }
 
-    // Update metadata with results
     await CCTVMetadata.findByIdAndUpdate(metadataId, {
       entities: normalizedEntities,
       aiAnalysis: aiAnalysis,
@@ -914,7 +821,6 @@ async function processMetadataAsync(metadataId, filePath, mimetype, io) {
 
     const metadata = await CCTVMetadata.findById(metadataId);
 
-    // Emit completion event
     io.emit('cctv:metadata_completed', {
       metadataId,
       agency: metadata.agency
@@ -941,9 +847,6 @@ async function processMetadataAsync(metadataId, filePath, mimetype, io) {
   }
 }
 
-/**
- * Generate text report from metadata analysis
- */
 function generateMetadataReport(metadata) {
   let report = `CCTV METADATA ANALYSIS REPORT\n`;
   report += `${'='.repeat(80)}\n\n`;
@@ -962,7 +865,6 @@ function generateMetadataReport(metadata) {
   
   report += `\n${'='.repeat(80)}\n\n`;
   
-  // AI Analysis
   if (metadata.aiAnalysis) {
     report += `EXECUTIVE SUMMARY\n`;
     report += `${'-'.repeat(80)}\n`;
@@ -996,7 +898,6 @@ function generateMetadataReport(metadata) {
     }
   }
   
-  // Entities
   if (metadata.entities) {
     report += `EXTRACTED ENTITIES\n`;
     report += `${'-'.repeat(80)}\n`;
@@ -1048,9 +949,6 @@ function generateMetadataReport(metadata) {
   return report;
 }
 
-/**
- * Async video metadata extraction function
- */
 async function extractVideoMetadataAsync(videoId, videoPath, io) {
   try {
     await emitLog(io, {
@@ -1060,13 +958,10 @@ async function extractVideoMetadataAsync(videoId, videoPath, io) {
       agency: "system"
     });
 
-    // Extract comprehensive metadata
     const metadata = await extractVideoMetadata(videoPath);
     
-    // Generate AI analysis
     const analysis = analyzeVideoMetadata(metadata);
 
-    // Update video record with metadata and analysis
     await CCTVVideo.findByIdAndUpdate(videoId, {
       videoMetadata: {
         duration: metadata.basic.duration,
@@ -1078,7 +973,6 @@ async function extractVideoMetadataAsync(videoId, videoPath, io) {
         codec: metadata.video?.codec || 'unknown',
         bitrate: metadata.basic.bitrate,
         quality: metadata.derived.quality,
-        // Store comprehensive metadata in a separate field
         comprehensive: {
           ...metadata,
           analysis
@@ -1088,7 +982,6 @@ async function extractVideoMetadataAsync(videoId, videoPath, io) {
 
     const video = await CCTVVideo.findById(videoId);
 
-    // Emit completion event
     io.emit('cctv:metadata_extracted', {
       videoId,
       metadata: metadata.derived,
@@ -1106,7 +999,6 @@ async function extractVideoMetadataAsync(videoId, videoPath, io) {
   } catch (error) {
     console.error('Error extracting video metadata:', error);
     
-    // If FFmpeg is not installed, use basic file metadata
     if (error.message.includes('Cannot find ffprobe') || error.message.includes('ffmpeg')) {
       console.log('FFmpeg not found, using basic metadata extraction...');
       
@@ -1114,7 +1006,6 @@ async function extractVideoMetadataAsync(videoId, videoPath, io) {
         const fs = await import('fs');
         const stats = fs.statSync(videoPath);
         
-        // Store basic metadata without FFmpeg
         await CCTVVideo.findByIdAndUpdate(videoId, {
           videoMetadata: {
             size: stats.size,
@@ -1133,7 +1024,6 @@ async function extractVideoMetadataAsync(videoId, videoPath, io) {
 
         const video = await CCTVVideo.findById(videoId);
 
-        // Emit completion event even with basic metadata
         io.emit('cctv:metadata_extracted', {
           videoId,
           ffmpegNotInstalled: true,
@@ -1160,18 +1050,13 @@ async function extractVideoMetadataAsync(videoId, videoPath, io) {
   }
 }
 
-/**
- * Calculate risk score based on detection counts
- */
 function calculateRiskScore(persons, vehicles, weapons) {
   let score = 0;
   
-  // Weapons are highest priority
   if (weapons > 0) {
     score += 50;
   }
   
-  // Large crowds
   if (persons > 20) {
     score += 30;
   } else if (persons > 10) {
@@ -1180,7 +1065,6 @@ function calculateRiskScore(persons, vehicles, weapons) {
     score += 10;
   }
   
-  // Vehicle concentration
   if (vehicles > 10) {
     score += 20;
   } else if (vehicles > 5) {

@@ -21,7 +21,6 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
   const [extractionComplete, setExtractionComplete] = useState(false);
   const [modelLoading, setModelLoading] = useState(true);
 
-  // Load TensorFlow.js model on component mount
   useEffect(() => {
     const initModel = async () => {
       try {
@@ -70,13 +69,11 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
 
     let score = 0;
 
-    // Resolution score
-    if (pixels >= 3840 * 2160) score += 40; // 4K
-    else if (pixels >= 1920 * 1080) score += 35; // 1080p
-    else if (pixels >= 1280 * 720) score += 25; // 720p
+    if (pixels >= 3840 * 2160) score += 40; 
+    else if (pixels >= 1920 * 1080) score += 35; 
+    else if (pixels >= 1280 * 720) score += 25; 
     else score += 15;
 
-    // Bitrate score
     if (bitrateMbps >= 10) score += 40;
     else if (bitrateMbps >= 5) score += 30;
     else if (bitrateMbps >= 2) score += 20;
@@ -99,7 +96,6 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
     setUploadProgress(0);
 
     try {
-      // Extract metadata from video in browser
       const metadata = await extractVideoMetadata(file);
       console.log('Extracted metadata:', metadata);
 
@@ -126,7 +122,6 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
         },
       });
 
-      // Send metadata to backend
       if (metadata) {
         await axios.post(`/api/cctv/${response.data.videoId}/metadata`, 
           { metadata }, 
@@ -170,7 +165,6 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
         
         const result = await detectObjects(frame.blob);
         
-        // Check if Roboflow returned valid predictions
         if (!result.predictions || result.predictions.length === 0) {
           roboflowErrors++;
         }
@@ -182,7 +176,6 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
         });
       }
 
-      // Warn if most frames had no detections
       if (roboflowErrors > extractedFrames.length * 0.8) {
         console.warn(`${roboflowErrors}/${extractedFrames.length} frames had no detections.`);
         setError('Warning: Most frames returned no detections. The video may not contain recognizable objects.');
@@ -191,7 +184,6 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
       }
 
       console.log('Sending detections to backend:', detections.length);
-      // Send detections to backend
       const response = await fetch(`/api/cctv/${uploadedVideoId}/detections`, {
         method: "POST",
         headers: {
@@ -206,7 +198,6 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
       if (response.ok) {
         console.log('Detections saved successfully');
         
-        // Show warning if no objects were detected
         if (responseData.warning) {
           setError(`Processing completed with warning: ${responseData.warning}`);
         } else {
@@ -215,7 +206,6 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
         
         setProcessingFrames(false);
         
-        // Reset form after successful processing
         setCameraInfo({
           cameraId: "",
           location: "",
@@ -244,7 +234,7 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
       "video/mov": [".mov"],
       "video/mkv": [".mkv"],
     },
-    maxSize: 100 * 1024 * 1024, // 100MB
+    maxSize: 100 * 1024 * 1024,
     multiple: false,
   });
 
@@ -262,7 +252,6 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
         Upload CCTV Video
       </h2>
 
-      {/* AI Detection Info */}
       <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 dark:border-green-400 rounded">
         <div className="flex items-start">
           <svg className="h-5 w-5 text-green-500 dark:text-green-400 mt-0.5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -279,7 +268,6 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
         </div>
       </div>
 
-      {/* File Upload Area */}
       <div
         {...getRootProps()}
         className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
@@ -336,14 +324,12 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
         )}
       </div>
 
-      {/* Error Message */}
       {error && (
         <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/20 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-400 rounded">
           {error}
         </div>
       )}
 
-      {/* Upload Guidelines */}
       <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
         <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Upload Guidelines:</h3>
         <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
@@ -356,7 +342,6 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
         </ul>
       </div>
 
-      {/* Frame Extraction */}
       {uploadedFile && uploadedVideoId && !extractionComplete && (
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-700">
           <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">
@@ -382,7 +367,6 @@ const CCTVUpload = ({ user, onUploadSuccess }) => {
         </div>
       )}
 
-      {/* Success Message */}
       {extractionComplete && (
         <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-200 dark:border-green-700">
           <div className="flex items-center">

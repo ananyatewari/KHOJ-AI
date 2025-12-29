@@ -34,7 +34,6 @@ Be thorough, clear, and extract maximum value from the provided document context
 
   const chatMessages = [
     { role: "system", content: systemPrompt },
-    // Provide relevant documents as context (if any)
     ...(contextText ? [{ role: "system", content: `RELEVANT_AGENCY_DOCUMENTS:\n${contextText}` }] : [{ role: "system", content: "RELEVANT_AGENCY_DOCUMENTS:\n(No documents available)" }]),
     ...messages,
   ];
@@ -47,7 +46,6 @@ Be thorough, clear, and extract maximum value from the provided document context
 
   const reply = completion.choices[0].message.content;
   
-  // Extract sources used from the AI response
   const sourcesUsedMatch = reply.match(/SOURCES_USED:\s*(.+?)(?:\n|$)/i);
   let usedSources = sources;
   
@@ -56,7 +54,6 @@ Be thorough, clear, and extract maximum value from the provided document context
     usedSources = sources.filter(source => 
       usedFilenames.some(filename => source.filename.toLowerCase().includes(filename) || filename.includes(source.filename.toLowerCase()))
     );
-    // Remove the SOURCES_USED line from the reply
     const cleanReply = reply.replace(/SOURCES_USED:\s*.+?(?:\n|$)/i, '').trim();
     return { reply: cleanReply, usedSources };
   }

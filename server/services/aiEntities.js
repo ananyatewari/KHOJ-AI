@@ -44,7 +44,6 @@ ${text.slice(0, 8000)}
 
   const raw = completion.choices[0].message.content;
 
-  // Safe JSON extraction
   const match =
     raw.match(/```json\s*([\s\S]*?)\s*```/) ||
     raw.match(/\{[\s\S]*\}/);

@@ -15,7 +15,6 @@ export async function extractEntities(text) {
 
   if (!text) return defaults;
 
-  // Allow override via env var; fall back to llama-3.1-70b-versatile if needed
   const preferredModel = process.env.GROQ_ENTITY_MODEL || process.env.AI_MODEL || 'llama-3.1-70b-versatile';
 
   const prompt = `Extract named entities from the following text and categorize them. Return as JSON with these exact categories: persons, places, dates, organizations, phoneNumbers. Each entity should have 'text' and 'confidence' (0-1) fields.
@@ -54,7 +53,6 @@ Return ONLY valid JSON, no additional text.`;
     const content = response?.choices?.[0]?.message?.content;
     if (!content) throw new Error('No content from entity model');
 
-    // Attempt to extract JSON from content
     const match = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/);
     const jsonText = match ? (match[1] || match[0]) : content;
 
@@ -66,7 +64,6 @@ Return ONLY valid JSON, no additional text.`;
       return defaults;
     }
 
-    // Normalize and ensure correct shape
     entities = { ...defaults, ...entities };
     Object.keys(entities).forEach((key) => {
       if (!Array.isArray(entities[key])) entities[key] = [];

@@ -17,7 +17,6 @@ export default function FrameExtractor({ videoFile, onFramesExtracted }) {
     const ctx = canvas.getContext("2d");
     const frames = [];
 
-    // Load video
     const videoURL = URL.createObjectURL(videoFile);
     video.src = videoURL;
 
@@ -41,9 +40,8 @@ export default function FrameExtractor({ videoFile, onFramesExtracted }) {
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0);
 
-      // Convert canvas to blob with higher quality
       const blob = await new Promise((resolve) => {
-        canvas.toBlob(resolve, "image/jpeg", 0.95); // Increased quality to 0.95
+        canvas.toBlob(resolve, "image/jpeg", 0.95);
       });
 
       console.log(`Frame ${i + 1}: ${video.videoWidth}x${video.videoHeight}, blob size: ${blob.size} bytes`);

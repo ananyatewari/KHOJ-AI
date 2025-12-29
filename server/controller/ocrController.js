@@ -21,10 +21,7 @@ export async function processDocument(file, userContext, io = null) {
     const uploadedBy = userContext.userId || "unknown";
     const agency = userContext.agency || "N/A";
 
-    // Store the relative path to serve the image later
     const relativePath = `/uploads/${path.basename(filePath)}`;
-
-    // Create document with processing status
     const newOcrDoc = new OcrDocument({
       originalImage: relativePath,
       filename: originalFilename,
@@ -35,13 +32,10 @@ export async function processDocument(file, userContext, io = null) {
 
     await newOcrDoc.save();
 
-    // Perform OCR on the uploaded image
     const ocrResult = await performOCR(filePath);
 
-    // Extract entities with bounding boxes
     const entities = extractEntities(ocrResult);
 
-    // Generate AI summary to enrich entities
     let aiSummary = null;
     try {
       aiSummary = await generateAISummary({
@@ -61,10 +55,8 @@ export async function processDocument(file, userContext, io = null) {
 
     const mergedEntities = mergeAiEntityInsights(entities, aiSummary);
 
-    // Calculate processing time
     const processingTime = Date.now() - startTime;
 
-    // Update document with OCR results
     newOcrDoc.text = ocrResult.text;
     newOcrDoc.entities = mergedEntities;
     newOcrDoc.aiSummary = aiSummary;
@@ -181,7 +173,6 @@ export const deleteOcrDocument = async (id) => {
       throw new Error('OCR document not found');
     }
     
-    // Delete the file if it exists
     if (doc.originalImage) {
       const filePath = path.join(process.cwd(), doc.originalImage);
       if (fs.existsSync(filePath)) {

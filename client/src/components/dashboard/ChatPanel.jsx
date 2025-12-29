@@ -32,7 +32,6 @@ export default function ChatPanel() {
     scrollToBottom();
   }, [messages]);
 
-  // Load chat history from localStorage on mount
   useEffect(() => {
     const savedHistory = localStorage.getItem(`chatHistory_${user?.username}`);
     if (savedHistory) {
@@ -44,7 +43,6 @@ export default function ChatPanel() {
     }
   }, [user]);
 
-  // Save current conversation to history
   const saveToHistory = () => {
     if (messages.length === 0) return;
 
@@ -55,7 +53,7 @@ export default function ChatPanel() {
       preview: messages[0]?.text?.slice(0, 50) || "Conversation",
     };
 
-    const updatedHistory = [conversation, ...chatHistory].slice(0, 20); // Keep last 20
+    const updatedHistory = [conversation, ...chatHistory].slice(0, 20);
     setChatHistory(updatedHistory);
     localStorage.setItem(
       `chatHistory_${user?.username}`,
@@ -63,13 +61,11 @@ export default function ChatPanel() {
     );
   };
 
-  // Load a conversation from history
   const loadConversation = (conversation) => {
     setMessages(conversation.messages);
     setShowHistory(false);
   };
 
-  // Clear current chat
   const clearChat = () => {
     if (messages.length > 0) {
       saveToHistory();
@@ -77,7 +73,6 @@ export default function ChatPanel() {
     setMessages([]);
   };
 
-  // Delete a conversation from history
   const deleteFromHistory = (id) => {
     const updatedHistory = chatHistory.filter((c) => c.id !== id);
     setChatHistory(updatedHistory);
@@ -150,7 +145,6 @@ export default function ChatPanel() {
           : "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50"
       }`}
     >
-      {/* History Sidebar */}
       <div
         className={`${
           showHistory ? "w-80" : "w-0"
@@ -280,9 +274,7 @@ export default function ChatPanel() {
         )}
       </div>
 
-      {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
-        {/* Header */}
         <div
           className={`backdrop-blur-sm border-b p-6 ${
             theme === "dark"
@@ -351,7 +343,6 @@ export default function ChatPanel() {
           </div>
         </div>
 
-        {/* Messages Area */}
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-5xl mx-auto p-6">
             {messages.length === 0 && (
@@ -597,7 +588,6 @@ export default function ChatPanel() {
           </div>
         </div>
 
-        {/* Input Area */}
         <div
           className={`border-t backdrop-blur-sm p-6 ${
             theme === "dark"

@@ -10,11 +10,9 @@ import { generateReportPDF } from "../utils/pdfGenerator.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Set up storage for uploaded files
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, "../uploads");
-    // Create directory if it doesn't exist
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -27,7 +25,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { fileSize: 10 * 1024 * 1024 }, 
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith("image/")) {
       cb(null, true);
@@ -39,7 +37,6 @@ const upload = multer({
 
 const router = express.Router();
 
-// Process multiple images endpoint - OCR and entity extraction
 router.post("/process", upload.array("images", 10), async (req, res) => {
   try {
     if (!req.files || !req.files.length) {
@@ -86,10 +83,8 @@ router.post("/process", upload.array("images", 10), async (req, res) => {
   }
 });
 
-// Get all OCR documents
 router.get("/documents", async (req, res) => {
   try {
-    // Optional filtering by user or agency
     const filter = {};
     if (req.query.userId) filter.uploadedBy = req.query.userId;
     if (req.query.agency) filter.agency = req.query.agency;
@@ -114,7 +109,6 @@ router.get("/documents", async (req, res) => {
   }
 });
 
-// Get OCR document by ID
 router.get("/:id", async (req, res) => {
   try {
     const document = await OcrDocument.findById(req.params.id);
@@ -138,7 +132,6 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Download OCR summary as PDF
 router.post("/download-pdf", async (req, res) => {
   try {
     const { summary, documents } = req.body;
@@ -147,14 +140,11 @@ router.post("/download-pdf", async (req, res) => {
       return res.status(400).json({ error: "No summary data provided" });
     }
 
-    // Use the professional KHOJ AI branded PDF generator
     const pdfBuffer = await generateReportPDF(summary);
 
-    // Set response headers for PDF download
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="khoj-ai-ocr-intelligence-report.pdf"');
     
-    // Send the PDF
     res.send(pdfBuffer);
 
   } catch (error) {

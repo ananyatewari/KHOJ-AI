@@ -21,25 +21,22 @@ const CCTVVideoSchema = new mongoose.Schema({
     required: true
   },
   
-  // Video metadata
   videoMetadata: {
-    duration: Number,        // in seconds
+    duration: Number,        
     width: Number,
     height: Number,
     fps: Number,
     format: String,
-    size: Number,            // in bytes
+    size: Number,            
     codec: String,
     bitrate: Number,
-    quality: String,         // excellent, good, fair, poor
-    // Comprehensive metadata including GPS, camera info, analysis
+    quality: String,         
     comprehensive: {
       type: mongoose.Schema.Types.Mixed,
       default: {}
     }
   },
   
-  // Camera information
   cameraInfo: {
     cameraId: String,
     location: {
@@ -58,33 +55,30 @@ const CCTVVideoSchema = new mongoose.Schema({
     }
   },
   
-  // Processing status
   processingStatus: {
     type: String,
     enum: ["uploaded", "processing", "completed", "failed"],
     default: "uploaded"
   },
   
-  // Frame extraction info
   frameExtraction: {
     totalFrames: Number,
     extractedFrames: Number,
-    frameInterval: Number,    // seconds between frames
+    frameInterval: Number,    
     extractionCompleted: {
       type: Boolean,
       default: false
     }
   },
   
-  // Object detection results
   objectDetections: [{
     frameNumber: Number,
-    timestamp: Number,        // seconds from start
+    timestamp: Number,        
     objects: [{
-      label: String,          // "person", "car", "truck", "weapon", etc.
-      confidence: Number,     // 0-1
+      label: String,          
+      confidence: Number,     
       boundingBox: {
-        x: Number,            // normalized 0-1
+        x: Number,            
         y: Number,
         width: Number,
         height: Number
@@ -97,7 +91,6 @@ const CCTVVideoSchema = new mongoose.Schema({
     }]
   }],
   
-  // Face detection results
   faceDetections: [{
     frameNumber: Number,
     timestamp: Number,
@@ -109,14 +102,13 @@ const CCTVVideoSchema = new mongoose.Schema({
         width: Number,
         height: Number
       },
-      faceId: String,         // for tracking same face across frames
-      embeddings: [Number],   // facial embeddings for recognition
-      matchedPerson: String,  // if matched against database
+      faceId: String,         
+      embeddings: [Number],   
+      matchedPerson: String,  
       matchConfidence: Number
     }]
   }],
   
-  // Summary statistics
   detectionSummary: {
     totalPersons: Number,
     totalVehicles: Number,
@@ -133,7 +125,6 @@ const CCTVVideoSchema = new mongoose.Schema({
     }
   },
 
-  // AI-extracted intelligence for inter-agency coordination
   intelligence: {
     threatLevel: {
       type: String,
@@ -169,13 +160,11 @@ const CCTVVideoSchema = new mongoose.Schema({
     detectionStats: mongoose.Schema.Types.Mixed
   },
   
-  // Visibility and sharing
   visibility: {
     type: [String],
     default: []
   },
   
-  // Processing logs
   processingLogs: [{
     timestamp: {
       type: Date,
@@ -199,17 +188,14 @@ const CCTVVideoSchema = new mongoose.Schema({
   processedAt: Date
 });
 
-// Indexes for efficient queries
 CCTVVideoSchema.index({ agency: 1, createdAt: -1 });
 CCTVVideoSchema.index({ processingStatus: 1 });
 CCTVVideoSchema.index({ "cameraInfo.location": 1 });
 CCTVVideoSchema.index({ "detectionSummary.suspiciousActivity": 1 });
 CCTVVideoSchema.index({ "detectionSummary.riskScore": -1 });
 
-// Post-save hook to trigger alerts
 CCTVVideoSchema.post('save', async function(doc) {
   if (doc.isNew && doc.processingStatus === 'completed') {
-    // Trigger alert if suspicious activity detected
     if (doc.detectionSummary.suspiciousActivity || doc.detectionSummary.riskScore > 50) {
       const { createRealTimeAlert } = await import("../utils/alertCreator.js");
       

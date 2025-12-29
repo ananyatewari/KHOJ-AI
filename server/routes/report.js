@@ -5,9 +5,6 @@ import { generateReportPDF } from "../utils/pdfGenerator.js";
 
 const router = express.Router();
 
-/**
- * Export Intelligence Report (PDF)
- */
 router.post("/export", authMiddleware, async (req, res) => {
   try {
     const { summary } = req.body;
@@ -16,7 +13,6 @@ router.post("/export", authMiddleware, async (req, res) => {
       return res.status(400).json({ error: "Summary missing" });
     }
 
-    // Generate PDF
     const pdfBuffer = await generateReportPDF(summary);
 
     res.setHeader(

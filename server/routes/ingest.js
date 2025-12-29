@@ -14,7 +14,7 @@ const router = express.Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 10 * 1024 * 1024 }, 
   fileFilter: (req, file, cb) => {
     if (file.mimetype !== "application/pdf") {
       return cb(new Error("Only PDFs allowed"));
@@ -46,10 +46,8 @@ router.post("/pdf", upload.single("file"), async (req, res) => {
     });
     const text = parsed.text || "";
 
-    // 1️⃣ Rule-based extraction (fast)
 const ruleEntities = extractEntities(text);
 
-// 2️⃣ AI extraction (intelligent)
 let aiEntities = null;
 try {
   aiEntities = await extractEntitiesAI(text);
@@ -57,7 +55,6 @@ try {
   console.error("AI entity extraction failed:", e.message);
 }
 
-// 3️⃣ Merge
 const entities = aiEntities? aiEntities : ruleEntities;
 
 await emitLog(io, {
@@ -86,7 +83,6 @@ await emitLog(io, {
       agency: req.body.agency
     });
 
-    // Generate AI Summary
     let aiSummary = null;
     try {
       await emitLog(io, {

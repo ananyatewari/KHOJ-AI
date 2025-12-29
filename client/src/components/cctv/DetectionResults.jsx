@@ -78,7 +78,6 @@ const DetectionResults = ({ videoId, user }) => {
 
   return (
     <div className="space-y-6">
-      {/* Summary Card */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">
           Detection Summary
@@ -129,7 +128,6 @@ const DetectionResults = ({ videoId, user }) => {
           </div>
         </div>
         
-        {/* Additional Info Banner */}
         <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
           <p className="text-sm text-gray-700 dark:text-gray-300">
             <strong>Note:</strong> Counts show the <strong>peak number</strong> of objects detected in any single frame. 
@@ -137,7 +135,6 @@ const DetectionResults = ({ videoId, user }) => {
           </p>
         </div>
 
-        {/* Risk Assessment */}
         <div
           className={`p-4 rounded-lg ${getSeverityColor(
             detectionSummary.riskScore
@@ -159,7 +156,6 @@ const DetectionResults = ({ videoId, user }) => {
         </div>
       </div>
 
-      {/* Object Detections */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
           Frame-by-Frame Detections
@@ -170,7 +166,6 @@ const DetectionResults = ({ videoId, user }) => {
         ) : (
           <div className="space-y-3">
             {objectDetections.map((frame, index) => {
-              // Group objects by type for better readability
               const objectCounts = {};
               frame.objects.forEach(obj => {
                 const label = obj.label || obj.class || 'unknown';
@@ -181,7 +176,6 @@ const DetectionResults = ({ videoId, user }) => {
                 objectCounts[label].confidences.push(obj.confidence);
               });
               
-              // Calculate average confidence for each object type
               Object.keys(objectCounts).forEach(label => {
                 const confidences = objectCounts[label].confidences;
                 objectCounts[label].avgConfidence = confidences.reduce((a, b) => a + b, 0) / confidences.length;
@@ -204,14 +198,12 @@ const DetectionResults = ({ videoId, user }) => {
                     </span>
                   </div>
 
-                  {/* Grouped Object Summary */}
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(objectCounts).map(([label, data]) => (
                       <div
                         key={label}
                         className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200"
                       >
-                        {/* Icon based on object type */}
                         <span className="text-lg">
                           {label.toLowerCase().includes('person') ? '👤' :
                            label.toLowerCase().includes('car') ? '🚗' :
@@ -245,7 +237,6 @@ const DetectionResults = ({ videoId, user }) => {
                     ))}
                   </div>
 
-                  {/* Detailed list - collapsible if needed */}
                   {frame.objects.length > 5 && (
                     <details className="mt-3">
                       <summary className="text-sm text-blue-600 cursor-pointer hover:text-blue-800">
@@ -273,7 +264,6 @@ const DetectionResults = ({ videoId, user }) => {
         )}
       </div>
 
-      {/* Face Detections */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-xl font-bold mb-4 text-gray-800">
           Face Detections
@@ -333,7 +323,6 @@ const DetectionResults = ({ videoId, user }) => {
         )}
       </div>
 
-      {/* Export Options */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-xl font-bold mb-4 text-gray-800">Export Options</h3>
 

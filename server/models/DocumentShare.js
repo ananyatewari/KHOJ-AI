@@ -13,19 +13,17 @@ const DocumentShareSchema = new mongoose.Schema({
     enum: ["agency", "cross-agency", "specific-agencies"],
     default: "agency"
   },
-  // For 'specific-agencies' scope, list which agencies can see it
   visibleToAgencies: [String],
-  // Approval workflow
   approvalStatus: {
     type: String,
     enum: ["pending", "approved", "rejected"],
     default: "pending"
   },
-  approvedBy: String, // admin username
+  approvedBy: String, 
   approvedAt: Date,
   
   sharedAt: { type: Date, default: Date.now },
-  expiresAt: Date, // optional: expiry for time-limited shares
+  expiresAt: Date, 
   
   createdAt: { type: Date, default: Date.now }
 });
