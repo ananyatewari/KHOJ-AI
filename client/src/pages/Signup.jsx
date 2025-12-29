@@ -40,12 +40,9 @@ export default function Signup() {
   };
 
   return (
-    <div
-      className={`relative w-full min-h-screen flex items-center justify-center overflow-hidden transition-colors duration-300 ${
-        theme === "dark" ? "text-white" : "text-slate-900"
-      }`}
-    >
-      {/* ===== BACK TO HOME BUTTON ===== */}
+    <div className={`relative w-full min-h-screen flex items-center justify-center overflow-hidden transition-colors duration-300 ${
+      theme === "dark" ? "text-white" : "text-slate-900"
+    }`}>
       <Link
         to="/"
         className={`fixed top-6 left-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 ${
@@ -58,7 +55,6 @@ export default function Signup() {
         <span className="text-sm font-medium">Back to Home</span>
       </Link>
 
-      {/* ===== THEME TOGGLE BUTTON ===== */}
       <button
         onClick={toggleTheme}
         className={`fixed top-6 right-6 z-50 p-3 rounded-lg transition-all duration-200 ${
@@ -75,7 +71,6 @@ export default function Signup() {
         )}
       </button>
 
-      {/* ===== BACKGROUND ===== */}
       <BackgroundCanvas></BackgroundCanvas>
       <div
         className={`absolute inset-0 h-full transition-colors duration-300 ${
@@ -100,7 +95,6 @@ export default function Signup() {
         )}
       </div>
 
-      {/* ===== SIGNUP CARD ===== */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -137,7 +131,6 @@ export default function Signup() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* USERNAME */}
           <div className="relative">
             <User className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
             <input
@@ -158,7 +151,6 @@ export default function Signup() {
             />
           </div>
 
-          {/* PASSWORD */}
           <div className="relative">
             <Lock className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
             <input
@@ -180,51 +172,6 @@ export default function Signup() {
             />
           </div>
 
-          {/* ROLE */}
-          <div className="relative">
-            <Shield className="absolute left-3 top-3.5 text-slate-400 w-5 h-5 z-10" />
-            <select
-              className={`
-                w-full pl-10 pr-8 py-3 rounded-lg
-                border
-                focus:outline-none focus:ring-2 focus:ring-indigo-500
-                appearance-none
-                transition-colors duration-300
-                cursor-pointer
-                font-medium
-                ${
-                  theme === "dark"
-                    ? "bg-slate-900/70 border-white/10 text-white [&>option]:bg-slate-900 [&>option]:text-white [&>option]:py-2"
-                    : "bg-white border-purple-200 text-slate-900 [&>option]:bg-white [&>option]:text-slate-900 [&>option]:py-2"
-                }
-              `}
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-            >
-              <option value="user">User - Standard Access</option>
-              <option value="admin">Admin - Full System Access</option>
-            </select>
-            {/* Custom dropdown arrow */}
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-              <svg
-                className={`w-5 h-5 ${
-                  theme === "dark" ? "text-slate-400" : "text-slate-600"
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </div>
-          </div>
-
-          {/* AGENCY */}
           <div className="relative">
             <Building2 className="absolute left-3 top-3.5 text-slate-400 w-5 h-5 z-10" />
             <select
@@ -248,21 +195,8 @@ export default function Signup() {
               <option value="police">Police - Indian Police Service</option>
               <option value="cbi">CBI - Central Bureau of Investigation</option>
               <option value="ncb">NCB - Narcotics Control Bureau</option>
-              <option value="ed">ED - Enforcement Directorate</option>
               <option value="nia">NIA - National Investigation Agency</option>
-              <option value="ats">ATS - Anti-Terrorism Squad</option>
-              <option value="raw">RAW - Research and Analysis Wing</option>
-              <option value="ib">IB - Intelligence Bureau</option>
-              <option value="crpf">CRPF - Central Reserve Police Force</option>
-              <option value="bsf">BSF - Border Security Force</option>
-              <option value="cisf">
-                CISF - Central Industrial Security Force
-              </option>
-              <option value="itbp">ITBP - Indo-Tibetan Border Police</option>
-              <option value="ssb">SSB - Sashastra Seema Bal</option>
-              <option value="nsg">NSG - National Security Guard</option>
             </select>
-            {/* Custom dropdown arrow */}
             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
               <svg
                 className={`w-5 h-5 ${
@@ -282,7 +216,6 @@ export default function Signup() {
             </div>
           </div>
 
-          {/* GRADIENT BUTTON */}
           <button
             type="submit"
             className="
@@ -297,7 +230,6 @@ export default function Signup() {
           >
             <span className="relative z-10">Create Account</span>
 
-            {/* shine */}
             <span
               className="
                 absolute inset-0
