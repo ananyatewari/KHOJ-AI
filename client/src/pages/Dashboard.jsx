@@ -8,6 +8,7 @@ import SharePanel from "../components/dashboard/SharePanel";
 import ApprovalPanel from "../components/dashboard/ApprovalPanel";
 import EventIntelligencePanel from "../components/dashboard/EventIntelligencePanel";
 import CriminalAlertsWidget from "../components/dashboard/CriminalAlertsWidget";
+import SocialMediaWidget from "../components/dashboard/SocialMediaWidget";
 
 export default function Dashboard() {
   const { token, user } = useAuth();
@@ -71,19 +72,32 @@ export default function Dashboard() {
 
   return (
     <>
-      <div className={`min-h-full ${
-        theme === "dark" ? "bg-slate-900" : "bg-gradient-to-br from-slate-50 to-purple-50"
-      }`}>
+      <div
+        className={`min-h-full ${
+          theme === "dark"
+            ? "bg-slate-900"
+            : "bg-gradient-to-br from-slate-50 to-purple-50"
+        }`}
+      >
         <div className="max-w-7xl mx-auto p-6">
           <div className="mb-6">
-            <h1 className={`text-3xl font-bold mb-2 flex items-center gap-3 ${
-              theme === "dark" ? "text-white" : "text-slate-800"
-            }`}>
+            <h1
+              className={`text-3xl font-bold mb-2 flex items-center gap-3 ${
+                theme === "dark" ? "text-white" : "text-slate-800"
+              }`}
+            >
               <TrendingUp className="w-8 h-8 text-indigo-500" />
               Dashboard
             </h1>
-            <p className={`text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-              Welcome back, <span className="text-indigo-500 font-semibold">{user.username}</span>
+            <p
+              className={`text-sm ${
+                theme === "dark" ? "text-slate-400" : "text-slate-600"
+              }`}
+            >
+              Welcome back,{" "}
+              <span className="text-indigo-500 font-semibold">
+                {user.username}
+              </span>
             </p>
           </div>
 
@@ -121,15 +135,23 @@ export default function Dashboard() {
           <div className="space-y-5">
             <EventIntelligencePanel />
 
+            <SocialMediaWidget />
+
             <CriminalAlertsWidget />
 
             <OperationalReportPanel token={token} agency={user.agency} />
 
             <ApprovalPanel />
 
-            {loading && <p className={`text-center py-8 ${
-            theme === "dark" ? "text-slate-400" : "text-slate-600"
-          }`}>Loading dashboard…</p>}
+            {loading && (
+              <p
+                className={`text-center py-8 ${
+                  theme === "dark" ? "text-slate-400" : "text-slate-600"
+                }`}
+              >
+                Loading dashboard…
+              </p>
+            )}
 
             {data && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -155,28 +177,45 @@ export default function Dashboard() {
   );
 }
 
-import { Upload, Users, Building2, Globe, UserCheck, TrendingUp } from "lucide-react";
+import {
+  Upload,
+  Users,
+  Building2,
+  Globe,
+  UserCheck,
+  TrendingUp,
+} from "lucide-react";
 
 function StatCard({ title, value, color, icon, theme }) {
   return (
-    <div className={`backdrop-blur-sm border rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-xl animate-fade-in ${
-      theme === "dark"
-        ? "bg-slate-800/50 border-slate-700/50 hover:border-indigo-500/50 shadow-lg"
-        : "bg-white/90 border-purple-200 hover:border-purple-400 shadow-md"
-    }`}>
+    <div
+      className={`backdrop-blur-sm border rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-xl animate-fade-in ${
+        theme === "dark"
+          ? "bg-slate-800/50 border-slate-700/50 hover:border-indigo-500/50 shadow-lg"
+          : "bg-white/90 border-purple-200 hover:border-purple-400 shadow-md"
+      }`}
+    >
       <div className="flex items-center justify-between mb-3">
-        <div className={`p-2.5 rounded-lg bg-gradient-to-br ${color} shadow-md`}>
-          <div className="text-white">
-            {icon}
-          </div>
+        <div
+          className={`p-2.5 rounded-lg bg-gradient-to-br ${color} shadow-md`}
+        >
+          <div className="text-white">{icon}</div>
         </div>
       </div>
-      <p className={`text-xs mb-1 font-medium ${
-        theme === "dark" ? "text-slate-400" : "text-slate-600"
-      }`}>{title}</p>
-      <p className={`text-2xl font-bold ${
-        theme === "dark" ? "text-white" : "text-slate-800"
-      }`}>{value}</p>
+      <p
+        className={`text-xs mb-1 font-medium ${
+          theme === "dark" ? "text-slate-400" : "text-slate-600"
+        }`}
+      >
+        {title}
+      </p>
+      <p
+        className={`text-2xl font-bold ${
+          theme === "dark" ? "text-white" : "text-slate-800"
+        }`}
+      >
+        {value}
+      </p>
     </div>
   );
 }
@@ -184,14 +223,18 @@ function StatCard({ title, value, color, icon, theme }) {
 function Section({ title, children }) {
   const { theme } = useTheme();
   return (
-    <section className={`backdrop-blur-sm border rounded-xl p-5 transition-all duration-300 hover:shadow-xl ${
-      theme === "dark"
-        ? "bg-slate-800/50 border-slate-700/50 shadow-lg"
-        : "bg-white/90 border-purple-200 shadow-md"
-    }`}>
-      <h2 className={`text-base font-semibold mb-3 flex items-center gap-2 ${
-        theme === "dark" ? "text-white" : "text-slate-800"
-      }`}>
+    <section
+      className={`backdrop-blur-sm border rounded-xl p-5 transition-all duration-300 hover:shadow-xl ${
+        theme === "dark"
+          ? "bg-slate-800/50 border-slate-700/50 shadow-lg"
+          : "bg-white/90 border-purple-200 shadow-md"
+      }`}
+    >
+      <h2
+        className={`text-base font-semibold mb-3 flex items-center gap-2 ${
+          theme === "dark" ? "text-white" : "text-slate-800"
+        }`}
+      >
         <Upload className="w-4 h-4 text-indigo-500" />
         {title}
       </h2>
@@ -207,17 +250,25 @@ function List({ docs, showUser }) {
   const visibleDocs = docs.slice(0, visible);
 
   if (!docs.length)
-    return <p className={`text-sm ${
-      theme === "dark" ? "text-slate-400" : "text-slate-600"
-    }`}>No documents</p>;
+    return (
+      <p
+        className={`text-sm ${
+          theme === "dark" ? "text-slate-400" : "text-slate-600"
+        }`}
+      >
+        No documents
+      </p>
+    );
 
   return (
     <>
-      <ul className={`space-y-2 max-h-[420px] overflow-y-auto pr-2 scrollbar-thin ${
-        theme === "dark"
-          ? "scrollbar-thumb-slate-700"
-          : "scrollbar-thumb-purple-300"
-      } scrollbar-track-transparent`}>
+      <ul
+        className={`space-y-2 max-h-[420px] overflow-y-auto pr-2 scrollbar-thin ${
+          theme === "dark"
+            ? "scrollbar-thumb-slate-700"
+            : "scrollbar-thumb-purple-300"
+        } scrollbar-track-transparent`}
+      >
         {visibleDocs.map((d, index) => (
           <li
             key={d._id}
@@ -230,20 +281,28 @@ function List({ docs, showUser }) {
           >
             <div className="flex justify-between items-start gap-4">
               <div className="flex-1 min-w-0">
-                <p className={`font-medium truncate text-sm ${
-                  theme === "dark" ? "text-white" : "text-slate-800"
-                }`}>{d.filename}</p>
+                <p
+                  className={`font-medium truncate text-sm ${
+                    theme === "dark" ? "text-white" : "text-slate-800"
+                  }`}
+                >
+                  {d.filename}
+                </p>
                 {showUser && (
-                  <p className={`text-xs mt-1 ${
-                    theme === "dark" ? "text-slate-400" : "text-slate-600"
-                  }`}>
+                  <p
+                    className={`text-xs mt-1 ${
+                      theme === "dark" ? "text-slate-400" : "text-slate-600"
+                    }`}
+                  >
                     Uploaded by: {d.uploadedBy}
                   </p>
                 )}
               </div>
-              <span className={`text-xs whitespace-nowrap ${
-                theme === "dark" ? "text-slate-500" : "text-slate-500"
-              }`}>
+              <span
+                className={`text-xs whitespace-nowrap ${
+                  theme === "dark" ? "text-slate-500" : "text-slate-500"
+                }`}
+              >
                 {new Date(d.createdAt).toLocaleDateString()}
               </span>
             </div>

@@ -27,6 +27,8 @@ import eventsRoutes from "./routes/events.js";
 import alertsRoutes from "./routes/alerts.js";
 import cctvRoutes from "./routes/cctv.js";
 import criminalsRoutes from "./routes/criminals.js";
+import socialMediaRoutes from "./routes/socialMedia.js";
+import socialMediaService from "./services/socialMediaService.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -48,6 +50,11 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("Mongo connected"));
 
+// Start social media monitoring service
+socialMediaService.start().catch(error => {
+  console.error("Failed to start social media service:", error);
+});
+
 app.use("/api/ingest", ingestPdf);
 app.use("/api/search", searchRoutes);
 app.use("/api/dashboard", dashboardRoutes);
@@ -63,6 +70,7 @@ app.use("/api/alerts", alertsRoutes);
 import authMiddleware from "./middleware/auth.js";
 app.use("/api/cctv", authMiddleware, cctvRoutes);
 app.use("/api/criminals", authMiddleware, criminalsRoutes);
+app.use("/api/social-media", socialMediaRoutes);
 server.listen(3000, () => {
   console.log("Server running on 3000");
 });
