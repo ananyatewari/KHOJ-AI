@@ -12,7 +12,7 @@ export async function checkCriminalRecord(personName, additionalDetails = {}) {
 
     const cached = await CriminalRecord.findOne({
       name: { $regex: new RegExp(`^${personName}$`, 'i') },
-      updatedAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // 7 days cache
+      updatedAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
     });
 
     if (cached) {

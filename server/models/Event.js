@@ -96,6 +96,13 @@ const EventSchema = new mongoose.Schema({
     totalDocuments: { type: Number, default: 0 },
     uniqueEntities: { type: Number, default: 0 },
     crossAgencyFlag: { type: Boolean, default: false }
+  },
+  
+  acknowledged: {
+    acknowledged: { type: Boolean, default: false },
+    acknowledgedBy: String,
+    acknowledgedAt: Date,
+    note: String
   }
 }, { timestamps: true });
 

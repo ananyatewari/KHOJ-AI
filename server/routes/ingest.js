@@ -16,17 +16,8 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, 
   fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'application/pdf',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ];
-    
-    if (!allowedTypes.includes(file.mimetype)) {
-      return cb(new Error("Only PDFs, Excel files, Word documents, and text files allowed"));
+    if (file.mimetype !== "application/pdf") {
+      return cb(new Error("Only PDFs allowed"));
     }
     cb(null, true);
   },
@@ -37,62 +28,23 @@ router.post("/pdf", upload.single("file"), async (req, res) => {
 
   await emitLog(io, {
     level: "INFO",
-    message: `File received – ${req.file.originalname}`,
+    message: `PDF received – ${req.file.originalname}`,
     user: req.body.uploadedBy,
     agency: req.body.agency
   });
 
   try {
     if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
+      return res.status(400).json({ error: "No PDF uploaded" });
     }
-
-    let text = "";
-
-    // Handle different file types
-    if (req.file.mimetype === "application/pdf") {
-      const parsed = await pdf(req.file.buffer);
-      text = parsed.text || "";
-    } else if (req.file.mimetype === "text/plain") {
-      text = req.file.buffer.toString("utf-8");
-    } else if (
-      req.file.mimetype === "application/msword" ||
-      req.file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ) {
-      // For Word documents, try to extract text from buffer
-      try {
-        const content = req.file.buffer.toString("utf-8");
-        // Remove binary characters and extract readable text
-        text = content
-          .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F-\x9F]/g, " ")
-          .replace(/\s+/g, " ")
-          .trim();
-      } catch (err) {
-        console.warn("Could not extract text from Word document:", err.message);
-        text = "";
-      }
-    } else if (
-      req.file.mimetype === "application/vnd.ms-excel" ||
-      req.file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    ) {
-      // For Excel files, we'll need additional processing
-      // For now, return empty text and log a warning
-      console.warn("Excel file processing not fully implemented yet");
-      text = "";
-    } else {
-      return res.status(400).json({ error: "Unsupported file type" });
-    }
-
-    if (!text || text.trim().length === 0) {
-      return res.status(400).json({ error: "No text could be extracted from the file" });
-    }
-
+    const parsed = await pdf(req.file.buffer);
     await emitLog(io, {
       level: "INFO",
       message: "Text extracted successfully",
       user: req.body.uploadedBy,
       agency: req.body.agency
     });
+    const text = parsed.text || "";
 
 const ruleEntities = extractEntities(text);
 
@@ -290,17 +242,19 @@ await emitLog(io, {
       documentId: doc._id,
       text,
       entities,
+      chunks,
+      chunkEmbeddings
     });
 
   } catch (err) {
-    console.error("File ingest failed:", err);
+    console.error("PDF ingest failed:", err);
     await emitLog(req.app.get("io"), {
       level: "ERROR",
-      message: "File ingestion failed",
+      message: "PDF ingestion failed",
       user: req.body.uploadedBy,
       agency: req.body.agency
-    });
-    res.status(500).json({ error: "File processing failed" });
+  });
+    res.status(500).json({ error: "PDF processing failed" });
   }
 });
 
