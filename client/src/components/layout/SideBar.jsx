@@ -251,7 +251,7 @@ export default function SideBar() {
             Collaboration Chatbot
           </NavLink>
 
-          <NavLink
+          {/* <NavLink
             to="/app/cctv"
             className={({ isActive }) =>
               `${linkBase} ${
@@ -265,7 +265,7 @@ export default function SideBar() {
           >
             <Video size={18} />
             CCTV Analysis
-          </NavLink>
+          </NavLink> */}
 
           <NavLink
                   to="/app/social-media"
