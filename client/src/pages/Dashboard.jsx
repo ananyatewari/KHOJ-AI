@@ -8,7 +8,6 @@ import SharePanel from "../components/dashboard/SharePanel";
 import ApprovalPanel from "../components/dashboard/ApprovalPanel";
 import EventIntelligencePanel from "../components/dashboard/EventIntelligencePanel";
 import CriminalAlertsWidget from "../components/dashboard/CriminalAlertsWidget";
-import SocialMediaWidget from "../components/dashboard/SocialMediaWidget";
 
 export default function Dashboard() {
   const { token, user } = useAuth();
@@ -98,6 +97,15 @@ export default function Dashboard() {
               <span className="text-indigo-500 font-semibold">
                 {user.username}
               </span>
+              <span
+                className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                  user.role === "admin"
+                    ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                    : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                }`}
+              >
+                {user.role === "admin" ? "ADMIN" : "USER"}
+              </span>
             </p>
           </div>
 
@@ -124,21 +132,22 @@ export default function Dashboard() {
               theme={theme}
             />
             <StatCard
-              title="Agency Members"
-              value={data?.stats.totalMembers || 0}
-              icon={<UserCheck size={20} />}
-              color="from-amber-500 to-orange-500"
+              title="Crime Rate Change"
+              value="+12.5%"
+              icon={<TrendingUp size={20} />}
+              color="from-red-500 to-orange-500"
+              theme={theme}
+            />
+            <StatCard
+              title="High Risk Individuals"
+              value="23"
+              icon={<AlertTriangle size={20} />}
+              color="from-purple-500 to-pink-500"
               theme={theme}
             />
           </div>
 
           <div className="space-y-5">
-            <EventIntelligencePanel />
-
-            <SocialMediaWidget />
-
-            <CriminalAlertsWidget />
-
             <OperationalReportPanel token={token} agency={user.agency} />
 
             <ApprovalPanel />
@@ -170,6 +179,9 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
+
+            <EventIntelligencePanel />
+            <CriminalAlertsWidget />
           </div>
         </div>
       </div>
@@ -182,8 +194,8 @@ import {
   Users,
   Building2,
   Globe,
-  UserCheck,
   TrendingUp,
+  AlertTriangle,
 } from "lucide-react";
 
 function StatCard({ title, value, color, icon, theme }) {

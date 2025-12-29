@@ -27,7 +27,6 @@ import transcriptionRoutes from "./routes/transcription.js";
 import historyRoutes from "./routes/history.js";
 import eventsRoutes from "./routes/events.js";
 import alertsRoutes from "./routes/alerts.js";
-import cctvRoutes from "./routes/cctv.js";
 import criminalsRoutes from "./routes/criminals.js";
 import socialMediaRoutes from "./routes/socialMedia.js";
 import socialMediaService from "./services/socialMediaService.js";
@@ -81,7 +80,6 @@ app.use("/api/history", historyRoutes);
 app.use("/api/events", eventsRoutes);
 app.use("/api/alerts", alertsRoutes);
 import authMiddleware from "./middleware/auth.js";
-app.use("/api/cctv", authMiddleware, cctvRoutes);
 app.use("/api/criminals", authMiddleware, criminalsRoutes);
 app.use("/api/social-media", socialMediaRoutes);
 server.listen(3000, () => {

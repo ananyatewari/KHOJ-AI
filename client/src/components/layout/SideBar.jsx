@@ -18,6 +18,7 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronRight,
+  Brain,
 } from "lucide-react";
 
 export default function SideBar() {
@@ -248,40 +249,24 @@ export default function SideBar() {
             }
           >
             <MessageSquare size={18} />
-            Collaboration Chatbot
+            Collaboration Space
           </NavLink>
 
-          {/* <NavLink
-            to="/app/cctv"
+          <NavLink
+            to="/app/social-media"
             className={({ isActive }) =>
-              `${linkBase} ${
+              `${linkBase} text-lg ${
                 isActive
-                  ? "bg-gradient-to-r from-purple-400 to-indigo-600 text-white shadow-lg"
+                  ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg"
                   : theme === "dark"
                   ? "text-slate-300 hover:bg-white/5"
                   : "text-slate-600 hover:bg-purple-50"
               }`
             }
           >
-            <Video size={18} />
-            CCTV Analysis
-          </NavLink> */}
-
-          <NavLink
-                  to="/app/social-media"
-                  className={({ isActive }) =>
-                    `${linkBase} text-lg ${
-                      isActive
-                        ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg"
-                        : theme === "dark"
-                        ? "text-slate-300 hover:bg-white/5"
-                        : "text-slate-600 hover:bg-purple-50"
-                    }`
-                  }
-                >
-                <TrendingUp size={18} />
-                Social Media
-                  </NavLink>
+            <TrendingUp size={18} />
+            Social Media
+          </NavLink>
 
           <NavLink
             to="/app/history"
@@ -316,7 +301,6 @@ export default function SideBar() {
           </NavLink>
         </nav>
 
-        {/* Theme Toggle */}
         <div className="px-4 pb-4">
           <button
             onClick={toggleTheme}

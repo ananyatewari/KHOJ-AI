@@ -14,6 +14,9 @@ import {
   Filter,
   Eye,
   EyeOff,
+  Activity,
+  MapPin,
+  Target,
 } from "lucide-react";
 
 export default function SocialMediaWidget() {
@@ -22,34 +25,68 @@ export default function SocialMediaWidget() {
   const [posts, setPosts] = useState([]);
   const [events, setEvents] = useState([]);
   const [stats, setStats] = useState(null);
+  const [crimeAnalytics, setCrimeAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("crime"); // "all", "crime", "events"
+  const [filter, setFilter] = useState("crime"); // "all", "crime", "events", "analytics"
   const [showDetails, setShowDetails] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchSocialMediaData = async () => {
     try {
-      const [postsRes, eventsRes, statsRes] = await Promise.all([
-        fetch("http://localhost:3000/api/social-media/posts/crime?limit=10", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch("http://localhost:3000/api/social-media/events?limit=5", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch("http://localhost:3000/api/social-media/stats", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
+      const [postsRes, eventsRes, statsRes, trendsRes, predictionsRes] =
+        await Promise.all([
+          fetch("http://localhost:3000/api/social-media/posts/crime?limit=10", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch("http://localhost:3000/api/social-media/events?limit=5", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch("http://localhost:3000/api/social-media/stats", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(
+            "http://localhost:3000/api/analytics/crime-trends?period=30days",
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          ),
+          fetch(
+            "http://localhost:3000/api/analytics/predictions?type=recidivism",
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          ),
+        ]);
 
       const postsData = await postsRes.json();
       const eventsData = await eventsRes.json();
-      const statsData = await statsRes.json();
+      const statsData = statsRes.ok ? await statsRes.json() : { overview: {} };
+      const trendsData = trendsRes.ok ? await trendsRes.json() : { trends: [] };
+      const predictionsData = predictionsRes.ok
+        ? await predictionsRes.json()
+        : { predictions: [] };
 
       setPosts(postsData.posts || []);
       setEvents(eventsData.events || []);
       setStats(statsData);
+      setCrimeAnalytics({
+        trends: trendsData,
+        predictions: predictionsData,
+      });
     } catch (error) {
       console.error("Error fetching social media data:", error);
+      setStats({
+        overview: {
+          totalPosts: 0,
+          crimePosts24h: 0,
+          activeEvents: 0,
+          highSeverityEvents: 0,
+        },
+      });
+      setCrimeAnalytics({
+        trends: { trends: [], hotspots: [] },
+        predictions: { predictions: [] },
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -106,6 +143,38 @@ export default function SocialMediaWidget() {
     return `${diffDays}d ago`;
   };
 
+  const calculateCrimeIncrease = () => {
+    if (!crimeAnalytics?.trends?.trends)
+      return { percentage: 0, trend: "neutral" };
+
+    const trends = crimeAnalytics.trends.trends;
+    if (trends.length < 2) return { percentage: 0, trend: "neutral" };
+
+    const recent = trends.slice(-2);
+    const current = recent[1]?.count || 0;
+    const previous = recent[0]?.count || 0;
+
+    if (previous === 0) return { percentage: 0, trend: "neutral" };
+
+    const percentage = ((current - previous) / previous) * 100;
+    return {
+      percentage: Math.abs(percentage),
+      trend: percentage > 0 ? "increase" : "decrease",
+    };
+  };
+
+  const getHighRiskCount = () => {
+    if (!crimeAnalytics?.predictions?.predictions) return 0;
+    return crimeAnalytics.predictions.predictions.filter(
+      (p) => p.avgRiskLevel === "high" || p.avgRiskLevel === "critical"
+    ).length;
+  };
+
+  const getTopHotspot = () => {
+    if (!crimeAnalytics?.trends?.hotspots?.length) return null;
+    return crimeAnalytics.trends.hotspots[0];
+  };
+
   if (loading) {
     return (
       <section
@@ -127,22 +196,15 @@ export default function SocialMediaWidget() {
   }
 
   return (
-    <section
-      className={`backdrop-blur-sm border rounded-xl p-5 transition-all duration-300 hover:shadow-xl ${
-        theme === "dark"
-          ? "bg-slate-800/50 border-slate-700/50 shadow-lg"
-          : "bg-white/90 border-purple-200 shadow-md"
-      }`}
-    >
-      {/* Header */}
+    <>
       <div className="flex items-center justify-between mb-4">
         <h2
           className={`text-base font-semibold flex items-center gap-2 ${
             theme === "dark" ? "text-white" : "text-slate-800"
           }`}
         >
-          <TrendingUp className="w-4 h-4 text-indigo-500" />
-          Social Media Intelligence
+          <Activity className="w-4 h-4 text-indigo-500" />
+          Intelligence Analytics
         </h2>
 
         <div className="flex items-center gap-2">
@@ -177,140 +239,6 @@ export default function SocialMediaWidget() {
         </div>
       </div>
 
-      {/* Stats Overview */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-          <div
-            className={`p-3 rounded-lg border ${
-              theme === "dark"
-                ? "bg-slate-900/50 border-slate-700/50"
-                : "bg-purple-50/50 border-purple-200"
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <MessageSquare className="w-3 h-3 text-indigo-500" />
-              <span
-                className={`text-xs ${
-                  theme === "dark" ? "text-slate-400" : "text-slate-600"
-                }`}
-              >
-                Total Posts
-              </span>
-            </div>
-            <p
-              className={`text-lg font-bold ${
-                theme === "dark" ? "text-white" : "text-slate-800"
-              }`}
-            >
-              {stats.overview.totalPosts}
-            </p>
-          </div>
-
-          <div
-            className={`p-3 rounded-lg border ${
-              theme === "dark"
-                ? "bg-slate-900/50 border-slate-700/50"
-                : "bg-red-50/50 border-red-200"
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="w-3 h-3 text-red-500" />
-              <span
-                className={`text-xs ${
-                  theme === "dark" ? "text-slate-400" : "text-slate-600"
-                }`}
-              >
-                Crime Posts (24h)
-              </span>
-            </div>
-            <p
-              className={`text-lg font-bold ${
-                theme === "dark" ? "text-white" : "text-slate-800"
-              }`}
-            >
-              {stats.overview.crimePosts24h}
-            </p>
-          </div>
-
-          <div
-            className={`p-3 rounded-lg border ${
-              theme === "dark"
-                ? "bg-slate-900/50 border-slate-700/50"
-                : "bg-orange-50/50 border-orange-200"
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <Users className="w-3 h-3 text-orange-500" />
-              <span
-                className={`text-xs ${
-                  theme === "dark" ? "text-slate-400" : "text-slate-600"
-                }`}
-              >
-                Active Events
-              </span>
-            </div>
-            <p
-              className={`text-lg font-bold ${
-                theme === "dark" ? "text-white" : "text-slate-800"
-              }`}
-            >
-              {stats.overview.activeEvents}
-            </p>
-          </div>
-
-          <div
-            className={`p-3 rounded-lg border ${
-              theme === "dark"
-                ? "bg-slate-900/50 border-slate-700/50"
-                : "bg-yellow-50/50 border-yellow-200"
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="w-3 h-3 text-yellow-500" />
-              <span
-                className={`text-xs ${
-                  theme === "dark" ? "text-slate-400" : "text-slate-600"
-                }`}
-              >
-                High Severity
-              </span>
-            </div>
-            <p
-              className={`text-lg font-bold ${
-                theme === "dark" ? "text-white" : "text-slate-800"
-              }`}
-            >
-              {stats.overview.highSeverityEvents}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Filter Tabs */}
-      <div className="flex gap-2 mb-4">
-        {[
-          { key: "crime", label: "Crime Posts", count: posts.length },
-          { key: "events", label: "Events", count: events.length },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setFilter(tab.key)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              filter === tab.key
-                ? theme === "dark"
-                  ? "bg-indigo-500 text-white"
-                  : "bg-purple-500 text-white"
-                : theme === "dark"
-                ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                : "bg-purple-100 text-purple-700 hover:bg-purple-200"
-            }`}
-          >
-            {tab.label} ({tab.count})
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
       <div
         className={`space-y-3 max-h-96 overflow-y-auto pr-2 scrollbar-thin ${
           theme === "dark"
@@ -539,7 +467,128 @@ export default function SocialMediaWidget() {
             )}
           </>
         )}
+
+        {filter === "analytics" && (
+          <>
+            {!crimeAnalytics ? (
+              <p
+                className={`text-center py-8 ${
+                  theme === "dark" ? "text-slate-400" : "text-slate-600"
+                }`}
+              >
+                Loading crime analytics...
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {/* Crime Trend Card */}
+                {(() => {
+                  const crimeChange = calculateCrimeIncrease();
+                  const highRiskCount = getHighRiskCount();
+                  const topHotspot = getTopHotspot();
+
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {/* Crime Trend */}
+                      <div
+                        className={`p-3 rounded-lg border ${
+                          crimeChange.trend === "increase"
+                            ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                            : crimeChange.trend === "decrease"
+                            ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+                            : "bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                            Crime Rate (30d)
+                          </span>
+                          <TrendingUp
+                            className={`w-4 h-4 ${
+                              crimeChange.trend === "increase"
+                                ? "text-red-600"
+                                : crimeChange.trend === "decrease"
+                                ? "text-green-600"
+                                : "text-gray-600"
+                            }`}
+                          />
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span
+                            className={`text-lg font-bold ${
+                              crimeChange.trend === "increase"
+                                ? "text-red-700 dark:text-red-300"
+                                : crimeChange.trend === "decrease"
+                                ? "text-green-700 dark:text-green-300"
+                                : "text-gray-700 dark:text-gray-300"
+                            }`}
+                          >
+                            {crimeChange.percentage.toFixed(1)}%
+                          </span>
+                          <span
+                            className={`text-xs ${
+                              crimeChange.trend === "increase"
+                                ? "text-red-600 dark:text-red-400"
+                                : crimeChange.trend === "decrease"
+                                ? "text-green-600 dark:text-green-400"
+                                : "text-gray-600 dark:text-gray-400"
+                            }`}
+                          >
+                            {crimeChange.trend === "increase"
+                              ? "increase"
+                              : crimeChange.trend === "decrease"
+                              ? "decrease"
+                              : "stable"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* High Risk Individuals */}
+                      <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                            High Risk Individuals
+                          </span>
+                          <AlertTriangle className="w-4 h-4 text-orange-600" />
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-lg font-bold text-orange-700 dark:text-orange-300">
+                            {highRiskCount}
+                          </span>
+                          <span className="text-xs text-orange-600 dark:text-orange-400">
+                            persons
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Top Hotspot */}
+                      {topHotspot && (
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                              Top Hotspot
+                            </span>
+                            <MapPin className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-blue-700 dark:text-blue-300 truncate">
+                              {topHotspot._id}
+                            </span>
+                            <span className="text-xs text-blue-600 dark:text-blue-400">
+                              {topHotspot.count} cases
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+                  );
+                })()}
+
+              </div>
+            )}
+          </>
+        )}
       </div>
-    </section>
+    </>
   );
 }

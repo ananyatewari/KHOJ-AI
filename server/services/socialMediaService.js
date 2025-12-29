@@ -7,36 +7,28 @@ class SocialMediaService {
   constructor() {
     this.isRunning = false;
     this.intervalId = null;
-    this.fetchInterval = 5000; // 5 seconds
+    this.fetchInterval = 5000;
     
-    // Crime-related keywords for filtering
     this.crimeKeywords = [
-      // General crime terms
       "crime", "criminal", "illegal", "theft", "steal", "robbery", "burglary", 
       "assault", "attack", "violence", "fight", "weapon", "gun", "knife", "shooting",
       "murder", "kill", "homicide", "death", "injure", "hurt", "victim",
       
-      // Specific crimes
       "fraud", "scam", "drugs", "narcotics", "overdose", "vandalism", "arson", 
-      "kidnap", "abduction", "harassment", "stalking", "threat", "intimidation",
+      "kidnap", "abduction", "harassment", "stalking", "threat", "intimidation", "stampede",
       
-      // Suspicious activity
       "suspicious", "strange", "unusual", "weird", "concerning", "alarming",
       "emergency", "danger", "unsafe", "risky", "illegal activity",
       
-      // Law enforcement terms
       "police", "cop", "officer", "detective", "investigation", "arrest", 
       "detain", "custody", "jail", "prison", "court", "legal", "law",
       
-      // Location-based crime indicators
       "break in", "break-in", "carjacking", "home invasion", "looting", "riot",
       
-      // Emergency situations
       "112", "emergency", "help", "danger", "flee", "escape", "chase", "ambulance", "fire",
       "stampede", "panic", "crowd crush", "accident", "incident", "tragedy"
     ];
     
-    // API endpoints (you can update these with actual URLs)
     this.apiEndpoints = [
       {
         name: "primary_social_media_api",
@@ -56,10 +48,8 @@ class SocialMediaService {
     console.log("Starting Social Media Service...");
     this.isRunning = true;
     
-    // Initial fetch
     await this.fetchPosts();
     
-    // Set up interval for periodic fetching
     this.intervalId = setInterval(async () => {
       try {
         await this.fetchPosts();
@@ -108,7 +98,6 @@ class SocialMediaService {
         console.log(`Response status: ${response.status}`);
         console.log(`Response data type: ${Array.isArray(response.data) ? 'array' : typeof response.data}`);
         
-        // Handle different response structures
         let posts = [];
         if (Array.isArray(response.data)) {
           posts = response.data;
@@ -133,7 +122,6 @@ class SocialMediaService {
           console.error(`Response status: ${error.response.status}`);
           console.error(`Response data:`, error.response.data);
         }
-        // Continue with next endpoint
         continue;
       }
     }
@@ -148,24 +136,19 @@ class SocialMediaService {
     
     for (const postData of posts) {
       try {
-        // Normalize post data
         const normalizedPost = this.normalizePostData(postData, source);
         
-        // Check if post already exists
         const existingPost = await SocialMediaPost.findOne({ postId: normalizedPost.postId });
         if (existingPost) {
           duplicateCount++;
-          continue; // Skip duplicate posts
+          continue;
         }
 
-        // Analyze post for crime-related content
         const analysis = await this.analyzePost(normalizedPost);
         
-        // Log every post analysis for debugging
         const contentPreview = normalizedPost.content.text.substring(0, 50);
         console.log(`Post ${normalizedPost.postId}: "${contentPreview}..." | Crime=${analysis.isCrimeRelated}, Confidence=${analysis.confidence}%, Type=${analysis.crimeType}, Keywords=[${analysis.keywords.slice(0, 5).join(', ')}]`);
         
-        // Create post document
         const post = new SocialMediaPost({
           ...normalizedPost,
           analysis,
@@ -175,7 +158,6 @@ class SocialMediaService {
         await post.save();
         processedCount++;
 
-        // If crime-related, check for event creation
         if (analysis.isCrimeRelated) {
           crimeRelatedCount++;
           await this.handleCrimeRelatedPost(post);
@@ -191,32 +173,31 @@ class SocialMediaService {
   }
 
   normalizePostData(postData, source) {
-    // This function normalizes your API response to our standard format
     return {
       postId: postData.id || `${source}_${Date.now()}_${Math.random()}`,
       platform: this.detectPlatform(postData) || "other",
       author: {
         username: postData.username || "unknown",
         displayName: postData.username || "Unknown User",
-        followersCount: 0, // Your API doesn't provide this
-        verified: false, // Your API doesn't provide this
+        followersCount: 0,
+        verified: false,
         profileImageUrl: ""
       },
       content: {
         text: postData.content || "",
         imageUrl: postData.imageUrl || "",
-        videoUrl: "", // Your API doesn't provide this
-        hashtags: [], // Extract from content if needed
-        mentions: [], // Extract from content if needed
-        urls: [] // Extract from content if needed
+        videoUrl: "",
+        hashtags: [],
+        mentions: [],
+        urls: []
       },
       metadata: {
         likes: postData.likes || 0,
-        shares: 0, // Your API doesn't provide this
-        comments: 0, // Your API doesn't provide this
-        views: 0, // Your API doesn't provide this
-        location: null, // Your API doesn't provide this
-        language: "en", // Default language
+        shares: 0,
+        comments: 0,
+        views: 0,
+        location: null,
+        language: "en",
         createdAt: postData.createdAt ? new Date(postData.createdAt) : new Date(),
         updatedAt: new Date()
       }
@@ -224,7 +205,6 @@ class SocialMediaService {
   }
 
   detectPlatform(postData) {
-    // Try to detect platform from post structure or metadata
     if (postData.tweet_id || postData.retweet_count) return "twitter";
     if (postData.post_id && postData.from) return "facebook";
     if (postData.media_type && postData.owner) return "instagram";
@@ -234,32 +214,27 @@ class SocialMediaService {
   }
 
   async analyzePost(post) {
-    // Safely get text content
     const text = (post.content?.text || post.content || "").toLowerCase();
     
     if (!text) {
       console.log("Warning: Empty text content for post", post.postId);
     }
     
-    // Check for crime-related keywords
     const foundKeywords = this.crimeKeywords.filter(keyword => 
       text.includes(keyword.toLowerCase())
     );
     
     const isCrimeRelated = foundKeywords.length > 0;
     
-    // Calculate confidence based on keyword density and other factors
     let confidence = 0;
     if (isCrimeRelated) {
       confidence = Math.min(100, foundKeywords.length * 15);
       
-      // Boost confidence for verified accounts or high engagement
       if (post.author.verified) confidence += 10;
       if (post.metadata.likes > 100 || post.metadata.shares > 50) confidence += 10;
       if (post.metadata.location) confidence += 5;
     }
 
-    // Determine crime type and severity
     let crimeType = "other";
     let severity = "medium";
     
@@ -268,7 +243,6 @@ class SocialMediaService {
       severity = this.determineSeverity(foundKeywords, text, post);
     }
 
-    // Simple sentiment analysis
     const sentiment = this.analyzeSentiment(text);
 
     return {
@@ -278,7 +252,7 @@ class SocialMediaService {
       confidence,
       keywords: foundKeywords,
       sentiment,
-      entities: [] // You can add NLP entity extraction here
+      entities: []
     };
   }
 
@@ -304,7 +278,6 @@ class SocialMediaService {
   determineSeverity(keywords, text, post) {
     let severityScore = 0;
     
-    // High severity indicators
     const highSeverityKeywords = ["murder", "kill", "shooting", "weapon", "gun", "knife", "death"];
     const mediumSeverityKeywords = ["assault", "attack", "violence", "robbery", "theft"];
     
@@ -315,11 +288,9 @@ class SocialMediaService {
       severityScore += 2;
     }
     
-    // Boost based on engagement (viral potential)
     if (post.metadata.likes > 1000) severityScore += 1;
     if (post.metadata.shares > 500) severityScore += 1;
     
-    // Verified account boost
     if (post.author.verified) severityScore += 1;
     
     if (severityScore >= 4) return "critical";
@@ -329,7 +300,6 @@ class SocialMediaService {
   }
 
   analyzeSentiment(text) {
-    // Simple sentiment analysis - you can replace with a more sophisticated NLP library
     const positiveWords = ["good", "great", "safe", "secure", "helped", "resolved"];
     const negativeWords = ["bad", "terrible", "dangerous", "scary", "worse", "harmful"];
     
@@ -344,27 +314,22 @@ class SocialMediaService {
   async handleCrimeRelatedPost(post) {
     console.log(`Handling crime-related post: ${post.postId}`);
     
-    // Check if there's an existing event in the same area/timeframe
     const existingEvent = await this.findRelatedEvent(post);
     
     if (existingEvent) {
-      // Add post to existing event
       existingEvent.posts.push(post._id);
       existingEvent.aggregatedMetrics.totalPosts = existingEvent.posts.length;
       existingEvent.aggregatedMetrics.uniqueAuthors = new Set(existingEvent.posts.map(p => p.author.username)).size;
       existingEvent.lastUpdated = new Date();
       
-      // Update confidence based on new post
       existingEvent.confidence = Math.min(100, existingEvent.confidence + 5);
       
       await existingEvent.save();
       
-      // Create alert if severity threshold is met
       if (existingEvent.confidence >= 70 && existingEvent.severity === "high") {
         await this.createAlert(existingEvent, post);
       }
     } else {
-      // Create new event if enough confidence
       if (post.analysis.confidence >= 60) {
         await this.createNewEvent(post);
       }
@@ -372,7 +337,6 @@ class SocialMediaService {
   }
 
   async findRelatedEvent(post) {
-    // Look for events in same location within last 2 hours
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
     
     let query = {
@@ -380,7 +344,6 @@ class SocialMediaService {
       status: { $in: ["active", "monitoring"] }
     };
     
-    // Add location filter if available
     if (post.metadata.location?.coordinates) {
       query["location.coordinates"] = {
         $near: {
@@ -388,11 +351,10 @@ class SocialMediaService {
             type: "Point",
             coordinates: [post.metadata.location.coordinates.lng, post.metadata.location.coordinates.lat]
           },
-          $maxDistance: 5000 // 5km radius
+          $maxDistance: 5000
         }
       };
     } else {
-      // If no location, look for similar keywords
       query.keywords = { $in: post.analysis.keywords };
     }
     
@@ -427,13 +389,11 @@ class SocialMediaService {
     
     await event.save();
     
-    // Update post with related event
     post.relatedEvent = event._id;
     await post.save();
     
     console.log(`Created new social media event: ${eventId}`);
     
-    // Create alert for high severity events
     if (event.severity === "high" || event.severity === "critical") {
       await this.createAlert(event, post);
     }
@@ -465,7 +425,6 @@ class SocialMediaService {
     
     await alert.save();
     
-    // Emit real-time alert via Socket.IO
     if (global.io) {
       global.io.emit("new_alert", alert);
     }
@@ -473,7 +432,6 @@ class SocialMediaService {
     console.log(`Created alert for social media event: ${event.eventId}`);
   }
 
-  // Utility method to manually trigger fetch (for testing)
   async manualFetch() {
     console.log("Manual fetch triggered");
     await this.fetchPosts();

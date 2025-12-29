@@ -21,17 +21,16 @@ import {
   Download,
   Settings,
 } from "lucide-react";
+import CrimeAnalyticsDashboard from "../components/analytics/CrimeAnalyticsDashboard";
 
 export default function SocialMediaPage() {
   const { theme } = useTheme();
   const { token } = useAuth();
   const [searchParams] = useSearchParams();
   const [posts, setPosts] = useState([]);
-  const [events, setEvents] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Get tab from URL params, default to "posts"
   const initialTab = searchParams.get("tab") || "posts";
   const [activeTab, setActiveTab] = useState(initialTab);
   const [filter, setFilter] = useState({
@@ -50,7 +49,6 @@ export default function SocialMediaPage() {
     try {
       const queryParams = new URLSearchParams();
 
-      // Add filters to query params
       if (filter.severity) queryParams.append("severity", filter.severity);
       if (filter.crimeType) queryParams.append("crimeType", filter.crimeType);
       if (filter.platform) queryParams.append("platform", filter.platform);
@@ -58,15 +56,9 @@ export default function SocialMediaPage() {
       if (filter.endDate) queryParams.append("endDate", filter.endDate);
       if (searchTerm) queryParams.append("search", searchTerm);
 
-      const [postsRes, eventsRes, statsRes] = await Promise.all([
+      const [postsRes, statsRes] = await Promise.all([
         fetch(
           `http://localhost:3000/api/social-media/posts/crime?${queryParams.toString()}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        ),
-        fetch(
-          `http://localhost:3000/api/social-media/events?${queryParams.toString()}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -77,11 +69,9 @@ export default function SocialMediaPage() {
       ]);
 
       const postsData = await postsRes.json();
-      const eventsData = await eventsRes.json();
       const statsData = await statsRes.json();
 
       setPosts(postsData.posts || []);
-      setEvents(eventsData.events || []);
       setStats(statsData);
     } catch (error) {
       console.error("Error fetching social media data:", error);
@@ -115,7 +105,6 @@ export default function SocialMediaPage() {
     fetchSocialMediaData();
   }, [token, filter, searchTerm]);
 
-  // Update active tab when URL params change
   useEffect(() => {
     const tab = searchParams.get("tab") || "posts";
     setActiveTab(tab);
@@ -273,58 +262,6 @@ export default function SocialMediaPage() {
                 Crime Posts (24h)
               </p>
             </div>
-
-            <div
-              className={`backdrop-blur-sm border rounded-xl p-4 ${
-                theme === "dark"
-                  ? "bg-slate-800/50 border-slate-700/50"
-                  : "bg-white/90 border-purple-200"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <Users className="w-8 h-8 text-orange-500" />
-                <span
-                  className={`text-2xl font-bold ${
-                    theme === "dark" ? "text-white" : "text-slate-800"
-                  }`}
-                >
-                  {stats.overview.activeEvents}
-                </span>
-              </div>
-              <p
-                className={`text-sm font-medium ${
-                  theme === "dark" ? "text-slate-300" : "text-slate-700"
-                }`}
-              >
-                Active Events
-              </p>
-            </div>
-
-            <div
-              className={`backdrop-blur-sm border rounded-xl p-4 ${
-                theme === "dark"
-                  ? "bg-slate-800/50 border-slate-700/50"
-                  : "bg-white/90 border-purple-200"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <AlertTriangle className="w-8 h-8 text-yellow-500" />
-                <span
-                  className={`text-2xl font-bold ${
-                    theme === "dark" ? "text-white" : "text-slate-800"
-                  }`}
-                >
-                  {stats.overview.highSeverityEvents}
-                </span>
-              </div>
-              <p
-                className={`text-sm font-medium ${
-                  theme === "dark" ? "text-slate-300" : "text-slate-700"
-                }`}
-              >
-                High Severity Events
-              </p>
-            </div>
           </div>
         )}
 
@@ -393,22 +330,6 @@ export default function SocialMediaPage() {
                 <option value="suspicious_activity">Suspicious Activity</option>
               </select>
 
-              <select
-                value={filter.platform}
-                onChange={(e) => handleFilterChange("platform", e.target.value)}
-                className={`px-3 py-2 rounded-lg border ${
-                  theme === "dark"
-                    ? "bg-slate-900/50 border-slate-700/50 text-white"
-                    : "bg-purple-50/50 border-purple-200 text-slate-800"
-                } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
-              >
-                <option value="">All Platforms</option>
-                <option value="twitter">Twitter</option>
-                <option value="facebook">Facebook</option>
-                <option value="instagram">Instagram</option>
-                <option value="reddit">Reddit</option>
-              </select>
-
               <button
                 onClick={clearFilters}
                 className={`px-4 py-2 rounded-lg transition-all ${
@@ -438,11 +359,9 @@ export default function SocialMediaPage() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-2 mb-6">
           {[
             { key: "posts", label: "All Related Posts", count: posts.length },
-            { key: "events", label: "Events", count: events.length },
             { key: "analytics", label: "Analytics", count: null },
           ].map((tab) => (
             <button
@@ -464,7 +383,6 @@ export default function SocialMediaPage() {
           ))}
         </div>
 
-        {/* Content */}
         <div
           className={`backdrop-blur-sm border rounded-xl p-6 ${
             theme === "dark"
@@ -504,7 +422,6 @@ export default function SocialMediaPage() {
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        {/* Post Header */}
                         <div className="flex items-center gap-3 mb-3">
                           {getPlatformIcon(post.platform)}
                           <div>
@@ -547,7 +464,6 @@ export default function SocialMediaPage() {
                           </div>
                         </div>
 
-                        {/* Severity and Type */}
                         <div className="flex items-center gap-2 mb-3">
                           <span
                             className={`px-3 py-1 rounded-full text-sm font-medium border ${getSeverityColor(
@@ -577,7 +493,6 @@ export default function SocialMediaPage() {
                           </span>
                         </div>
 
-                        {/* Content */}
                         <div
                           className={`mb-3 p-3 rounded-lg ${
                             theme === "dark" ? "bg-slate-800/50" : "bg-white/50"
@@ -602,7 +517,6 @@ export default function SocialMediaPage() {
                           )}
                         </div>
 
-                        {/* Keywords */}
                         {post.analysis.keywords.length > 0 && (
                           <div className="flex flex-wrap gap-2 mb-3">
                             {post.analysis.keywords.map((keyword, idx) => (
@@ -620,7 +534,6 @@ export default function SocialMediaPage() {
                           </div>
                         )}
 
-                        {/* Engagement Metrics */}
                         <div className="flex items-center gap-4 text-sm text-slate-500">
                           <span className="flex items-center gap-1">
                             <span>💗</span> {post.metadata.likes}
@@ -643,303 +556,15 @@ export default function SocialMediaPage() {
             </div>
           )}
 
-          {activeTab === "events" && (
-            <div className="space-y-4">
-              {events.length === 0 ? (
-                <div className="text-center py-12">
-                  <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-slate-400" />
-                  <p
-                    className={`text-lg ${
-                      theme === "dark" ? "text-slate-400" : "text-slate-600"
-                    }`}
-                  >
-                    No active events
-                  </p>
-                </div>
-              ) : (
-                events.map((event) => (
-                  <div
-                    key={event.eventId}
-                    className={`border rounded-lg p-4 transition-all duration-300 hover:shadow-md ${
-                      theme === "dark"
-                        ? "bg-slate-900/50 border-slate-700/50 hover:border-indigo-500/50"
-                        : "bg-gradient-to-r from-orange-50/50 to-red-50/50 border-orange-200 hover:border-orange-400"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        {/* Event Header */}
-                        <div className="flex items-center gap-3 mb-3">
-                          <AlertTriangle className="w-5 h-5 text-orange-500" />
-                          <h3
-                            className={`font-semibold text-lg ${
-                              theme === "dark" ? "text-white" : "text-slate-800"
-                            }`}
-                          >
-                            {event.title}
-                          </h3>
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm font-medium border ${getSeverityColor(
-                              event.severity
-                            )}`}
-                          >
-                            {event.severity.toUpperCase()}
-                          </span>
-                        </div>
-
-                        <p
-                          className={`mb-3 ${
-                            theme === "dark"
-                              ? "text-slate-300"
-                              : "text-slate-700"
-                          }`}
-                        >
-                          {event.description}
-                        </p>
-
-                        {/* Event Metrics */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                          <div
-                            className={`p-2 rounded ${
-                              theme === "dark"
-                                ? "bg-slate-800/50"
-                                : "bg-purple-50/50"
-                            }`}
-                          >
-                            <p
-                              className={`text-xs ${
-                                theme === "dark"
-                                  ? "text-slate-400"
-                                  : "text-slate-600"
-                              }`}
-                            >
-                              Confidence
-                            </p>
-                            <p
-                              className={`font-semibold ${
-                                theme === "dark"
-                                  ? "text-white"
-                                  : "text-slate-800"
-                              }`}
-                            >
-                              {event.confidence}%
-                            </p>
-                          </div>
-                          <div
-                            className={`p-2 rounded ${
-                              theme === "dark"
-                                ? "bg-slate-800/50"
-                                : "bg-purple-50/50"
-                            }`}
-                          >
-                            <p
-                              className={`text-xs ${
-                                theme === "dark"
-                                  ? "text-slate-400"
-                                  : "text-slate-600"
-                              }`}
-                            >
-                              Posts
-                            </p>
-                            <p
-                              className={`font-semibold ${
-                                theme === "dark"
-                                  ? "text-white"
-                                  : "text-slate-800"
-                              }`}
-                            >
-                              {event.posts.length}
-                            </p>
-                          </div>
-                          <div
-                            className={`p-2 rounded ${
-                              theme === "dark"
-                                ? "bg-slate-800/50"
-                                : "bg-purple-50/50"
-                            }`}
-                          >
-                            <p
-                              className={`text-xs ${
-                                theme === "dark"
-                                  ? "text-slate-400"
-                                  : "text-slate-600"
-                              }`}
-                            >
-                              Authors
-                            </p>
-                            <p
-                              className={`font-semibold ${
-                                theme === "dark"
-                                  ? "text-white"
-                                  : "text-slate-800"
-                              }`}
-                            >
-                              {event.aggregatedMetrics?.uniqueAuthors || 0}
-                            </p>
-                          </div>
-                          <div
-                            className={`p-2 rounded ${
-                              theme === "dark"
-                                ? "bg-slate-800/50"
-                                : "bg-purple-50/50"
-                            }`}
-                          >
-                            <p
-                              className={`text-xs ${
-                                theme === "dark"
-                                  ? "text-slate-400"
-                                  : "text-slate-600"
-                              }`}
-                            >
-                              Reach
-                            </p>
-                            <p
-                              className={`font-semibold ${
-                                theme === "dark"
-                                  ? "text-white"
-                                  : "text-slate-800"
-                              }`}
-                            >
-                              {event.aggregatedMetrics?.totalReach || 0}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Keywords */}
-                        {event.keywords.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {event.keywords.map((keyword, idx) => (
-                              <span
-                                key={idx}
-                                className={`px-2 py-1 rounded text-sm ${
-                                  theme === "dark"
-                                    ? "bg-slate-700 text-slate-300"
-                                    : "bg-orange-100 text-orange-700"
-                                }`}
-                              >
-                                {keyword}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-
           {activeTab === "analytics" && (
-            <div className="space-y-6">
+            <>
               {stats && (
                 <>
-                  {/* Platform Distribution */}
-                  <div>
-                    <h3
-                      className={`text-lg font-semibold mb-4 ${
-                        theme === "dark" ? "text-white" : "text-slate-800"
-                      }`}
-                    >
-                      Platform Distribution (Last 7 Days)
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {stats.platformStats.map((platform, idx) => (
-                        <div
-                          key={platform._id}
-                          className={`p-4 rounded-lg border ${
-                            theme === "dark"
-                              ? "bg-slate-900/50 border-slate-700/50"
-                              : "bg-purple-50/50 border-purple-200"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            {getPlatformIcon(platform._id)}
-                            <span
-                              className={`font-medium ${
-                                theme === "dark"
-                                  ? "text-white"
-                                  : "text-slate-800"
-                              }`}
-                            >
-                              {platform._id.charAt(0).toUpperCase() +
-                                platform._id.slice(1)}
-                            </span>
-                          </div>
-                          <p
-                            className={`text-2xl font-bold ${
-                              theme === "dark" ? "text-white" : "text-slate-800"
-                            }`}
-                          >
-                            {platform.count}
-                          </p>
-                          <p
-                            className={`text-sm ${
-                              theme === "dark"
-                                ? "text-slate-400"
-                                : "text-slate-600"
-                            }`}
-                          >
-                            posts
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+        <CrimeAnalyticsDashboard />
 
-                  {/* Crime Type Distribution */}
-                  <div>
-                    <h3
-                      className={`text-lg font-semibold mb-4 ${
-                        theme === "dark" ? "text-white" : "text-slate-800"
-                      }`}
-                    >
-                      Crime Type Distribution (Last 7 Days)
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {stats.crimeTypeStats.map((crime, idx) => (
-                        <div
-                          key={crime._id}
-                          className={`p-4 rounded-lg border ${
-                            theme === "dark"
-                              ? "bg-slate-900/50 border-slate-700/50"
-                              : "bg-red-50/50 border-red-200"
-                          }`}
-                        >
-                          <h4
-                            className={`font-medium mb-2 ${
-                              theme === "dark" ? "text-white" : "text-slate-800"
-                            }`}
-                          >
-                            {crime._id
-                              .replace("_", " ")
-                              .charAt(0)
-                              .toUpperCase() +
-                              crime._id.replace("_", " ").slice(1)}
-                          </h4>
-                          <p
-                            className={`text-2xl font-bold ${
-                              theme === "dark" ? "text-white" : "text-slate-800"
-                            }`}
-                          >
-                            {crime.count}
-                          </p>
-                          <p
-                            className={`text-sm ${
-                              theme === "dark"
-                                ? "text-slate-400"
-                                : "text-slate-600"
-                            }`}
-                          >
-                            incidents
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </>
               )}
-            </div>
+            </>
           )}
         </div>
       </div>

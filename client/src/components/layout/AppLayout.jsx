@@ -13,15 +13,8 @@ export default function AppLayout() {
         ? "bg-slate-900 text-white" 
         : "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 text-slate-800"
     }`}>
-      {/* Sidebar */}
       <SideBar />
-
-      {/* Main area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top bar */}
-        {/* <TopBar /> */}
-
-        {/* Page content */}
         <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>
