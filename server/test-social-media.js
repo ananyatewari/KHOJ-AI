@@ -18,7 +18,7 @@ const crimeKeywords = [
 ];
 
 async function testSocialMediaAPI() {
-  console.log("Testing Social Media API Integration...\n");
+  // console.log("Testing Social Media API Integration...\n");
   console.log(`Fetching from: ${SOCIAL_MEDIA_API_URL}\n`);
 
   try {
@@ -26,8 +26,8 @@ async function testSocialMediaAPI() {
       timeout: 15000
     });
 
-    console.log(`✓ API Response Status: ${response.status}`);
-    console.log(`✓ Response Type: ${typeof response.data}`);
+    // console.log(`✓ API Response Status: ${response.status}`);
+    // console.log(`✓ Response Type: ${typeof response.data}`);
 
     let posts = [];
     if (Array.isArray(response.data)) {

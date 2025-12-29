@@ -169,7 +169,7 @@ class SocialMediaService {
       }
     }
     
-    console.log(`Processing complete: ${processedCount} new posts saved, ${crimeRelatedCount} crime-related, ${duplicateCount} duplicates skipped`);
+    // console.log(`Processing complete: ${processedCount} new posts saved, ${crimeRelatedCount} crime-related, ${duplicateCount} duplicates skipped`);
   }
 
   normalizePostData(postData, source) {
