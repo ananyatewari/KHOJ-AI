@@ -5,8 +5,6 @@ import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
 
-// GET /api/analytics/crime-trends
-// Comprehensive crime trend analytics
 router.get("/crime-trends", authMiddleware, async (req, res) => {
   try {
     const { period = '12months', groupBy = 'month' } = req.query;
@@ -20,7 +18,6 @@ router.get("/crime-trends", authMiddleware, async (req, res) => {
       startDate.setMonth(startDate.getMonth() - 3);
     }
 
-    // Crime trends over time
     const trendsPipeline = [
       {
         $match: {
