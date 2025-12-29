@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-import { User, Lock, Building2, Sun, Moon, ArrowLeft } from "lucide-react";
+import {
+  User,
+  Lock,
+  Building2,
+  Sun,
+  Moon,
+  ArrowLeft,
+  Shield,
+  UserCheck,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import BackgroundCanvas from "../components/BackgroundCanvas";
 
@@ -9,6 +18,7 @@ export default function Signup() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [agency, setAgency] = useState("police");
+  const [role, setRole] = useState("user");
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -18,7 +28,7 @@ export default function Signup() {
     const res = await fetch("http://localhost:3000/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password, agency }),
+      body: JSON.stringify({ username, password, agency, role }),
     });
 
     if (!res.ok) {
@@ -30,9 +40,11 @@ export default function Signup() {
   };
 
   return (
-    <div className={`relative w-full min-h-screen flex items-center justify-center overflow-hidden transition-colors duration-300 ${
-      theme === "dark" ? "text-white" : "text-slate-900"
-    }`}>
+    <div
+      className={`relative w-full min-h-screen flex items-center justify-center overflow-hidden transition-colors duration-300 ${
+        theme === "dark" ? "text-white" : "text-slate-900"
+      }`}
+    >
       {/* ===== BACK TO HOME BUTTON ===== */}
       <Link
         to="/"
@@ -65,9 +77,13 @@ export default function Signup() {
 
       {/* ===== BACKGROUND ===== */}
       <BackgroundCanvas></BackgroundCanvas>
-      <div className={`absolute inset-0 h-full transition-colors duration-300 ${
-        theme === "dark" ? "bg-black" : "bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50"
-      }`}>
+      <div
+        className={`absolute inset-0 h-full transition-colors duration-300 ${
+          theme === "dark"
+            ? "bg-black"
+            : "bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50"
+        }`}
+      >
         <div
           className={`absolute inset-0 ${
             theme === "dark"
@@ -105,14 +121,18 @@ export default function Signup() {
           }
         `}
       >
-        <h2 className={`text-2xl font-bold mb-1 text-center transition-colors duration-300 ${
-          theme === "dark" ? "text-white" : "text-slate-900"
-        }`}>
+        <h2
+          className={`text-2xl font-bold mb-1 text-center transition-colors duration-300 ${
+            theme === "dark" ? "text-white" : "text-slate-900"
+          }`}
+        >
           Create Account
         </h2>
-        <p className={`text-sm mb-6 text-center transition-colors duration-300 ${
-          theme === "dark" ? "text-slate-400" : "text-slate-600"
-        }`}>
+        <p
+          className={`text-sm mb-6 text-center transition-colors duration-300 ${
+            theme === "dark" ? "text-slate-400" : "text-slate-600"
+          }`}
+        >
           Register for secure access
         </p>
 
@@ -160,6 +180,50 @@ export default function Signup() {
             />
           </div>
 
+          {/* ROLE */}
+          <div className="relative">
+            <Shield className="absolute left-3 top-3.5 text-slate-400 w-5 h-5 z-10" />
+            <select
+              className={`
+                w-full pl-10 pr-8 py-3 rounded-lg
+                border
+                focus:outline-none focus:ring-2 focus:ring-indigo-500
+                appearance-none
+                transition-colors duration-300
+                cursor-pointer
+                font-medium
+                ${
+                  theme === "dark"
+                    ? "bg-slate-900/70 border-white/10 text-white [&>option]:bg-slate-900 [&>option]:text-white [&>option]:py-2"
+                    : "bg-white border-purple-200 text-slate-900 [&>option]:bg-white [&>option]:text-slate-900 [&>option]:py-2"
+                }
+              `}
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="user">User - Standard Access</option>
+              <option value="admin">Admin - Full System Access</option>
+            </select>
+            {/* Custom dropdown arrow */}
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <svg
+                className={`w-5 h-5 ${
+                  theme === "dark" ? "text-slate-400" : "text-slate-600"
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+          </div>
+
           {/* AGENCY */}
           <div className="relative">
             <Building2 className="absolute left-3 top-3.5 text-slate-400 w-5 h-5 z-10" />
@@ -191,17 +255,29 @@ export default function Signup() {
               <option value="ib">IB - Intelligence Bureau</option>
               <option value="crpf">CRPF - Central Reserve Police Force</option>
               <option value="bsf">BSF - Border Security Force</option>
-              <option value="cisf">CISF - Central Industrial Security Force</option>
+              <option value="cisf">
+                CISF - Central Industrial Security Force
+              </option>
               <option value="itbp">ITBP - Indo-Tibetan Border Police</option>
               <option value="ssb">SSB - Sashastra Seema Bal</option>
               <option value="nsg">NSG - National Security Guard</option>
             </select>
             {/* Custom dropdown arrow */}
             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-              <svg className={`w-5 h-5 ${
-                theme === "dark" ? "text-slate-400" : "text-slate-600"
-              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <svg
+                className={`w-5 h-5 ${
+                  theme === "dark" ? "text-slate-400" : "text-slate-600"
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
               </svg>
             </div>
           </div>
@@ -234,9 +310,11 @@ export default function Signup() {
           </button>
         </form>
 
-        <p className={`text-sm mt-6 text-center transition-colors duration-300 ${
-          theme === "dark" ? "text-slate-400" : "text-slate-600"
-        }`}>
+        <p
+          className={`text-sm mt-6 text-center transition-colors duration-300 ${
+            theme === "dark" ? "text-slate-400" : "text-slate-600"
+          }`}
+        >
           Already have an account?{" "}
           <Link to="/login" className="text-indigo-400 hover:underline">
             Login

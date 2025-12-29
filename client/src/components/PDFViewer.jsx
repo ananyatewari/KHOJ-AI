@@ -57,7 +57,7 @@ export default function PDFViewer({
       <h2 className={`text-lg font-semibold mb-2 ${
         theme === "dark" ? "text-white" : "text-slate-800"
       }`}>
-        Extracted PDF Text (AI Highlighted)
+        Extracted File Text (Entity Highlighted)
       </h2>
 
       <div

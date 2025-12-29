@@ -7,36 +7,28 @@ class SocialMediaService {
   constructor() {
     this.isRunning = false;
     this.intervalId = null;
-    this.fetchInterval = 5000; // 5 seconds
+    this.fetchInterval = 5000;
     
-    // Crime-related keywords for filtering
     this.crimeKeywords = [
-      // General crime terms
       "crime", "criminal", "illegal", "theft", "steal", "robbery", "burglary", 
       "assault", "attack", "violence", "fight", "weapon", "gun", "knife", "shooting",
       "murder", "kill", "homicide", "death", "injure", "hurt", "victim",
       
-      // Specific crimes
       "fraud", "scam", "drugs", "narcotics", "overdose", "vandalism", "arson", 
-      "kidnap", "abduction", "harassment", "stalking", "threat", "intimidation",
+      "kidnap", "abduction", "harassment", "stalking", "threat", "intimidation", "stampede",
       
-      // Suspicious activity
       "suspicious", "strange", "unusual", "weird", "concerning", "alarming",
       "emergency", "danger", "unsafe", "risky", "illegal activity",
       
-      // Law enforcement terms
       "police", "cop", "officer", "detective", "investigation", "arrest", 
       "detain", "custody", "jail", "prison", "court", "legal", "law",
       
-      // Location-based crime indicators
       "break in", "break-in", "carjacking", "home invasion", "looting", "riot",
       
-      // Emergency situations
       "112", "emergency", "help", "danger", "flee", "escape", "chase", "ambulance", "fire",
       "stampede", "panic", "crowd crush", "accident", "incident", "tragedy"
     ];
     
-    // API endpoints (you can update these with actual URLs)
     this.apiEndpoints = [
       {
         name: "primary_social_media_api",
@@ -56,10 +48,8 @@ class SocialMediaService {
     console.log("Starting Social Media Service...");
     this.isRunning = true;
     
-    // Initial fetch
     await this.fetchPosts();
     
-    // Set up interval for periodic fetching
     this.intervalId = setInterval(async () => {
       try {
         await this.fetchPosts();
