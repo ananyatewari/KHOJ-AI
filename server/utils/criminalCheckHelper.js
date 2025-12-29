@@ -46,7 +46,8 @@ export async function checkCriminalRecordsForDocument(document, documentType, io
         const alertSeverity = mapCaseSeverityToAlertSeverity(maxSeverity);
 
         // Create alert
-        const alert = new Alert({
+        const { createRealTimeAlert } = await import("./alertCreator.js");
+        const alert = await createRealTimeAlert({
           type: "criminal_match",
           severity: alertSeverity,
           title: `Court Records Found: ${personName}`,
@@ -79,7 +80,6 @@ export async function checkCriminalRecordsForDocument(document, documentType, io
           triggeredBy: "CrimeCheck AI"
         });
 
-        await alert.save();
         alerts.push(alert);
 
         // Emit real-time alert via Socket.IO

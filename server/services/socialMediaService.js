@@ -400,7 +400,7 @@ class SocialMediaService {
   }
 
   async createAlert(event, post) {
-    const alert = new Alert({
+    const alertData = {
       type: "event_created",
       severity: event.severity,
       title: `Social Media Event: ${event.title}`,
@@ -421,11 +421,12 @@ class SocialMediaService {
       relatedEvent: event._id,
       agencies: event.agencies,
       triggeredBy: "Social Media AI"
-    });
+    };
     
-    await alert.save();
+    const { createRealTimeAlert } = await import("../utils/alertCreator.js");
+    const alert = await createRealTimeAlert(alertData);
     
-    if (global.io) {
+    if (alert && global.io) {
       global.io.emit("new_alert", alert);
     }
     
