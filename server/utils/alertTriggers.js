@@ -49,7 +49,8 @@ export async function checkEntityCrossMatch(entityName, entityType, documentId, 
         return existingAlert;
       }
 
-      const alert = new Alert({
+      const { createRealTimeAlert } = await import("./alertCreator.js");
+      const alert = await createRealTimeAlert({
         type: crossAgency ? "cross_agency" : "entity_match",
         severity: crossAgency ? "high" : "medium",
         title: crossAgency 
@@ -74,7 +75,6 @@ export async function checkEntityCrossMatch(entityName, entityType, documentId, 
         triggeredBy: "AI"
       });
 
-      await alert.save();
       return alert;
     }
 
@@ -122,7 +122,8 @@ export async function checkGeoFenceSpike(location, agency) {
         return existingAlert;
       }
 
-      const alert = new Alert({
+      const { createRealTimeAlert } = await import("./alertCreator.js");
+      const alert = await createRealTimeAlert({
         type: "geo_spike",
         severity: totalIncidents >= 10 ? "critical" : totalIncidents >= 7 ? "high" : "medium",
         title: `Geo-Fence Alert: Spike in ${location}`,
@@ -142,7 +143,6 @@ export async function checkGeoFenceSpike(location, agency) {
         triggeredBy: "AI"
       });
 
-      await alert.save();
       return alert;
     }
 
@@ -191,7 +191,8 @@ export async function checkRiskProfile(document, documentType) {
     }
 
     if (riskScore >= 30) {
-      const alert = new Alert({
+      const { createRealTimeAlert } = await import("./alertCreator.js");
+      const alert = await createRealTimeAlert({
         type: "risk_profile",
         severity: riskScore >= 50 ? "critical" : riskScore >= 40 ? "high" : "medium",
         title: `High-Risk Document Detected`,
@@ -212,7 +213,6 @@ export async function checkRiskProfile(document, documentType) {
         triggeredBy: "AI"
       });
 
-      await alert.save();
       return alert;
     }
 

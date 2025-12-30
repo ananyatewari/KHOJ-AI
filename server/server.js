@@ -27,6 +27,7 @@ import transcriptionRoutes from "./routes/transcription.js";
 import historyRoutes from "./routes/history.js";
 import eventsRoutes from "./routes/events.js";
 import alertsRoutes from "./routes/alerts.js";
+import alertsPostgresRoutes from "./routes/alerts-postgres.js";
 import criminalsRoutes from "./routes/criminals.js";
 import analyticsRoutes from "./routes/analytics.js";
 import socialMediaRoutes from "./routes/socialMedia.js";
@@ -52,12 +53,12 @@ app.use(cors());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("Postgres connected"));
+  .then(() => console.log("Mongo connected"));
 
 if (process.env.USE_POSTGRES === 'true') {
   connectPostgres().then(connected => {
     if (connected) {
-      console.log("PostgreSQL enabled for authentication");
+      console.log("PostgreSQL enabled for authentication, alerts, and criminal records");
     } else {
       console.log("PostgreSQL connection failed, falling back to MongoDB");
     }
@@ -80,7 +81,7 @@ app.use("/api/report", reportRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/events", eventsRoutes);
-app.use("/api/alerts", alertsRoutes);
+app.use("/api/alerts", process.env.USE_POSTGRES === 'true' ? alertsPostgresRoutes : alertsRoutes);
 import authMiddleware from "./middleware/auth.js";
 app.use("/api/criminals", authMiddleware, criminalsRoutes);
 app.use("/api/analytics", authMiddleware, analyticsRoutes);

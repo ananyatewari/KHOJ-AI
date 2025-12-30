@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "migrate:users": "node scripts/migrate-users-to-postgres.js"
+    "migrate:users": "node scripts/migrate-users-to-postgres.js",
+    "migrate:alerts": "node scripts/migrate-alerts-to-postgres.js",
+    "migrate:criminals": "node scripts/migrate-criminals-to-postgres.js"
   },
   "keywords": [
     "SHIELD",
