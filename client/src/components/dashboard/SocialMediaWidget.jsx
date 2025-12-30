@@ -38,24 +38,6 @@ export default function SocialMediaWidget() {
           fetch("http://localhost:3000/api/social-media/posts/crime?limit=10", {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          fetch("http://localhost:3000/api/social-media/events?limit=5", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch("http://localhost:3000/api/social-media/stats", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(
-            "http://localhost:3000/api/analytics/crime-trends?period=30days",
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          ),
-          fetch(
-            "http://localhost:3000/api/analytics/predictions?type=recidivism",
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          ),
         ]);
 
       const postsData = await postsRes.json();
@@ -488,18 +470,29 @@ export default function SocialMediaWidget() {
 
                   return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {/* Crime Trend */}
                       <div
                         className={`p-3 rounded-lg border ${
                           crimeChange.trend === "increase"
-                            ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                            ? theme === "dark"
+                              ? "bg-red-900/20 border-red-800"
+                              : "bg-red-50 border-red-200"
                             : crimeChange.trend === "decrease"
-                            ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
-                            : "bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800"
+                            ? theme === "dark"
+                              ? "bg-green-900/20 border-green-800"
+                              : "bg-green-50 border-green-200"
+                            : theme === "dark"
+                            ? "bg-gray-900/20 border-gray-800"
+                            : "bg-gray-50 border-gray-200"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                          <span
+                            className={`text-xs font-medium ${
+                              theme === "dark"
+                                ? "text-gray-400"
+                                : "text-gray-600"
+                            }`}
+                          >
                             Crime Rate (30d)
                           </span>
                           <TrendingUp
@@ -516,10 +509,16 @@ export default function SocialMediaWidget() {
                           <span
                             className={`text-lg font-bold ${
                               crimeChange.trend === "increase"
-                                ? "text-red-700 dark:text-red-300"
+                                ? theme === "dark"
+                                  ? "text-red-300"
+                                  : "text-red-700"
                                 : crimeChange.trend === "decrease"
-                                ? "text-green-700 dark:text-green-300"
-                                : "text-gray-700 dark:text-gray-300"
+                                ? theme === "dark"
+                                  ? "text-green-300"
+                                  : "text-green-700"
+                                : theme === "dark"
+                                ? "text-gray-300"
+                                : "text-gray-700"
                             }`}
                           >
                             {crimeChange.percentage.toFixed(1)}%
@@ -527,10 +526,16 @@ export default function SocialMediaWidget() {
                           <span
                             className={`text-xs ${
                               crimeChange.trend === "increase"
-                                ? "text-red-600 dark:text-red-400"
+                                ? theme === "dark"
+                                  ? "text-red-400"
+                                  : "text-red-600"
                                 : crimeChange.trend === "decrease"
-                                ? "text-green-600 dark:text-green-400"
-                                : "text-gray-600 dark:text-gray-400"
+                                ? theme === "dark"
+                                  ? "text-green-400"
+                                  : "text-green-600"
+                                : theme === "dark"
+                                ? "text-gray-400"
+                                : "text-gray-600"
                             }`}
                           >
                             {crimeChange.trend === "increase"
@@ -543,18 +548,42 @@ export default function SocialMediaWidget() {
                       </div>
 
                       {/* High Risk Individuals */}
-                      <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+                      <div
+                        className={`p-3 rounded-lg border ${
+                          theme === "dark"
+                            ? "bg-orange-900/20 border-orange-800"
+                            : "bg-orange-50 border-orange-200"
+                        }`}
+                      >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                          <span
+                            className={`text-xs font-medium ${
+                              theme === "dark"
+                                ? "text-gray-400"
+                                : "text-gray-600"
+                            }`}
+                          >
                             High Risk Individuals
                           </span>
                           <AlertTriangle className="w-4 h-4 text-orange-600" />
                         </div>
                         <div className="flex items-baseline gap-2">
-                          <span className="text-lg font-bold text-orange-700 dark:text-orange-300">
+                          <span
+                            className={`text-lg font-bold ${
+                              theme === "dark"
+                                ? "text-orange-300"
+                                : "text-orange-700"
+                            }`}
+                          >
                             {highRiskCount}
                           </span>
-                          <span className="text-xs text-orange-600 dark:text-orange-400">
+                          <span
+                            className={`text-xs ${
+                              theme === "dark"
+                                ? "text-orange-400"
+                                : "text-orange-600"
+                            }`}
+                          >
                             persons
                           </span>
                         </div>
@@ -562,28 +591,50 @@ export default function SocialMediaWidget() {
 
                       {/* Top Hotspot */}
                       {topHotspot && (
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                        <div
+                          className={`p-3 rounded-lg border ${
+                            theme === "dark"
+                              ? "bg-blue-900/20 border-blue-800"
+                              : "bg-blue-50 border-blue-200"
+                          }`}
+                        >
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                            <span
+                              className={`text-xs font-medium ${
+                                theme === "dark"
+                                  ? "text-gray-400"
+                                  : "text-gray-600"
+                              }`}
+                            >
                               Top Hotspot
                             </span>
                             <MapPin className="w-4 h-4 text-blue-600" />
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-sm font-bold text-blue-700 dark:text-blue-300 truncate">
+                            <span
+                              className={`text-sm font-bold ${
+                                theme === "dark"
+                                  ? "text-blue-300"
+                                  : "text-blue-700"
+                              } truncate`}
+                            >
                               {topHotspot._id}
                             </span>
-                            <span className="text-xs text-blue-600 dark:text-blue-400">
+                            <span
+                              className={`text-xs ${
+                                theme === "dark"
+                                  ? "text-blue-400"
+                                  : "text-blue-600"
+                              }`}
+                            >
                               {topHotspot.count} cases
                             </span>
                           </div>
                         </div>
                       )}
-
                     </div>
                   );
                 })()}
-
               </div>
             )}
           </>

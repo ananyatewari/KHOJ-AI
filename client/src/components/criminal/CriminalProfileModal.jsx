@@ -263,14 +263,6 @@ export default function CriminalProfileModal({ personName, onClose }) {
           >
             Close
           </button>
-          {profile && (
-            <button
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              onClick={() => window.open(`/app/document/${profile.relatedDocuments[0]?._id}`, '_blank')}
-            >
-              View Related Documents
-            </button>
-          )}
         </div>
       </div>
     </div>

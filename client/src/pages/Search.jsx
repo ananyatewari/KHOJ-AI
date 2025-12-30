@@ -254,7 +254,6 @@ const downloadReport = async () => {
       theme === "dark" ? "bg-slate-900" : ""
     }`}>
       <div className="max-w-[1800px] mx-auto p-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className={`text-3xl font-bold mb-2 ${
             theme === "dark" ? "text-white" : "text-slate-800"
@@ -266,7 +265,6 @@ const downloadReport = async () => {
           </p>
         </div>
 
-        {/* Upload Section */}
         <div className={`backdrop-blur-sm border rounded-xl p-6 mb-8 ${
           theme === "dark"
             ? "bg-slate-800/50 border-slate-700/50"
@@ -365,7 +363,6 @@ const downloadReport = async () => {
           </div>
         </div>
 
-        {/* Tabs */}
         {primaryDoc.text && (
           <div className="flex gap-2 mb-6">
             {[
@@ -391,17 +388,14 @@ const downloadReport = async () => {
           </div>
         )}
 
-        {/* Main Content */}
         {primaryDoc.text && (
           <div className="grid grid-cols-[1fr_380px] gap-6">
-            {/* Main Content Area */}
             <div className={`backdrop-blur-sm border rounded-xl overflow-hidden ${
               theme === "dark"
                 ? "bg-slate-800/50 border-slate-700/50"
                 : "bg-white/80 border-purple-200 shadow-lg"
             }`}>
 
-              {/* DOCUMENT TAB */}
               {activeTab === "document" && (
                 <div className="p-6">
                   <PDFViewer
@@ -412,7 +406,6 @@ const downloadReport = async () => {
                 </div>
               )}
 
-              {/* SEMANTIC TAB */}
               {activeTab === "semantic" && (
                 <div className="p-6">
 
@@ -422,7 +415,6 @@ const downloadReport = async () => {
                     Semantic Search Results
                   </h2>
 
-                  {/* Scope + Filters */}
                   <div className="space-y-4 mb-6">
                     <div className="flex gap-2">
                       <button
@@ -473,7 +465,6 @@ const downloadReport = async () => {
                     />
                   </div>
 
-                  {/* Results */}
                   <div className="space-y-3">
                     {filteredResults.map((r, idx) => (
                       <div
@@ -546,7 +537,6 @@ const downloadReport = async () => {
                 </div>
               )}
 
-              {/* SUMMARY TAB */}
               {activeTab === "summary" && (
                 <div className="p-6">
                   <SummaryPanel summary={summary} loading={summaryLoading} onDownload={downloadReport} />

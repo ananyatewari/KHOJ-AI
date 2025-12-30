@@ -8,8 +8,10 @@ import {
   Target,
 } from "lucide-react";
 import axios from "axios";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function CrimeAnalyticsWidget() {
+  const { theme } = useTheme();
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -94,12 +96,30 @@ export default function CrimeAnalyticsWidget() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+      <div
+        className={`rounded-lg shadow-lg p-6 ${
+          theme === "dark"
+            ? "bg-slate-800/50 border-slate-700/50"
+            : "bg-white/90 border-purple-200"
+        }`}
+      >
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+          <div
+            className={`h-6 rounded w-1/2 ${
+              theme === "dark" ? "bg-slate-700" : "bg-gray-200"
+            }`}
+          ></div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            <div
+              className={`h-20 rounded ${
+                theme === "dark" ? "bg-slate-700" : "bg-gray-200"
+              }`}
+            ></div>
+            <div
+              className={`h-20 rounded ${
+                theme === "dark" ? "bg-slate-700" : "bg-gray-200"
+              }`}
+            ></div>
           </div>
         </div>
       </div>
@@ -111,15 +131,27 @@ export default function CrimeAnalyticsWidget() {
   const topHotspot = getTopHotspot();
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+    <div
+      className={`rounded-lg shadow-lg p-6 ${
+        theme === "dark"
+          ? "bg-slate-800/50 border-slate-700/50"
+          : "bg-white/90 border-purple-200"
+      }`}
+    >
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <h3
+          className={`text-lg font-bold flex items-center gap-2 ${
+            theme === "dark" ? "text-white" : "text-gray-900"
+          }`}
+        >
           <Activity className="w-5 h-5 text-purple-600" />
           Crime Analytics
         </h3>
         <button
           onClick={fetchCrimeAnalytics}
-          className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+          className={`text-sm hover:underline ${
+            theme === "dark" ? "text-indigo-400" : "text-indigo-600"
+          }`}
         >
           Refresh →
         </button>
@@ -130,14 +162,24 @@ export default function CrimeAnalyticsWidget() {
         <div
           className={`p-4 rounded-lg border ${
             crimeChange.trend === "increase"
-              ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+              ? theme === "dark"
+                ? "bg-red-900/20 border-red-800"
+                : "bg-red-50 border-red-200"
               : crimeChange.trend === "decrease"
-              ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
-              : "bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800"
+              ? theme === "dark"
+                ? "bg-green-900/20 border-green-800"
+                : "bg-green-50 border-green-200"
+              : theme === "dark"
+              ? "bg-gray-900/20 border-gray-800"
+              : "bg-gray-50 border-gray-200"
           }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <span
+              className={`text-sm font-medium ${
+                theme === "dark" ? "text-gray-400" : "text-gray-600"
+              }`}
+            >
               Crime Rate (30d)
             </span>
             {crimeChange.trend === "increase" ? (
@@ -152,10 +194,16 @@ export default function CrimeAnalyticsWidget() {
             <span
               className={`text-2xl font-bold ${
                 crimeChange.trend === "increase"
-                  ? "text-red-700 dark:text-red-300"
+                  ? theme === "dark"
+                    ? "text-red-300"
+                    : "text-red-700"
                   : crimeChange.trend === "decrease"
-                  ? "text-green-700 dark:text-green-300"
-                  : "text-gray-700 dark:text-gray-300"
+                  ? theme === "dark"
+                    ? "text-green-300"
+                    : "text-green-700"
+                  : theme === "dark"
+                  ? "text-gray-300"
+                  : "text-gray-700"
               }`}
             >
               {crimeChange.percentage.toFixed(1)}%
@@ -163,10 +211,16 @@ export default function CrimeAnalyticsWidget() {
             <span
               className={`text-sm ${
                 crimeChange.trend === "increase"
-                  ? "text-red-600 dark:text-red-400"
+                  ? theme === "dark"
+                    ? "text-red-400"
+                    : "text-red-600"
                   : crimeChange.trend === "decrease"
-                  ? "text-green-600 dark:text-green-400"
-                  : "text-gray-600 dark:text-gray-400"
+                  ? theme === "dark"
+                    ? "text-green-400"
+                    : "text-green-600"
+                  : theme === "dark"
+                  ? "text-gray-400"
+                  : "text-gray-600"
               }`}
             >
               {crimeChange.trend === "increase"
@@ -179,18 +233,36 @@ export default function CrimeAnalyticsWidget() {
         </div>
 
         {/* High Risk Individuals */}
-        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+        <div
+          className={`rounded-lg p-4 border ${
+            theme === "dark"
+              ? "bg-orange-900/20 border-orange-800"
+              : "bg-orange-50 border-orange-200"
+          }`}
+        >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <span
+              className={`text-sm font-medium ${
+                theme === "dark" ? "text-gray-400" : "text-gray-600"
+              }`}
+            >
               High Risk Individuals
             </span>
             <AlertTriangle className="w-4 h-4 text-orange-600" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-orange-700 dark:text-orange-300">
+            <span
+              className={`text-2xl font-bold ${
+                theme === "dark" ? "text-orange-300" : "text-orange-700"
+              }`}
+            >
               {highRiskCount}
             </span>
-            <span className="text-sm text-orange-600 dark:text-orange-400">
+            <span
+              className={`text-sm ${
+                theme === "dark" ? "text-orange-400" : "text-orange-600"
+              }`}
+            >
               persons
             </span>
           </div>
@@ -198,18 +270,36 @@ export default function CrimeAnalyticsWidget() {
 
         {/* Top Hotspot */}
         {topHotspot && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div
+            className={`rounded-lg p-4 border ${
+              theme === "dark"
+                ? "bg-blue-900/20 border-blue-800"
+                : "bg-blue-50 border-blue-200"
+            }`}
+          >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <span
+                className={`text-sm font-medium ${
+                  theme === "dark" ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
                 Top Hotspot
               </span>
               <MapPin className="w-4 h-4 text-blue-600" />
             </div>
             <div className="flex flex-col">
-              <span className="text-lg font-bold text-blue-700 dark:text-blue-300 truncate">
+              <span
+                className={`text-lg font-bold ${
+                  theme === "dark" ? "text-blue-300" : "text-blue-700"
+                } truncate`}
+              >
                 {topHotspot._id}
               </span>
-              <span className="text-sm text-blue-600 dark:text-blue-400">
+              <span
+                className={`text-sm ${
+                  theme === "dark" ? "text-blue-400" : "text-blue-600"
+                }`}
+              >
                 {topHotspot.count} cases
               </span>
             </div>
@@ -217,18 +307,36 @@ export default function CrimeAnalyticsWidget() {
         )}
 
         {/* Prediction Accuracy */}
-        <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+        <div
+          className={`rounded-lg p-4 border ${
+            theme === "dark"
+              ? "bg-purple-900/20 border-purple-800"
+              : "bg-purple-50 border-purple-200"
+          }`}
+        >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <span
+              className={`text-sm font-medium ${
+                theme === "dark" ? "text-gray-400" : "text-gray-600"
+              }`}
+            >
               Prediction Accuracy
             </span>
             <Target className="w-4 h-4 text-purple-600" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+            <span
+              className={`text-2xl font-bold ${
+                theme === "dark" ? "text-purple-300" : "text-purple-700"
+              }`}
+            >
               87.3%
             </span>
-            <span className="text-sm text-purple-600 dark:text-purple-400">
+            <span
+              className={`text-sm ${
+                theme === "dark" ? "text-purple-400" : "text-purple-600"
+              }`}
+            >
               model accuracy
             </span>
           </div>
@@ -236,20 +344,36 @@ export default function CrimeAnalyticsWidget() {
       </div>
 
       {/* Quick Insights */}
-      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+      <div
+        className={`mt-4 pt-4 border-t ${
+          theme === "dark" ? "border-slate-700" : "border-gray-200"
+        }`}
+      >
+        <h4
+          className={`text-sm font-semibold mb-3 ${
+            theme === "dark" ? "text-gray-300" : "text-gray-700"
+          }`}
+        >
           Quick Insights
         </h4>
         <div className="space-y-2">
           {crimeChange.trend === "increase" && (
-            <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+            <div
+              className={`flex items-center gap-2 text-sm ${
+                theme === "dark" ? "text-red-400" : "text-red-600"
+              }`}
+            >
               <AlertTriangle className="w-4 h-4" />
               <span>Crime rate increasing - consider enhanced patrols</span>
             </div>
           )}
 
           {highRiskCount > 5 && (
-            <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
+            <div
+              className={`flex items-center gap-2 text-sm ${
+                theme === "dark" ? "text-orange-400" : "text-orange-600"
+              }`}
+            >
               <Target className="w-4 h-4" />
               <span>
                 Multiple high-risk individuals detected - review monitoring
@@ -259,7 +383,11 @@ export default function CrimeAnalyticsWidget() {
           )}
 
           {topHotspot && topHotspot.count > 10 && (
-            <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+            <div
+              className={`flex items-center gap-2 text-sm ${
+                theme === "dark" ? "text-blue-400" : "text-blue-600"
+              }`}
+            >
               <MapPin className="w-4 h-4" />
               <span>
                 {topHotspot._id} shows high activity - allocate resources

@@ -1,10 +1,14 @@
 import express from "express";
 import CriminalRecord from "../models/CriminalRecord.js";
 import Alert from "../models/Alert.js";
+import CriminalRecordSQL from "../models/sql/CriminalRecord.js";
+import AlertSQL from "../models/sql/Alert.js";
 import authMiddleware from "../middleware/auth.js";
 import { checkCriminalRecord, checkMCARecords, requestDetailedReport } from "../services/crimeCheckService.js";
+import { Op } from "sequelize";
 
 const router = express.Router();
+const USE_POSTGRES = process.env.USE_POSTGRES === 'true';
 
 // GET /api/criminals/check/:personName
 // Check a person against criminal database
@@ -171,56 +175,125 @@ router.get("/stats", authMiddleware, async (req, res) => {
   try {
     const userAgency = req.user.agency;
 
-    const [totalAlerts, criticalAlerts, todayAlerts, uniquePersons] = await Promise.all([
-      Alert.countDocuments({
-        type: "criminal_match",
-        $or: [
-          { agencies: userAgency },
-          { agencies: { $size: 0 } }
-        ]
-      }),
-      Alert.countDocuments({
-        type: "criminal_match",
-        severity: "critical",
-        $or: [
-          { agencies: userAgency },
-          { agencies: { $size: 0 } }
-        ]
-      }),
-      Alert.countDocuments({
-        type: "criminal_match",
-        createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-        $or: [
-          { agencies: userAgency },
-          { agencies: { $size: 0 } }
-        ]
-      }),
-      CriminalRecord.countDocuments({ hasRecord: true })
-    ]);
+    let totalAlerts, criticalAlerts, todayAlerts, uniquePersons, recentMatches;
 
-    // Get recent matches
-    const recentMatches = await Alert.find({
-      type: "criminal_match",
-      $or: [
-        { agencies: userAgency },
-        { agencies: { $size: 0 } }
-      ]
-    })
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .select("details.criminalRecord.personName details.criminalRecord.caseCount severity createdAt");
+    if (USE_POSTGRES) {
+      // PostgreSQL queries
+      const [totalAlertsResult, criticalAlertsResult, todayAlertsResult, uniquePersonsResult] = await Promise.all([
+        AlertSQL.count({
+          where: {
+            type: "criminal_match",
+            [Op.or]: [
+              { agencies: { [Op.contains]: [userAgency] } },
+              { agencies: { [Op.eq]: [] } }
+            ]
+          }
+        }),
+        AlertSQL.count({
+          where: {
+            type: "criminal_match",
+            severity: "critical",
+            [Op.or]: [
+              { agencies: { [Op.contains]: [userAgency] } },
+              { agencies: { [Op.eq]: [] } }
+            ]
+          }
+        }),
+        AlertSQL.count({
+          where: {
+            type: "criminal_match",
+            createdAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+            [Op.or]: [
+              { agencies: { [Op.contains]: [userAgency] } },
+              { agencies: { [Op.eq]: [] } }
+            ]
+          }
+        }),
+        CriminalRecordSQL.count({
+          where: { hasRecord: true }
+        })
+      ]);
+
+      totalAlerts = totalAlertsResult;
+      criticalAlerts = criticalAlertsResult;
+      todayAlerts = todayAlertsResult;
+      uniquePersons = uniquePersonsResult;
+
+      // Get recent matches
+      recentMatches = await AlertSQL.findAll({
+        where: {
+          type: "criminal_match",
+          [Op.or]: [
+            { agencies: { [Op.contains]: [userAgency] } },
+            { agencies: { [Op.eq]: [] } }
+          ]
+        },
+        order: [['createdAt', 'DESC']],
+        limit: 5,
+        attributes: ['details', 'severity', 'createdAt']
+      });
+
+      recentMatches = recentMatches.map(a => ({
+        personName: a.details?.criminalRecord?.personName,
+        caseCount: a.details?.criminalRecord?.caseCount,
+        severity: a.severity,
+        createdAt: a.createdAt
+      }));
+    } else {
+      // MongoDB queries (original)
+      [totalAlerts, criticalAlerts, todayAlerts, uniquePersons] = await Promise.all([
+        Alert.countDocuments({
+          type: "criminal_match",
+          $or: [
+            { agencies: userAgency },
+            { agencies: { $size: 0 } }
+          ]
+        }),
+        Alert.countDocuments({
+          type: "criminal_match",
+          severity: "critical",
+          $or: [
+            { agencies: userAgency },
+            { agencies: { $size: 0 } }
+          ]
+        }),
+        Alert.countDocuments({
+          type: "criminal_match",
+          createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          $or: [
+            { agencies: userAgency },
+            { agencies: { $size: 0 } }
+          ]
+        }),
+        CriminalRecord.countDocuments({ hasRecord: true })
+      ]);
+
+      // Get recent matches
+      recentMatches = await Alert.find({
+        type: "criminal_match",
+        $or: [
+          { agencies: userAgency },
+          { agencies: { $size: 0 } }
+        ]
+      })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .select("details.criminalRecord.personName details.criminalRecord.caseCount severity createdAt");
+
+      recentMatches = recentMatches.map(a => ({
+        personName: a.details?.criminalRecord?.personName,
+        caseCount: a.details?.criminalRecord?.caseCount,
+        severity: a.severity,
+        createdAt: a.createdAt
+      }));
+    }
 
     res.json({
       totalAlerts,
       criticalAlerts,
       todayAlerts,
       uniquePersons,
-      recentMatches: recentMatches.map(a => ({
-        personName: a.details?.criminalRecord?.personName,
-        caseCount: a.details?.criminalRecord?.caseCount,
-        severity: a.severity,
-        createdAt: a.createdAt
-      }))
+      recentMatches
     });
 
   } catch (error) {
