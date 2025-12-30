@@ -31,6 +31,7 @@ import alertsPostgresRoutes from "./routes/alerts-postgres.js";
 import criminalsRoutes from "./routes/criminals.js";
 import analyticsRoutes from "./routes/analytics.js";
 import socialMediaRoutes from "./routes/socialMedia.js";
+import geotaggingRoutes from "./routes/geotagging.js";
 import socialMediaService from "./services/socialMediaService.js";
 
 const app = express();
@@ -85,6 +86,7 @@ import authMiddleware from "./middleware/auth.js";
 app.use("/api/criminals", authMiddleware, criminalsRoutes);
 app.use("/api/analytics", authMiddleware, analyticsRoutes);
 app.use("/api/social-media", socialMediaRoutes);
+app.use("/api/geotagging", authMiddleware, geotaggingRoutes);
 server.listen(3000, () => {
   console.log("Server running on 3000");
 });

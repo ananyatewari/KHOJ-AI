@@ -10,6 +10,7 @@ import TranscriptionView from "./pages/TranscriptionView";
 import History from "./pages/History";
 import AlertsPage from "./pages/AlertsPage";
 import SocialMediaPage from "./pages/SocialMediaPage";
+import GeotaggingPage from "./pages/geotagging";
 import AppLayout from "./components/layout/AppLayout";
 import PublicLayout from "./components/layout/PublicLayout";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
@@ -70,6 +71,7 @@ export default function App() {
             <Route path="transcription/:id" element={<TranscriptionView />} />
             <Route path="chatbot" element={<ChatPanel />} />
             <Route path="social-media" element={<SocialMediaPage />} />
+            <Route path="geotagging" element={<GeotaggingPage />} />
             <Route path="history" element={<History />} />
             <Route path="alerts" element={<AlertsPage />} />
           </Route>

@@ -18,6 +18,7 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronRight,
+  MapPin,
   Brain,
 } from "lucide-react";
 
@@ -282,6 +283,22 @@ export default function SideBar() {
           >
             <History size={18} />
             History
+          </NavLink>
+
+          <NavLink
+            to="/app/geotagging"
+            className={({ isActive }) =>
+              `${linkBase} ${
+                isActive
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg"
+                  : theme === "dark"
+                  ? "text-slate-300 hover:bg-white/5"
+                  : "text-slate-600 hover:bg-purple-50"
+              }`
+            }
+          >
+            <MapPin size={18} />
+            Geotagged Intelligence
           </NavLink>
 
           <NavLink

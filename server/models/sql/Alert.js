@@ -8,61 +8,49 @@ export const AlertSQL = sequelize.define('Alert', {
     autoIncrement: true
   },
   type: {
-    type: DataTypes.STRING(50),
-    allowNull: false,
-    validate: {
-      isIn: [['entity_match', 'geo_spike', 'risk_profile', 'cross_agency', 'custom', 'event_created', 'document_created', 'new_document', 'new_ocr_document', 'new_transcription', 'criminal_match']]
-    }
+    type: DataTypes.ENUM(
+      'entity_match', 
+      'geo_spike', 
+      'risk_profile', 
+      'cross_agency', 
+      'custom', 
+      'event_created', 
+      'document_created', 
+      'new_document', 
+      'new_ocr_document', 
+      'new_transcription', 
+      'criminal_match'
+    ),
+    allowNull: false
   },
   severity: {
-    type: DataTypes.STRING(20),
+    type: DataTypes.ENUM('low', 'medium', 'high', 'critical'),
     allowNull: false,
-    defaultValue: 'medium',
-    validate: {
-      isIn: [['low', 'medium', 'high', 'critical']]
-    }
+    defaultValue: 'medium'
+  },
+  status: {
+    type: DataTypes.ENUM('active', 'resolved', 'archived'),
+    allowNull: false,
+    defaultValue: 'active'
   },
   title: {
-    type: DataTypes.TEXT,
+    type: DataTypes.STRING(255),
     allowNull: false
   },
   description: {
     type: DataTypes.TEXT,
-    allowNull: false
-  },
-  status: {
-    type: DataTypes.STRING(20),
-    defaultValue: 'unread',
-    validate: {
-      isIn: [['unread', 'read', 'acknowledged', 'resolved', 'dismissed']]
-    }
-  },
-  triggered_by: {
-    type: DataTypes.STRING(100),
-    defaultValue: 'AI'
-  },
-  action_taken: {
-    type: DataTypes.TEXT,
-    defaultValue: ''
-  },
-  related_event_id: {
-    type: DataTypes.STRING(24),
     allowNull: true
   },
-  expires_at: {
-    type: DataTypes.DATE,
-    allowNull: true
-  },
-  acknowledged_by_user_id: {
-    type: DataTypes.STRING(24),
-    allowNull: true
-  },
-  acknowledged_at: {
-    type: DataTypes.DATE,
-    allowNull: true
-  },
-  details_json: {
+  agencies: {
     type: DataTypes.JSONB,
+    defaultValue: []
+  },
+  details: {
+    type: DataTypes.JSONB,
+    defaultValue: {}
+  },
+  expiresAt: {
+    type: DataTypes.DATE,
     allowNull: true
   }
 }, {
@@ -74,6 +62,9 @@ export const AlertSQL = sequelize.define('Alert', {
       fields: ['status', 'created_at']
     },
     {
+      fields: ['agencies']
+    },
+    {
       fields: ['severity', 'created_at']
     },
     {
@@ -81,9 +72,6 @@ export const AlertSQL = sequelize.define('Alert', {
     },
     {
       fields: ['expires_at']
-    },
-    {
-      fields: ['created_at']
     }
   ]
 });

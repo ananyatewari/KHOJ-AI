@@ -30,12 +30,14 @@ import {
   Clock,
 } from "lucide-react";
 import axios from "axios";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function CrimeAnalyticsDashboard() {
   const [activeTab, setActiveTab] = useState("trends");
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState("12months");
+  const { theme } = useTheme();
 
   useEffect(() => {
     fetchAnalyticsData();
@@ -102,54 +104,97 @@ export default function CrimeAnalyticsDashboard() {
     }, []);
 
     return (
-      <div className="space-y-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+      <div
+        className={`space-y-6 ${
+          theme === "dark" ? "text-white" : "text-gray-800"
+        }`}
+      >
+        <div
+          className={`rounded-lg shadow-lg p-6 ${
+            theme === "dark"
+              ? "bg-slate-800/50 border-slate-700/50"
+              : "bg-white border-purple-200"
+          }`}
+        >
+          <h3
+            className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
+              theme === "dark" ? "text-white" : "text-gray-800"
+            }`}
+          >
             <TrendingUp className="w-5 h-5 text-blue-600" />
             Crime Trends Over Time
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={theme === "dark" ? "#475569" : "#e5e7eb"}
+              />
+              <XAxis
+                dataKey="month"
+                stroke={theme === "dark" ? "#94a3b8" : "#6b7280"}
+              />
+              <YAxis stroke={theme === "dark" ? "#94a3b8" : "#6b7280"} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: theme === "dark" ? "#1e293b" : "#ffffff",
+                  border: `1px solid ${
+                    theme === "dark" ? "#475569" : "#e5e7eb"
+                  }`,
+                  borderRadius: "8px",
+                  color: theme === "dark" ? "#ffffff" : "#000000",
+                }}
+              />
+              <Legend
+                wrapperStyle={{
+                  color: theme === "dark" ? "#ffffff" : "#000000",
+                }}
+              />
               <Area
                 type="monotone"
                 dataKey="critical"
                 stackId="1"
-                stroke="#ef4444"
-                fill="#ef4444"
+                stroke={theme === "dark" ? "#ef4444" : "#ef4444"}
+                fill={theme === "dark" ? "#ef4444" : "#ef4444"}
               />
               <Area
                 type="monotone"
                 dataKey="high"
                 stackId="1"
-                stroke="#f59e0b"
-                fill="#f59e0b"
+                stroke={theme === "dark" ? "#f59e0b" : "#f59e0b"}
+                fill={theme === "dark" ? "#f59e0b" : "#f59e0b"}
               />
               <Area
                 type="monotone"
                 dataKey="medium"
                 stackId="1"
-                stroke="#eab308"
-                fill="#eab308"
+                stroke={theme === "dark" ? "#eab308" : "#eab308"}
+                fill={theme === "dark" ? "#eab308" : "#eab308"}
               />
               <Area
                 type="monotone"
                 dataKey="low"
                 stackId="1"
-                stroke="#22c55e"
-                fill="#22c55e"
+                stroke={theme === "dark" ? "#22c55e" : "#22c55e"}
+                fill={theme === "dark" ? "#22c55e" : "#22c55e"}
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-6`}>
+          <div
+            className={`rounded-lg shadow-lg p-6 ${
+              theme === "dark"
+                ? "bg-slate-800/50 border-slate-700/50"
+                : "bg-white border-purple-200"
+            }`}
+          >
+            <h3
+              className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
+                theme === "dark" ? "text-white" : "text-gray-800"
+              }`}
+            >
               <Shield className="w-5 h-5 text-purple-600" />
               Risk Level Distribution
             </h3>
@@ -172,7 +217,16 @@ export default function CrimeAnalyticsDashboard() {
                     />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: theme === "dark" ? "#1e293b" : "#ffffff",
+                    border: `1px solid ${
+                      theme === "dark" ? "#475569" : "#e5e7eb"
+                    }`,
+                    borderRadius: "8px",
+                    color: theme === "dark" ? "#ffffff" : "#000000",
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -182,17 +236,24 @@ export default function CrimeAnalyticsDashboard() {
   };
 
   return (
-    <div className="min-h-full bg-gray-50 dark:bg-slate-900">
+    <div
+      className={`min-h-full ${
+        theme === "dark"
+          ? "bg-slate-900"
+          : "bg-gradient-to-br from-slate-50 to-purple-50"
+      }`}
+    >
       <div className="max-w-[1800px] mx-auto p-8">
-
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <div
+              className={`animate-spin rounded-full h-12 w-12 border-b-2 ${
+                theme === "dark" ? "border-indigo-400" : "border-indigo-600"
+              }`}
+            ></div>
           </div>
         ) : (
-          <div>
-            {activeTab === "trends" && renderTrendsTab()}
-          </div>
+          <div>{activeTab === "trends" && renderTrendsTab()}</div>
         )}
       </div>
     </div>
